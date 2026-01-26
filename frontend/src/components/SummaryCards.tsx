@@ -21,11 +21,12 @@ export default function SummaryCards({ snapshot }: SummaryCardsProps) {
     return `${days}d ${hours}h`;
   }
 
-  function formatBytes(bytes?: number): string {
-    if (!bytes) return '0 B';
+  function formatBytes(bytes?: number | string | null): string {
+    const numBytes = Number(bytes);
+    if (!numBytes || isNaN(numBytes)) return '0 B';
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     let i = 0;
-    let value = bytes;
+    let value = numBytes;
     while (value >= 1024 && i < units.length - 1) {
       value /= 1024;
       i++;
@@ -33,9 +34,10 @@ export default function SummaryCards({ snapshot }: SummaryCardsProps) {
     return `${value.toFixed(2)} ${units[i]}`;
   }
 
-  function formatSpeed(bytesPerSec?: number): string {
-    if (!bytesPerSec) return '0 bps';
-    const bitsPerSec = bytesPerSec * 8;
+  function formatSpeed(bytesPerSec?: number | string | null): string {
+    const numBytes = Number(bytesPerSec);
+    if (!numBytes || isNaN(numBytes)) return '0 bps';
+    const bitsPerSec = numBytes * 8;
     const units = ['bps', 'Kbps', 'Mbps', 'Gbps'];
     let i = 0;
     let value = bitsPerSec;

@@ -23,10 +23,12 @@ export default function TrafficChart() {
     }
   }
 
-  function formatBytes(bytes: number): string {
+  function formatBytes(bytes: number | string | null | undefined): string {
+    const numBytes = Number(bytes);
+    if (!numBytes || isNaN(numBytes)) return '0 B';
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     let i = 0;
-    let value = bytes;
+    let value = numBytes;
     while (value >= 1024 && i < units.length - 1) {
       value /= 1024;
       i++;
