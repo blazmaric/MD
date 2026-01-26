@@ -49,9 +49,19 @@ export default async function trafficRoutes(fastify) {
       GROUP BY interface_name
     `, [iface || 'Vxlan']);
 
+    const totals = totalResult.rows[0] || { total_rx: 0, total_tx: 0 };
+
     return {
-      history: result.rows,
-      totals: totalResult.rows[0] || { total_rx: 0, total_tx: 0 }
+      history: result.rows.map(row => ({
+        time_bucket: row.time_bucket,
+        interface_name: row.interface_name,
+        rx_bytes_delta: parseInt(row.rx_bytes_delta) || 0,
+        tx_bytes_delta: parseInt(row.tx_bytes_delta) || 0
+      })),
+      totals: {
+        total_rx: parseInt(totals.total_rx) || 0,
+        total_tx: parseInt(totals.total_tx) || 0
+      }
     };
   });
 }
