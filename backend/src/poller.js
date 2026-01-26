@@ -19,6 +19,7 @@ async function collectSnapshot() {
     stale: false,
     error: null,
     active_uplink: null,
+    gateway_type: null,
     lte_operator: null,
     lte_rsrp: null,
     lte_rsrq: null,
@@ -29,6 +30,7 @@ async function collectSnapshot() {
     system_uptime: null,
     system_cpu_percent: null,
     system_ram_percent: null,
+    current_speed_interface: null,
     current_speed_rx: null,
     current_speed_tx: null,
     vxlan_rx_bytes: null,
@@ -48,6 +50,14 @@ async function collectSnapshot() {
 
     if (route && route.gateway) {
       snapshot.active_uplink = route.gateway;
+
+      if (route['gateway-status'] && route['gateway-status'].includes(config.mikrotik.interfaces.lte)) {
+        snapshot.gateway_type = 'LTE';
+      } else if (route['gateway-status'] && route['gateway-status'].includes(config.mikrotik.interfaces.wlan)) {
+        snapshot.gateway_type = 'WiFi';
+      } else {
+        snapshot.gateway_type = 'Unknown';
+      }
     }
 
     if (lte) {
@@ -77,6 +87,7 @@ async function collectSnapshot() {
     if (vxlanIface) {
       const traffic = await mt.monitorTraffic(config.mikrotik.interfaces.vxlan);
       if (traffic) {
+        snapshot.current_speed_interface = config.mikrotik.interfaces.vxlan;
         snapshot.current_speed_rx = traffic['rx-bits-per-second'] ? Math.floor(traffic['rx-bits-per-second'] / 8) : null;
         snapshot.current_speed_tx = traffic['tx-bits-per-second'] ? Math.floor(traffic['tx-bits-per-second'] / 8) : null;
       }
@@ -100,18 +111,18 @@ async function collectSnapshot() {
     await query(`
       INSERT INTO snapshots (
         snapshot_ts, online, stale, error,
-        active_uplink, lte_operator, lte_rsrp, lte_rsrq, lte_rssi, lte_sinr,
+        active_uplink, gateway_type, lte_operator, lte_rsrp, lte_rsrq, lte_rssi, lte_sinr,
         wifi_ssid, wifi_status,
         system_uptime, system_cpu_percent, system_ram_percent,
-        current_speed_rx, current_speed_tx,
+        current_speed_interface, current_speed_rx, current_speed_tx,
         vxlan_rx_bytes, vxlan_tx_bytes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
     `, [
       snapshot.snapshot_ts, snapshot.online, snapshot.stale, snapshot.error,
-      snapshot.active_uplink, snapshot.lte_operator, snapshot.lte_rsrp, snapshot.lte_rsrq,
+      snapshot.active_uplink, snapshot.gateway_type, snapshot.lte_operator, snapshot.lte_rsrp, snapshot.lte_rsrq,
       snapshot.lte_rssi, snapshot.lte_sinr, snapshot.wifi_ssid, snapshot.wifi_status,
       snapshot.system_uptime, snapshot.system_cpu_percent, snapshot.system_ram_percent,
-      snapshot.current_speed_rx, snapshot.current_speed_tx,
+      snapshot.current_speed_interface, snapshot.current_speed_rx, snapshot.current_speed_tx,
       snapshot.vxlan_rx_bytes, snapshot.vxlan_tx_bytes
     ]);
   } catch (err) {

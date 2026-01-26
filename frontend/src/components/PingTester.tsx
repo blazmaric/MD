@@ -5,6 +5,7 @@ import { api } from '../api';
 export default function PingTester() {
   const [address, setAddress] = useState('8.8.8.8');
   const [count, setCount] = useState(4);
+  const [sourceInterface, setSourceInterface] = useState('');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,7 +17,7 @@ export default function PingTester() {
     setLoading(true);
 
     try {
-      const data = await api.ping.send(address, count);
+      const data = await api.ping.send(address, count, sourceInterface || undefined);
       setResult(data.result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ping failed');
@@ -28,7 +29,7 @@ export default function PingTester() {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <form onSubmit={handlePing} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label htmlFor="address" className="block text-sm font-medium text-slate-700 mb-2">
               Target Address
@@ -42,6 +43,22 @@ export default function PingTester() {
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
+          </div>
+
+          <div>
+            <label htmlFor="source" className="block text-sm font-medium text-slate-700 mb-2">
+              Source Interface
+            </label>
+            <select
+              id="source"
+              value={sourceInterface}
+              onChange={(e) => setSourceInterface(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Default (Gateway)</option>
+              <option value="lte1">LTE</option>
+              <option value="wlan1">WiFi 2.4GHz</option>
+            </select>
           </div>
 
           <div>

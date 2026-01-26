@@ -13,6 +13,7 @@ export interface Snapshot {
   stale: boolean;
   error?: string;
   active_uplink?: string;
+  gateway_type?: string;
   lte_operator?: string;
   lte_rsrp?: number;
   lte_rsrq?: number;
@@ -23,6 +24,7 @@ export interface Snapshot {
   system_uptime?: number;
   system_cpu_percent?: number;
   system_ram_percent?: number;
+  current_speed_interface?: string;
   current_speed_rx?: number;
   current_speed_tx?: number;
   vxlan_rx_bytes?: number;
@@ -50,4 +52,20 @@ export interface TrafficData {
     total_rx: number;
     total_tx: number;
   };
+}
+
+export interface SmsMessage {
+  '.id': string;
+  phone: string;
+  message: string;
+  timestamp: string;
+  type: string;
+}
+
+export interface WiFiNetwork {
+  ssid: string;
+  'signal-strength': number;
+  frequency: string;
+  channel: string;
+  security: string;
 }

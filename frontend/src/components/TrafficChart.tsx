@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Trash2 } from 'lucide-react';
 import { api } from '../api';
 import type { TrafficData } from '../types';
 
@@ -6,6 +7,8 @@ export default function TrafficChart() {
   const [data, setData] = useState<TrafficData | null>(null);
   const [period, setPeriod] = useState('day');
   const [loading, setLoading] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     fetchTraffic();
@@ -20,6 +23,20 @@ export default function TrafficChart() {
       console.error('Failed to fetch traffic:', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleReset() {
+    setResetting(true);
+    try {
+      await api.traffic.reset();
+      alert('Traffic history reset successfully!');
+      setShowResetDialog(false);
+      fetchTraffic();
+    } catch (err) {
+      alert('Failed to reset traffic history: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -38,10 +55,11 @@ export default function TrafficChart() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-slate-900">Traffic History</h3>
-        <div className="flex space-x-2">
+    <>
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-slate-900">Traffic History</h3>
+          <div className="flex space-x-2">
           <button
             onClick={() => setPeriod('day')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -71,6 +89,14 @@ export default function TrafficChart() {
             }`}
           >
             Month
+          </button>
+          <button
+            onClick={() => setShowResetDialog(true)}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors flex items-center gap-2"
+            title="Reset traffic history"
+          >
+            <Trash2 className="w-4 h-4" />
+            Reset
           </button>
         </div>
       </div>
@@ -129,5 +155,33 @@ export default function TrafficChart() {
         </div>
       )}
     </div>
+
+    {showResetDialog && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+          <h3 className="text-lg font-bold text-red-600 mb-4">Confirm Reset</h3>
+          <p className="text-slate-700 mb-6">
+            Are you sure you want to delete all traffic history? This action cannot be undone.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={handleReset}
+              disabled={resetting}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50"
+            >
+              {resetting ? 'Resetting...' : 'Yes, Reset'}
+            </button>
+            <button
+              onClick={() => setShowResetDialog(false)}
+              disabled={resetting}
+              className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

@@ -86,6 +86,12 @@ FOR EACH ROW
 EXECUTE FUNCTION update_updated_at();
 `;
 
+const MIGRATION_002 = `
+-- Add new columns to snapshots table
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS gateway_type TEXT;
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS current_speed_interface TEXT;
+`;
+
 export async function runMigrations() {
   try {
     console.log('Running database migrations...');
@@ -98,20 +104,26 @@ export async function runMigrations() {
       )
     `);
 
-    const migrationFile = '001_init';
-    const result = await query('SELECT filename FROM migrations WHERE filename = $1', [migrationFile]);
+    const migrations = [
+      { name: '001_init', sql: MIGRATION_001 },
+      { name: '002_gateway_and_interface', sql: MIGRATION_002 }
+    ];
 
-    if (result.rows.length > 0) {
-      console.log(`Migration ${migrationFile} already applied, skipping`);
-      return;
+    for (const migration of migrations) {
+      const result = await query('SELECT filename FROM migrations WHERE filename = $1', [migration.name]);
+
+      if (result.rows.length > 0) {
+        console.log(`Migration ${migration.name} already applied, skipping`);
+        continue;
+      }
+
+      console.log(`Applying migration: ${migration.name}`);
+      await query(migration.sql);
+
+      await query('INSERT INTO migrations (filename) VALUES ($1)', [migration.name]);
+
+      console.log(`Migration ${migration.name} applied successfully`);
     }
-
-    console.log(`Applying migration: ${migrationFile}`);
-    await query(MIGRATION_001);
-
-    await query('INSERT INTO migrations (filename) VALUES ($1)', [migrationFile]);
-
-    console.log(`Migration ${migrationFile} applied successfully`);
   } catch (err) {
     console.error('Migration failed:', err);
     throw err;

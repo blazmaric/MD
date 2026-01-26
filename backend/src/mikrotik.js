@@ -122,15 +122,101 @@ export async function getLogs() {
   }
 }
 
-export async function ping(address, count = 4) {
+export async function ping(address, count = 4, sourceInterface = null) {
   try {
+    const body = { address, count };
+    if (sourceInterface) {
+      body.interface = sourceInterface;
+    }
     const result = await mtFetch('/rest/ping', {
       method: 'POST',
-      body: JSON.stringify({ address, count })
+      body: JSON.stringify(body)
     });
     return result;
   } catch (err) {
     console.error('Failed to ping:', err.message);
+    throw err;
+  }
+}
+
+export async function rebootSystem() {
+  try {
+    await mtFetch('/rest/system/reboot', { method: 'POST', body: '{}' });
+    return { success: true };
+  } catch (err) {
+    console.error('Failed to reboot:', err.message);
+    throw err;
+  }
+}
+
+export async function getSmsInbox() {
+  try {
+    return await mtFetch('/rest/tool/sms/inbox');
+  } catch (err) {
+    console.error('Failed to get SMS inbox:', err.message);
+    return [];
+  }
+}
+
+export async function sendSms(phoneNumber, message, channel = 0) {
+  try {
+    const result = await mtFetch('/rest/tool/sms/send', {
+      method: 'POST',
+      body: JSON.stringify({
+        phone: phoneNumber,
+        message,
+        channel
+      })
+    });
+    return result;
+  } catch (err) {
+    console.error('Failed to send SMS:', err.message);
+    throw err;
+  }
+}
+
+export async function scanWifi(interfaceName) {
+  try {
+    const result = await mtFetch('/rest/interface/wireless/scan', {
+      method: 'POST',
+      body: JSON.stringify({
+        numbers: interfaceName,
+        duration: 5
+      })
+    });
+    return result;
+  } catch (err) {
+    console.error('Failed to scan WiFi:', err.message);
+    throw err;
+  }
+}
+
+export async function connectWifi(interfaceName, ssid, password) {
+  try {
+    await mtFetch(`/rest/interface/wireless/${interfaceName}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        'mode': 'station',
+        'ssid': ssid,
+        'security-profile': 'default'
+      })
+    });
+
+    const profiles = await mtFetch('/rest/interface/wireless/security-profiles?name=default');
+    if (profiles && profiles[0]) {
+      await mtFetch(`/rest/interface/wireless/security-profiles/${profiles[0]['.id']}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          'mode': 'dynamic-keys',
+          'authentication-types': 'wpa2-psk',
+          'wpa2-pre-shared-key': password
+        })
+      });
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('Failed to connect WiFi:', err.message);
     throw err;
   }
 }

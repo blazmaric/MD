@@ -14,8 +14,6 @@ export default function SummaryCards({ snapshot }: SummaryCardsProps) {
     );
   }
 
-  console.log('Rendering SummaryCards with snapshot:', snapshot);
-
   function formatUptime(seconds?: number): string {
     if (!seconds) return 'N/A';
     const days = Math.floor(seconds / 86400);
@@ -90,6 +88,9 @@ export default function SummaryCards({ snapshot }: SummaryCardsProps) {
           {snapshot.active_uplink && (
             <p className="text-sm text-slate-500 mt-2">Gateway: {snapshot.active_uplink}</p>
           )}
+          {snapshot.gateway_type && (
+            <p className="text-sm font-semibold text-slate-700 mt-1">via {snapshot.gateway_type}</p>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
@@ -105,9 +106,19 @@ export default function SummaryCards({ snapshot }: SummaryCardsProps) {
           )}
           {snapshot.lte_rsrp && (
             <div className="text-xs text-slate-500 mt-2 space-y-1">
-              <div>RSRP: {snapshot.lte_rsrp} dBm</div>
-              {snapshot.lte_rsrq && <div>RSRQ: {snapshot.lte_rsrq} dB</div>}
-              {snapshot.lte_sinr && <div>SINR: {snapshot.lte_sinr} dB</div>}
+              <div title="Reference Signal Received Power - measures signal strength from cell tower">
+                RSRP: {snapshot.lte_rsrp} dBm
+              </div>
+              {snapshot.lte_rsrq && (
+                <div title="Reference Signal Received Quality - measures signal quality and interference">
+                  RSRQ: {snapshot.lte_rsrq} dB
+                </div>
+              )}
+              {snapshot.lte_sinr && (
+                <div title="Signal to Interference plus Noise Ratio - higher is better for data rates">
+                  SINR: {snapshot.lte_sinr} dB
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -166,6 +177,9 @@ export default function SummaryCards({ snapshot }: SummaryCardsProps) {
               </span>
             </div>
           </div>
+          {snapshot.current_speed_interface && (
+            <p className="text-xs text-slate-500 mt-2">Interface: {snapshot.current_speed_interface}</p>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow p-6 md:col-span-2 lg:col-span-3">

@@ -59,13 +59,43 @@ export const api = {
 
       return apiFetch(`/traffic?${query.toString()}`);
     },
+
+    reset: () =>
+      apiFetch('/traffic/history', { method: 'DELETE' }),
   },
 
   ping: {
-    send: (address: string, count?: number) =>
+    send: (address: string, count?: number, sourceInterface?: string) =>
       apiFetch('/ping', {
         method: 'POST',
-        body: JSON.stringify({ address, count }),
+        body: JSON.stringify({ address, count, interface: sourceInterface }),
+      }),
+  },
+
+  system: {
+    reboot: () =>
+      apiFetch('/system/reboot', { method: 'POST' }),
+  },
+
+  sms: {
+    inbox: () =>
+      apiFetch('/sms/inbox'),
+
+    send: (phone: string, message: string) =>
+      apiFetch('/sms/send', {
+        method: 'POST',
+        body: JSON.stringify({ phone, message }),
+      }),
+  },
+
+  wifi: {
+    scan: () =>
+      apiFetch('/wifi/scan', { method: 'POST' }),
+
+    connect: (ssid: string, password: string) =>
+      apiFetch('/wifi/connect', {
+        method: 'POST',
+        body: JSON.stringify({ ssid, password }),
       }),
   },
 

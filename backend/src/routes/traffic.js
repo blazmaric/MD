@@ -64,4 +64,15 @@ export default async function trafficRoutes(fastify) {
       }
     };
   });
+
+  fastify.delete('/traffic/history', {
+    preHandler: [authenticateMiddleware, requirePermission('admin_all')]
+  }, async (request, reply) => {
+    try {
+      await query('DELETE FROM traffic_history');
+      return { success: true, message: 'Traffic history reset successfully' };
+    } catch (err) {
+      return reply.code(500).send({ error: err.message });
+    }
+  });
 }
