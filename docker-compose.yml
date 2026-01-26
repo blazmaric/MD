@@ -1,0 +1,128 @@
+version: '3.9'
+
+services:
+  traefik:
+    image: traefik:v2.11
+    container_name: md-traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - md-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/acme.json:/acme.json
+    command:
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${LE_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: md-backend
+    restart: unless-stopped
+    expose:
+      - "8081"
+    networks:
+      - md-network
+    environment:
+      - NODE_ENV=production
+      - NODE_EXTRA_CA_CERTS=/app/certs/mikrotik-ca.crt
+      - PORT=8081
+      - DATABASE_URL=postgresql://mduser:${DB_PASSWORD}@postgres:5432/mikrotik_dashboard
+      - MT_BASE_URL=${MT_BASE_URL}
+      - MT_USER=${MT_USER}
+      - MT_PASS=${MT_PASS}
+      - MT_TLS_CA_PATH=${MT_TLS_CA_PATH}
+      - LTE_IFACE=${LTE_IFACE}
+      - WLAN_IFACE=${WLAN_IFACE}
+      - VXLAN_IFACE=${VXLAN_IFACE}
+      - SUMMARY_POLL_SECONDS=${SUMMARY_POLL_SECONDS}
+      - SUMMARY_STALE_SECONDS=${SUMMARY_STALE_SECONDS}
+      - REQUEST_TIMEOUT_MS=${REQUEST_TIMEOUT_MS}
+      - ADMIN_USER=${ADMIN_USER}
+      - ADMIN_PASS=${ADMIN_PASS}
+      - JWT_SECRET=${JWT_SECRET}
+      - COOKIE_NAME=${COOKIE_NAME}
+      - DOMAIN=${DOMAIN}
+    volumes:
+      - ./backend/certs:/app/certs:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backend.loadbalancer.server.port=8081"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8081/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: md-frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks:
+      - md-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: md-postgres
+    restart: unless-stopped
+    networks:
+      - md-network
+    environment:
+      - POSTGRES_USER=mduser
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=mikrotik_dashboard
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mduser -d mikrotik_dashboard"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  md-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
