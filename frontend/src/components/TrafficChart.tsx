@@ -119,38 +119,110 @@ export default function TrafficChart() {
           </div>
 
           {data.history.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">
-                      Time Period
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">
-                      RX
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">
-                      TX
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {data.history.slice(0, 10).map((item, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 text-sm text-slate-900">
-                        {new Date(item.time_bucket).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right text-slate-900">
-                        {formatBytes(item.rx_bytes_delta)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right text-slate-900">
-                        {formatBytes(item.tx_bytes_delta)}
-                      </td>
+            <>
+              <div className="p-4 bg-white rounded-lg border border-slate-200">
+                <h4 className="text-sm font-semibold text-slate-700 mb-4">Traffic Over Time</h4>
+                <div className="relative" style={{ height: '250px', width: '100%' }}>
+                  <svg width="100%" height="250" viewBox="0 0 800 250" preserveAspectRatio="none">
+                    {(() => {
+                      const history = data.history.slice().reverse();
+                      const maxValue = Math.max(
+                        ...history.map(d => Math.max(
+                          parseInt(String(d.rx_bytes_delta)) || 0,
+                          parseInt(String(d.tx_bytes_delta)) || 0
+                        )),
+                        1
+                      );
+                      const chartHeight = 200;
+                      const chartWidth = 760;
+                      const offsetX = 20;
+                      const offsetY = 10;
+                      const points = history.length;
+                      const xStep = chartWidth / Math.max(points - 1, 1);
+
+                      const rxPath = history.map((d, i) => {
+                        const x = offsetX + i * xStep;
+                        const value = parseInt(String(d.rx_bytes_delta)) || 0;
+                        const y = offsetY + chartHeight - (value / maxValue * chartHeight);
+                        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                      }).join(' ');
+
+                      const txPath = history.map((d, i) => {
+                        const x = offsetX + i * xStep;
+                        const value = parseInt(String(d.tx_bytes_delta)) || 0;
+                        const y = offsetY + chartHeight - (value / maxValue * chartHeight);
+                        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                      }).join(' ');
+
+                      return (
+                        <g>
+                          <line x1={offsetX} y1={offsetY} x2={offsetX} y2={offsetY + chartHeight} stroke="#cbd5e1" strokeWidth="1" />
+                          <line x1={offsetX} y1={offsetY + chartHeight} x2={offsetX + chartWidth} y2={offsetY + chartHeight} stroke="#cbd5e1" strokeWidth="1" />
+                          <path d={rxPath} fill="none" stroke="#3b82f6" strokeWidth="2.5" />
+                          <path d={txPath} fill="none" stroke="#10b981" strokeWidth="2.5" />
+                          {history.map((d, i) => {
+                            const x = offsetX + i * xStep;
+                            const rxValue = parseInt(String(d.rx_bytes_delta)) || 0;
+                            const txValue = parseInt(String(d.tx_bytes_delta)) || 0;
+                            const rxY = offsetY + chartHeight - (rxValue / maxValue * chartHeight);
+                            const txY = offsetY + chartHeight - (txValue / maxValue * chartHeight);
+                            return (
+                              <g key={i}>
+                                <circle cx={x} cy={rxY} r="4" fill="#3b82f6" />
+                                <circle cx={x} cy={txY} r="4" fill="#10b981" />
+                              </g>
+                            );
+                          })}
+                        </g>
+                      );
+                    })()}
+                  </svg>
+                </div>
+                <div className="flex gap-6 justify-center mt-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-1 bg-blue-600 rounded"></div>
+                    <span className="text-slate-600">Received</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-1 bg-green-600 rounded"></div>
+                    <span className="text-slate-600">Transmitted</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">
+                        Time Period
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">
+                        RX
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">
+                        TX
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {data.history.slice(0, 10).map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 text-sm text-slate-900">
+                          {new Date(item.time_bucket).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right text-slate-900">
+                          {formatBytes(item.rx_bytes_delta)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right text-slate-900">
+                          {formatBytes(item.tx_bytes_delta)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}

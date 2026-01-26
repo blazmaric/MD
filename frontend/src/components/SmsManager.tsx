@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, Send, RefreshCw } from 'lucide-react';
+import { MessageSquare, Send, RefreshCw, Trash2 } from 'lucide-react';
 import { api } from '../api';
 import type { SmsMessage } from '../types';
 
+const SMS_PER_PAGE = 4;
+
 export default function SmsManager() {
-  const [messages, setMessages] = useState<SmsMessage[]>([]);
+  const [allMessages, setAllMessages] = useState<SmsMessage[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -20,11 +24,27 @@ export default function SmsManager() {
     setLoading(true);
     try {
       const data = await api.sms.inbox();
-      setMessages(data.messages || []);
+      setAllMessages(data.messages || []);
     } catch (err) {
       console.error('Failed to fetch SMS inbox:', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDelete(msgId: string) {
+    if (!confirm('Delete this SMS?')) return;
+
+    setDeleting(msgId);
+    try {
+      await api.sms.delete(msgId);
+      await fetchInbox();
+      setSuccess('SMS deleted successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete SMS');
+    } finally {
+      setDeleting(null);
     }
   }
 
@@ -124,20 +144,69 @@ export default function SmsManager() {
           </button>
         </div>
 
-        {messages.length === 0 ? (
+        {allMessages.length === 0 ? (
           <p className="text-center py-8 text-slate-600">No messages</p>
         ) : (
-          <div className="space-y-3">
-            {messages.map((msg) => (
-              <div key={msg['.id']} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-semibold text-slate-900">{msg.phone}</span>
-                  <span className="text-xs text-slate-500">{msg.timestamp}</span>
+          <>
+            <div className="space-y-3">
+              {allMessages.slice((currentPage - 1) * SMS_PER_PAGE, currentPage * SMS_PER_PAGE).map((msg) => (
+                <div key={msg['.id']} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="font-semibold text-slate-900">{msg.phone}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-500">{msg.timestamp}</span>
+                      <button
+                        onClick={() => handleDelete(msg['.id'])}
+                        disabled={deleting === msg['.id']}
+                        className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-700">{msg.message}</p>
                 </div>
-                <p className="text-sm text-slate-700">{msg.message}</p>
+              ))}
+            </div>
+
+            {Math.ceil(allMessages.length / SMS_PER_PAGE) > 1 && (
+              <div className="mt-4 flex items-center justify-between border-t pt-4">
+                <div className="text-sm text-slate-600">
+                  Showing {((currentPage - 1) * SMS_PER_PAGE) + 1} to {Math.min(currentPage * SMS_PER_PAGE, allMessages.length)} of {allMessages.length}
+                </div>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  >
+                    Previous
+                  </button>
+                  {Array.from({ length: Math.ceil(allMessages.length / SMS_PER_PAGE) }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-1 border rounded text-sm ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setCurrentPage(Math.min(Math.ceil(allMessages.length / SMS_PER_PAGE), currentPage + 1))}
+                    disabled={currentPage === Math.ceil(allMessages.length / SMS_PER_PAGE)}
+                    className="px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

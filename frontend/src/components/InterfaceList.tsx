@@ -25,7 +25,7 @@ export default function InterfaceList() {
     try {
       const data = await api.interfaces.list();
       const etherInterfaces = (data.interfaces || []).filter((iface: Interface) =>
-        iface.name.match(/^ether[1-5]$/)
+        iface.name.startsWith('ether')
       );
       setInterfaces(etherInterfaces);
     } catch (err) {

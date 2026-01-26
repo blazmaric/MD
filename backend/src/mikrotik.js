@@ -158,6 +158,18 @@ export async function getSmsInbox() {
   }
 }
 
+export async function deleteSms(smsId) {
+  try {
+    await mtFetch(`/rest/tool/sms/inbox/${smsId}`, {
+      method: 'DELETE'
+    });
+    return { success: true };
+  } catch (err) {
+    console.error('Failed to delete SMS:', err.message);
+    throw err;
+  }
+}
+
 export async function sendSms(phoneNumber, message, port = 'lte1') {
   try {
     const result = await mtFetch('/rest/tool/sms/send', {

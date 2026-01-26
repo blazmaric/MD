@@ -86,6 +86,9 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ phone, message }),
       }),
+
+    delete: (smsId: string) =>
+      apiFetch(`/sms/${smsId}`, { method: 'DELETE' }),
   },
 
   wifi: {

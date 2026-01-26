@@ -1,5 +1,5 @@
 import { authenticateMiddleware, requirePermission } from '../auth.js';
-import { getSmsInbox, sendSms } from '../mikrotik.js';
+import { getSmsInbox, sendSms, deleteSms } from '../mikrotik.js';
 
 export default async function smsRoutes(fastify) {
   fastify.get('/sms/inbox', {
@@ -21,6 +21,18 @@ export default async function smsRoutes(fastify) {
     try {
       const result = await sendSms(phone, message, channel);
       return { success: true, result };
+    } catch (err) {
+      return reply.code(500).send({ error: err.message });
+    }
+  });
+
+  fastify.delete('/sms/:id', {
+    preHandler: [authenticateMiddleware, requirePermission('send_sms')]
+  }, async (request, reply) => {
+    const { id } = request.params;
+    try {
+      const result = await deleteSms(id);
+      return result;
     } catch (err) {
       return reply.code(500).send({ error: err.message });
     }

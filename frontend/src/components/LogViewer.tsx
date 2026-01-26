@@ -3,7 +3,7 @@ import { Search } from 'lucide-react';
 import { api } from '../api';
 import type { Log } from '../types';
 
-const LOGS_PER_PAGE = 50;
+const LOGS_PER_PAGE = 10;
 
 export default function LogViewer() {
   const [logs, setLogs] = useState<Log[]>([]);
