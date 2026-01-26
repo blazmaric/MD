@@ -127,7 +127,7 @@ export default function SummaryCards({ snapshot }: SummaryCardsProps) {
             <Cpu className="w-5 h-5 text-purple-600" />
           </div>
           <p className="text-2xl font-bold text-slate-900">
-            {snapshot.system_cpu_percent?.toFixed(1) || '0'}%
+            {snapshot.system_cpu_percent ? Number(snapshot.system_cpu_percent).toFixed(1) : '0'}%
           </p>
           <p className="text-sm text-slate-500 mt-2">Uptime: {formatUptime(snapshot.system_uptime)}</p>
         </div>
@@ -138,7 +138,7 @@ export default function SummaryCards({ snapshot }: SummaryCardsProps) {
             <HardDrive className="w-5 h-5 text-orange-600" />
           </div>
           <p className="text-2xl font-bold text-slate-900">
-            {snapshot.system_ram_percent ? parseFloat(snapshot.system_ram_percent.toString()).toFixed(1) : '0'}%
+            {snapshot.system_ram_percent ? Number(snapshot.system_ram_percent).toFixed(1) : '0'}%
           </p>
           <p className="text-sm text-slate-500 mt-2">Used</p>
         </div>
