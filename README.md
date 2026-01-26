@@ -64,13 +64,14 @@ cd mikrotik-dashboard
 
 ### 2. Configure Environment
 
-Copy the example environment file:
+Copy the example environment file and edit it:
 
 ```bash
 cp .env.example .env
+nano .env  # or use your preferred editor
 ```
 
-Edit `.env` and replace all `REPLACE_ME` values:
+Replace all `REPLACE_ME` values with your actual configuration:
 
 ```bash
 # Domain Configuration
@@ -98,25 +99,36 @@ openssl rand -base64 32
 
 ### 3. Add MikroTik CA Certificate
 
-Export your MikroTik's CA certificate and place it in:
+Export your MikroTik's CA certificate:
 
-```bash
-backend/certs/mikrotik-ca.crt
-```
-
-To export from MikroTik:
+**On MikroTik:**
 ```
 /certificate export-certificate mikrotik-ca export-passphrase=""
 ```
 
-Download the `.crt` file and place it in the correct location.
+**Download the `.crt` file and place it on your server:**
+```bash
+# Copy the certificate content to backend/certs/mikrotik-ca.crt
+# The certificate should look like:
+# -----BEGIN CERTIFICATE-----
+# MIIDXTCCAkWgAwIBAgIJAL...
+# -----END CERTIFICATE-----
+```
 
-### 4. Set Permissions
+### 4. Run Setup Script
+
+**CRITICAL:** This script sets correct file permissions (required for Traefik):
 
 ```bash
-chmod 600 traefik/acme.json
-chmod 600 .env
+chmod +x setup.sh
+./setup.sh
 ```
+
+The setup script will:
+- Create required directories
+- Set `chmod 600` on `traefik/acme.json` (required for Let's Encrypt)
+- Set `chmod 600` on `.env` (security)
+- Create placeholder CA certificate if missing
 
 ### 5. Deploy
 
@@ -251,22 +263,49 @@ docker compose exec -T postgres psql -U mduser mikrotik_dashboard < backup.sql
 
 ## Troubleshooting
 
-### "relation users does not exist" or "acme.json permissions too open"
+### Traefik: "permissions 644 for /acme.json are too open, please use 600"
 
-If you see these errors after first deployment:
+**Cause:** File permissions on `traefik/acme.json` are incorrect.
 
+**Solution:**
 ```bash
-# Stop all containers
+# Stop containers
 docker compose down
 
-# Fix Traefik acme.json permissions
+# Fix permissions (MUST be 600 for Traefik to work)
 chmod 600 traefik/acme.json
 
-# Restart with rebuild
+# Restart
 docker compose up -d --build
 ```
 
-The backend now automatically runs database migrations on startup, so no manual SQL execution is needed.
+**Prevention:** Always run `./setup.sh` before first deployment.
+
+### Backend: "relation users does not exist"
+
+**Cause:** Database migrations didn't run properly.
+
+**Solution:**
+```bash
+# Check if volume has old data
+docker compose down -v  # WARNING: This deletes all data!
+
+# Rebuild
+docker compose up -d --build
+```
+
+The backend automatically runs migrations on startup. If you see this error, the database volume likely has corrupted data.
+
+### MikroTik: "self-signed certificate in certificate chain"
+
+**Cause:** MikroTik CA certificate is missing or invalid.
+
+**Solution:**
+1. Export CA certificate from MikroTik: `/certificate export-certificate mikrotik-ca export-passphrase=""`
+2. Copy the `.crt` file content to `backend/certs/mikrotik-ca.crt`
+3. Restart backend: `docker compose restart backend`
+
+The certificate must be in PEM format and include the full certificate chain.
 
 ### Let's Encrypt Certificate Issues
 
