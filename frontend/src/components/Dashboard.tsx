@@ -8,6 +8,8 @@ import TrafficChart from './TrafficChart';
 import PingTester from './PingTester';
 import SmsManager from './SmsManager';
 import WiFiScanner from './WiFiScanner';
+import InterfaceList from './InterfaceList';
+import Wlan5Clients from './Wlan5Clients';
 
 interface DashboardProps {
   user: User;
@@ -79,17 +81,25 @@ export default function Dashboard({ user }: DashboardProps) {
         </div>
       )}
 
+      {hasPermission('view_summary') && (
+        <InterfaceList />
+      )}
+
+      {hasPermission('view_summary') && (
+        <Wlan5Clients />
+      )}
+
+      {hasPermission('manage_wifi') && (
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">WiFi Scanner (Wlan2.4)</h2>
+          <WiFiScanner snapshot={snapshot} />
+        </div>
+      )}
+
       {hasPermission('view_traffic') && (
         <div>
           <h2 className="text-2xl font-bold text-slate-900 mb-4">Traffic</h2>
           <TrafficChart />
-        </div>
-      )}
-
-      {hasPermission('view_logs') && (
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">Logs</h2>
-          <LogViewer />
         </div>
       )}
 
@@ -107,10 +117,10 @@ export default function Dashboard({ user }: DashboardProps) {
         </div>
       )}
 
-      {hasPermission('manage_wifi') && (
+      {hasPermission('view_logs') && (
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">WiFi Management</h2>
-          <WiFiScanner snapshot={snapshot} />
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">Logs</h2>
+          <LogViewer />
         </div>
       )}
 

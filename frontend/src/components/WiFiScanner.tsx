@@ -24,6 +24,10 @@ export default function WiFiScanner({ snapshot }: WiFiScannerProps) {
       return;
     }
 
+    if (!confirm('Do you really want to scan for WiFi networks? This may temporarily disrupt the WiFi connection.')) {
+      return;
+    }
+
     setScanning(true);
     setError('');
     try {

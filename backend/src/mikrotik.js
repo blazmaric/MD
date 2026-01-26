@@ -158,19 +158,40 @@ export async function getSmsInbox() {
   }
 }
 
-export async function sendSms(phoneNumber, message, channel = 0) {
+export async function sendSms(phoneNumber, message, port = 'lte1') {
   try {
     const result = await mtFetch('/rest/tool/sms/send', {
       method: 'POST',
       body: JSON.stringify({
-        phone: phoneNumber,
-        message,
-        channel
+        'port': port,
+        'phone-number': phoneNumber,
+        'message': message
       })
     });
     return result;
   } catch (err) {
     console.error('Failed to send SMS:', err.message);
+    throw err;
+  }
+}
+
+export async function getWirelessRegistrationTable(interfaceName) {
+  try {
+    return await mtFetch(`/rest/interface/wireless/registration-table?interface=${interfaceName}`);
+  } catch (err) {
+    console.error('Failed to get registration table:', err.message);
+    return [];
+  }
+}
+
+export async function disconnectWirelessClient(clientId) {
+  try {
+    await mtFetch(`/rest/interface/wireless/registration-table/${clientId}`, {
+      method: 'DELETE'
+    });
+    return { success: true };
+  } catch (err) {
+    console.error('Failed to disconnect client:', err.message);
     throw err;
   }
 }

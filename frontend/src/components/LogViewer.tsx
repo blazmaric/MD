@@ -3,8 +3,12 @@ import { Search } from 'lucide-react';
 import { api } from '../api';
 import type { Log } from '../types';
 
+const LOGS_PER_PAGE = 50;
+
 export default function LogViewer() {
   const [logs, setLogs] = useState<Log[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [category, setCategory] = useState('');
   const [severity, setSeverity] = useState('');
   const [search, setSearch] = useState('');
@@ -12,7 +16,7 @@ export default function LogViewer() {
 
   useEffect(() => {
     fetchLogs();
-  }, [category, severity]);
+  }, [category, severity, currentPage]);
 
   async function fetchLogs() {
     setLoading(true);
@@ -21,9 +25,11 @@ export default function LogViewer() {
         category: category || undefined,
         severity: severity || undefined,
         search: search || undefined,
-        limit: 100
+        limit: LOGS_PER_PAGE,
+        offset: (currentPage - 1) * LOGS_PER_PAGE
       });
       setLogs(data.logs);
+      setTotalCount(data.count);
     } catch (err) {
       console.error('Failed to fetch logs:', err);
     } finally {
@@ -33,7 +39,34 @@ export default function LogViewer() {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
+    setCurrentPage(1);
     fetchLogs();
+  }
+
+  const totalPages = Math.ceil(totalCount / LOGS_PER_PAGE);
+  const pageNumbers = [];
+  const maxPagesToShow = 7;
+
+  if (totalPages <= maxPagesToShow) {
+    for (let i = 1; i <= totalPages; i++) {
+      pageNumbers.push(i);
+    }
+  } else {
+    if (currentPage <= 3) {
+      for (let i = 1; i <= 5; i++) pageNumbers.push(i);
+      pageNumbers.push(-1);
+      pageNumbers.push(totalPages);
+    } else if (currentPage >= totalPages - 2) {
+      pageNumbers.push(1);
+      pageNumbers.push(-1);
+      for (let i = totalPages - 4; i <= totalPages; i++) pageNumbers.push(i);
+    } else {
+      pageNumbers.push(1);
+      pageNumbers.push(-1);
+      for (let i = currentPage - 1; i <= currentPage + 1; i++) pageNumbers.push(i);
+      pageNumbers.push(-1);
+      pageNumbers.push(totalPages);
+    }
   }
 
   function getSeverityColor(sev: string): string {
@@ -143,6 +176,47 @@ export default function LogViewer() {
           </table>
         )}
       </div>
+
+      {totalPages > 1 && !loading && (
+        <div className="p-4 border-t border-slate-200 flex items-center justify-between">
+          <div className="text-sm text-slate-600">
+            Showing {((currentPage - 1) * LOGS_PER_PAGE) + 1} to {Math.min(currentPage * LOGS_PER_PAGE, totalCount)} of {totalCount} logs
+          </div>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              Previous
+            </button>
+            {pageNumbers.map((pageNum, idx) => (
+              pageNum === -1 ? (
+                <span key={`ellipsis-${idx}`} className="px-3 py-1 text-slate-400">...</span>
+              ) : (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`px-3 py-1 border rounded text-sm ${
+                    currentPage === pageNum
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              )
+            ))}
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

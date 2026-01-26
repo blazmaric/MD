@@ -97,6 +97,20 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ ssid, password }),
       }),
+
+    registrationTable: (interfaceName?: string) => {
+      const query = new URLSearchParams();
+      if (interfaceName) query.append('interface', interfaceName);
+      return apiFetch(`/wifi/registration-table?${query.toString()}`);
+    },
+
+    disconnectClient: (clientId: string) =>
+      apiFetch(`/wifi/client/${clientId}`, { method: 'DELETE' }),
+  },
+
+  interfaces: {
+    list: () =>
+      apiFetch('/interfaces'),
   },
 
   users: {
