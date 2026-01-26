@@ -148,6 +148,24 @@ Access the dashboard:
 https://md.m-host.si
 ```
 
+## Upgrading
+
+When updating to a new version:
+
+```bash
+# Pull latest changes
+git pull
+
+# IMPORTANT: Run setup script to fix permissions
+./setup.sh
+
+# Rebuild and restart
+docker compose down
+docker compose up -d --build
+```
+
+**Note:** The setup script must run after every `git pull` to ensure correct file permissions for Let's Encrypt.
+
 ## First Login
 
 1. Navigate to `https://md.m-host.si`
@@ -296,16 +314,45 @@ docker compose up -d --build
 
 The backend automatically runs migrations on startup. If you see this error, the database volume likely has corrupted data.
 
-### MikroTik: "self-signed certificate in certificate chain"
+### MikroTik: "self-signed certificate in certificate chain" or "bad base64 decode"
 
-**Cause:** MikroTik CA certificate is missing or invalid.
+**Cause:** MikroTik CA certificate is missing, invalid, or in wrong format (DER instead of PEM).
 
 **Solution:**
-1. Export CA certificate from MikroTik: `/certificate export-certificate mikrotik-ca export-passphrase=""`
-2. Copy the `.crt` file content to `backend/certs/mikrotik-ca.crt`
-3. Restart backend: `docker compose restart backend`
 
-The certificate must be in PEM format and include the full certificate chain.
+1. Export CA certificate from MikroTik:
+```
+/certificate export-certificate mikrotik-ca export-passphrase=""
+```
+
+2. Download the exported `.crt` file from MikroTik (Files menu)
+
+3. **IMPORTANT:** Convert from DER to PEM format if needed:
+```bash
+# Check if it's in PEM format (should contain -----BEGIN CERTIFICATE-----)
+cat mikrotik-ca.crt
+
+# If it's binary (DER format), convert to PEM:
+openssl x509 -inform DER -in mikrotik-ca.crt -out mikrotik-ca-pem.crt
+
+# Copy to backend directory
+cp mikrotik-ca-pem.crt backend/certs/mikrotik-ca.crt
+```
+
+4. Verify the certificate:
+```bash
+openssl x509 -in backend/certs/mikrotik-ca.crt -text -noout
+```
+
+5. Restart backend:
+```bash
+docker compose restart backend
+```
+
+**Common Issues:**
+- "bad base64 decode" error = certificate is in DER format, needs conversion to PEM
+- Certificate must start with `-----BEGIN CERTIFICATE-----`
+- Some MikroTik versions export in DER format by default
 
 ### Let's Encrypt Certificate Issues
 
