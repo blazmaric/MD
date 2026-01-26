@@ -25,9 +25,11 @@ export default function Dashboard({ user }: DashboardProps) {
   async function fetchSummary() {
     try {
       const data = await api.summary.get();
+      console.log('Received snapshot data:', data);
       setSnapshot(data);
       setError('');
     } catch (err) {
+      console.error('Failed to fetch summary:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch summary');
     }
   }

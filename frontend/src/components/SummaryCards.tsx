@@ -14,6 +14,8 @@ export default function SummaryCards({ snapshot }: SummaryCardsProps) {
     );
   }
 
+  console.log('Rendering SummaryCards with snapshot:', snapshot);
+
   function formatUptime(seconds?: number): string {
     if (!seconds) return 'N/A';
     const days = Math.floor(seconds / 86400);
@@ -23,7 +25,8 @@ export default function SummaryCards({ snapshot }: SummaryCardsProps) {
 
   function formatBytes(bytes?: number | string | null): string {
     const numBytes = Number(bytes);
-    if (!numBytes || isNaN(numBytes)) return '0 B';
+    if (isNaN(numBytes) || numBytes == null) return '0 B';
+    if (numBytes === 0) return '0 B';
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     let i = 0;
     let value = numBytes;
@@ -36,7 +39,8 @@ export default function SummaryCards({ snapshot }: SummaryCardsProps) {
 
   function formatSpeed(bytesPerSec?: number | string | null): string {
     const numBytes = Number(bytesPerSec);
-    if (!numBytes || isNaN(numBytes)) return '0 bps';
+    if (isNaN(numBytes) || numBytes == null) return '0 bps';
+    if (numBytes === 0) return '0 bps';
     const bitsPerSec = numBytes * 8;
     const units = ['bps', 'Kbps', 'Mbps', 'Gbps'];
     let i = 0;
@@ -127,7 +131,7 @@ export default function SummaryCards({ snapshot }: SummaryCardsProps) {
             <Cpu className="w-5 h-5 text-purple-600" />
           </div>
           <p className="text-2xl font-bold text-slate-900">
-            {snapshot.system_cpu_percent ? Number(snapshot.system_cpu_percent).toFixed(1) : '0'}%
+            {snapshot.system_cpu_percent != null ? Number(snapshot.system_cpu_percent).toFixed(1) : '0'}%
           </p>
           <p className="text-sm text-slate-500 mt-2">Uptime: {formatUptime(snapshot.system_uptime)}</p>
         </div>
@@ -138,7 +142,7 @@ export default function SummaryCards({ snapshot }: SummaryCardsProps) {
             <HardDrive className="w-5 h-5 text-orange-600" />
           </div>
           <p className="text-2xl font-bold text-slate-900">
-            {snapshot.system_ram_percent ? Number(snapshot.system_ram_percent).toFixed(1) : '0'}%
+            {snapshot.system_ram_percent != null ? Number(snapshot.system_ram_percent).toFixed(1) : '0'}%
           </p>
           <p className="text-sm text-slate-500 mt-2">Used</p>
         </div>

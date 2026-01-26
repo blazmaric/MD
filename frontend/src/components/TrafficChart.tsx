@@ -25,7 +25,8 @@ export default function TrafficChart() {
 
   function formatBytes(bytes: number | string | null | undefined): string {
     const numBytes = Number(bytes);
-    if (!numBytes || isNaN(numBytes)) return '0 B';
+    if (isNaN(numBytes) || numBytes == null) return '0 B';
+    if (numBytes === 0) return '0 B';
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     let i = 0;
     let value = numBytes;
