@@ -3,6 +3,7 @@ import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
 import { config } from './config.js';
 import { testConnection } from './db.js';
+import { runMigrations } from './migrate.js';
 import { bootstrapAdmin } from './auth.js';
 import { startPollers, stopPollers } from './poller.js';
 
@@ -48,6 +49,7 @@ async function start() {
       process.exit(1);
     }
 
+    await runMigrations();
     await bootstrapAdmin();
 
     await fastify.listen({ port: config.port, host: '0.0.0.0' });

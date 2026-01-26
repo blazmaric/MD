@@ -251,6 +251,23 @@ docker compose exec -T postgres psql -U mduser mikrotik_dashboard < backup.sql
 
 ## Troubleshooting
 
+### "relation users does not exist" or "acme.json permissions too open"
+
+If you see these errors after first deployment:
+
+```bash
+# Stop all containers
+docker compose down
+
+# Fix Traefik acme.json permissions
+chmod 600 traefik/acme.json
+
+# Restart with rebuild
+docker compose up -d --build
+```
+
+The backend now automatically runs database migrations on startup, so no manual SQL execution is needed.
+
 ### Let's Encrypt Certificate Issues
 
 Check Traefik logs:
@@ -262,6 +279,7 @@ Ensure:
 - Port 80 and 443 are accessible from internet
 - DNS record points to your server
 - Email in `.env` is valid
+- acme.json has correct permissions: `chmod 600 traefik/acme.json`
 
 ### Backend Cannot Connect to MikroTik
 
