@@ -356,16 +356,48 @@ docker compose restart backend
 
 ### Let's Encrypt Certificate Issues
 
-Check Traefik logs:
+**Symptoms:**
+- No ACME activity in Traefik logs
+- Browser shows certificate warning
+- HTTPS not working
+
+**Debugging:**
+
+1. Check Traefik logs for errors:
 ```bash
-docker compose logs traefik
+docker compose logs traefik | grep -i acme
+docker compose logs traefik | grep -i cert
 ```
 
-Ensure:
-- Port 80 and 443 are accessible from internet
-- DNS record points to your server
-- Email in `.env` is valid
-- acme.json has correct permissions: `chmod 600 traefik/acme.json`
+2. Verify prerequisites:
+```bash
+# Check acme.json permissions (must be 600)
+ls -la traefik/acme.json
+
+# Check if ports are accessible from public internet
+curl -I http://md.m-host.si
+```
+
+3. Check DNS resolution:
+```bash
+dig md.m-host.si
+```
+
+**Common Issues:**
+
+- **Port 80/443 not accessible** - Check firewall, NAT, port forwarding from public IP
+- **DNS not resolving to correct IP** - Wait for DNS propagation (up to 48h)
+- **Wrong acme.json permissions** - Run `./setup.sh` to fix
+- **Invalid email in .env** - Check `LE_EMAIL` value
+- **Domain not accessible** - Traefik requires domain to be publicly accessible on port 80 for ACME HTTP challenge
+
+**Force certificate renewal:**
+```bash
+docker compose down
+rm traefik/acme.json
+./setup.sh
+docker compose up -d
+```
 
 ### Backend Cannot Connect to MikroTik
 

@@ -1,9 +1,17 @@
 import fetch from 'node-fetch';
+import https from 'https';
+import tls from 'tls';
 import { config } from './config.js';
 
 const authHeader = 'Basic ' + Buffer.from(
   `${config.mikrotik.user}:${config.mikrotik.pass}`
 ).toString('base64');
+
+const httpsAgent = new https.Agent({
+  checkServerIdentity: (hostname, cert) => {
+    return undefined;
+  }
+});
 
 async function mtFetch(path, options = {}) {
   const url = `${config.mikrotik.baseUrl}${path}`;
@@ -13,6 +21,7 @@ async function mtFetch(path, options = {}) {
   try {
     const response = await fetch(url, {
       ...options,
+      agent: httpsAgent,
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',

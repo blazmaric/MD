@@ -21,7 +21,8 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.letsencrypt.acme.email=${LE_EMAIL}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
-      - "--log.level=INFO"
+      - "--log.level=DEBUG"
+      - "--accesslog=true"
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 10s
