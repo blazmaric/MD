@@ -7,14 +7,14 @@ export default async function trafficRoutes(fastify) {
   }, async (request) => {
     const { period = 'day', interface: iface } = request.query;
 
-    let interval = '1 hour';
+    let interval = 'hour';
     let timeRange = '1 day';
 
     if (period === 'week') {
-      interval = '6 hours';
+      interval = 'hour';
       timeRange = '7 days';
     } else if (period === 'month') {
-      interval = '1 day';
+      interval = 'day';
       timeRange = '30 days';
     }
 
