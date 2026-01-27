@@ -57,7 +57,8 @@ export default function PingTester() {
             >
               <option value="">Default (Gateway)</option>
               <option value="lte1">LTE</option>
-              <option value="wlan1">WiFi 2.4GHz</option>
+              <option value="wlan2.4">WiFi 2.4GHz</option>
+              <option value="wlan5">WiFi 5GHz</option>
             </select>
           </div>
 

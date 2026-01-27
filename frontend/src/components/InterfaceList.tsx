@@ -8,6 +8,8 @@ interface Interface {
   type: string;
   running: string;
   disabled: string;
+  'actual-mtu'?: string;
+  'link-rate'?: string;
 }
 
 export default function InterfaceList() {
@@ -73,6 +75,9 @@ export default function InterfaceList() {
             <div className={`w-4 h-4 rounded-full mx-auto mb-2 ${getStatusColor(iface)}`} />
             <div className="font-semibold text-slate-900">{iface.name}</div>
             <div className="text-xs text-slate-600 mt-1">{getStatusText(iface)}</div>
+            {iface.running === 'true' && iface['link-rate'] && (
+              <div className="text-xs text-green-600 mt-1 font-medium">{iface['link-rate']}</div>
+            )}
           </div>
         ))}
       </div>
