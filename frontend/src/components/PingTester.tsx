@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Send } from 'lucide-react';
 import { api } from '../api';
+import { useLanguage } from '../LanguageContext';
 
 export default function PingTester() {
+  const { t } = useLanguage();
   const [address, setAddress] = useState('8.8.8.8');
   const [count, setCount] = useState(4);
   const [sourceInterface, setSourceInterface] = useState('');
@@ -32,7 +34,7 @@ export default function PingTester() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label htmlFor="address" className="block text-sm font-medium text-slate-700 mb-2">
-              Target Address
+              {t('targetAddress')}
             </label>
             <input
               id="address"
@@ -47,7 +49,7 @@ export default function PingTester() {
 
           <div>
             <label htmlFor="source" className="block text-sm font-medium text-slate-700 mb-2">
-              Source Interface
+              {t('sourceInterface')}
             </label>
             <select
               id="source"
@@ -55,7 +57,7 @@ export default function PingTester() {
               onChange={(e) => setSourceInterface(e.target.value)}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="">Default (Gateway)</option>
+              <option value="">{t('defaultGateway')}</option>
               <option value="lte1">LTE</option>
               <option value="wlan2.4">WiFi 2.4GHz</option>
               <option value="wlan5">WiFi 5GHz</option>
@@ -64,7 +66,7 @@ export default function PingTester() {
 
           <div>
             <label htmlFor="count" className="block text-sm font-medium text-slate-700 mb-2">
-              Ping Count
+              {t('pingCount')}
             </label>
             <input
               id="count"
@@ -85,7 +87,7 @@ export default function PingTester() {
           className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           <Send className="w-4 h-4" />
-          {loading ? 'Pinging...' : 'Send Ping'}
+          {loading ? t('pinging') : t('sendPing')}
         </button>
       </form>
 
@@ -97,7 +99,7 @@ export default function PingTester() {
 
       {result && (
         <div className="mt-6 p-4 bg-slate-50 rounded-lg">
-          <h4 className="font-semibold text-slate-900 mb-3">Ping Results</h4>
+          <h4 className="font-semibold text-slate-900 mb-3">{t('pingResults')}</h4>
           <pre className="text-sm text-slate-700 whitespace-pre-wrap font-mono">
             {JSON.stringify(result, null, 2)}
           </pre>

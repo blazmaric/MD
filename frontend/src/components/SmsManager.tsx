@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, Send, RefreshCw, Trash2 } from 'lucide-react';
 import { api } from '../api';
+import { useLanguage } from '../LanguageContext';
 import type { SmsMessage } from '../types';
 
 const SMS_PER_PAGE = 4;
 
 export default function SmsManager() {
+  const { t } = useLanguage();
   const [allMessages, setAllMessages] = useState<SmsMessage[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [phone, setPhone] = useState('');
@@ -33,13 +35,13 @@ export default function SmsManager() {
   }
 
   async function handleDelete(msgId: string) {
-    if (!confirm('Delete this SMS?')) return;
+    if (!confirm(t('confirmDeleteSms'))) return;
 
     setDeleting(msgId);
     try {
       await api.sms.delete(msgId);
       await fetchInbox();
-      setSuccess('SMS deleted successfully!');
+      setSuccess(t('smsDeleted'));
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete SMS');
@@ -56,7 +58,7 @@ export default function SmsManager() {
 
     try {
       await api.sms.send(phone, message);
-      setSuccess('SMS sent successfully!');
+      setSuccess(t('smsSent'));
       setPhone('');
       setMessage('');
       fetchInbox();
@@ -73,14 +75,14 @@ export default function SmsManager() {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
             <MessageSquare className="w-5 h-5" />
-            Send SMS
+            {t('sendSms')}
           </h3>
         </div>
 
         <form onSubmit={handleSend} className="space-y-4">
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-2">
-              Phone Number
+              {t('phoneNumber')}
             </label>
             <input
               id="phone"
@@ -95,7 +97,7 @@ export default function SmsManager() {
 
           <div>
             <label htmlFor="message" className="block text-sm font-medium text-slate-700 mb-2">
-              Message
+              {t('message')}
             </label>
             <textarea
               id="message"
@@ -106,7 +108,7 @@ export default function SmsManager() {
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               required
             />
-            <p className="text-xs text-slate-500 mt-1">{message.length}/160 characters</p>
+            <p className="text-xs text-slate-500 mt-1">{message.length}/160 {t('characters')}</p>
           </div>
 
           {error && (
@@ -127,25 +129,26 @@ export default function SmsManager() {
             className="w-full px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             <Send className="w-4 h-4" />
-            {sending ? 'Sending...' : 'Send SMS'}
+            {sending ? t('sending') : t('send')}
           </button>
         </form>
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-900">SMS Inbox</h3>
+          <h3 className="text-lg font-semibold text-slate-900">{t('smsInbox')}</h3>
           <button
             onClick={fetchInbox}
             disabled={loading}
             className="p-2 text-slate-600 hover:text-slate-900 disabled:opacity-50"
+            title={t('refresh')}
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
         {allMessages.length === 0 ? (
-          <p className="text-center py-8 text-slate-600">No messages</p>
+          <p className="text-center py-8 text-slate-600">{t('noMessages')}</p>
         ) : (
           <>
             <div className="space-y-3">
@@ -159,7 +162,7 @@ export default function SmsManager() {
                         onClick={() => handleDelete(msg['.id'])}
                         disabled={deleting === msg['.id']}
                         className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
-                        title="Delete"
+                        title={t('deleteSms')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -173,7 +176,7 @@ export default function SmsManager() {
             {Math.ceil(allMessages.length / SMS_PER_PAGE) > 1 && (
               <div className="mt-4 flex items-center justify-between border-t pt-4">
                 <div className="text-sm text-slate-600">
-                  Showing {((currentPage - 1) * SMS_PER_PAGE) + 1} to {Math.min(currentPage * SMS_PER_PAGE, allMessages.length)} of {allMessages.length}
+                  {t('showing')} {((currentPage - 1) * SMS_PER_PAGE) + 1} {t('to')} {Math.min(currentPage * SMS_PER_PAGE, allMessages.length)} {t('of')} {allMessages.length}
                 </div>
                 <div className="flex gap-1">
                   <button
@@ -181,7 +184,7 @@ export default function SmsManager() {
                     disabled={currentPage === 1}
                     className="px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
-                    Previous
+                    {t('previous')}
                   </button>
                   {Array.from({ length: Math.ceil(allMessages.length / SMS_PER_PAGE) }, (_, i) => i + 1).map((page) => (
                     <button
@@ -201,7 +204,7 @@ export default function SmsManager() {
                     disabled={currentPage === Math.ceil(allMessages.length / SMS_PER_PAGE)}
                     className="px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
-                    Next
+                    {t('next')}
                   </button>
                 </div>
               </div>

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
 import { api } from '../api';
+import { useLanguage } from '../LanguageContext';
 import type { TrafficData } from '../types';
 
 export default function TrafficChart() {
+  const { t } = useLanguage();
   const [data, setData] = useState<TrafficData | null>(null);
   const [period, setPeriod] = useState('day');
   const [loading, setLoading] = useState(false);
@@ -57,9 +59,9 @@ export default function TrafficChart() {
   return (
     <>
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-slate-900">Traffic History</h3>
-          <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <h3 className="text-lg font-semibold text-slate-900">{t('trafficHistory')}</h3>
+          <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setPeriod('day')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -68,7 +70,7 @@ export default function TrafficChart() {
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            Day
+            {t('day')}
           </button>
           <button
             onClick={() => setPeriod('week')}
@@ -78,7 +80,7 @@ export default function TrafficChart() {
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            Week
+            {t('week')}
           </button>
           <button
             onClick={() => setPeriod('month')}
@@ -88,32 +90,32 @@ export default function TrafficChart() {
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            Month
+            {t('month')}
           </button>
           <button
             onClick={() => setShowResetDialog(true)}
             className="px-4 py-2 rounded-lg text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors flex items-center gap-2"
-            title="Reset traffic history"
+            title={t('resetHistory')}
           >
             <Trash2 className="w-4 h-4" />
-            Reset
+            {t('reset')}
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-slate-600">Loading traffic data...</div>
+        <div className="text-center py-8 text-slate-600">{t('loadingTrafficData')}</div>
       ) : !data ? (
-        <div className="text-center py-8 text-slate-600">No traffic data available</div>
+        <div className="text-center py-8 text-slate-600">{t('noTrafficData')}</div>
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
             <div>
-              <p className="text-sm text-slate-600 mb-1">Total Received</p>
+              <p className="text-sm text-slate-600 mb-1">{t('totalReceived')}</p>
               <p className="text-2xl font-bold text-slate-900">{formatBytes(data.totals.total_rx)}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-600 mb-1">Total Transmitted</p>
+              <p className="text-sm text-slate-600 mb-1">{t('totalTransmitted')}</p>
               <p className="text-2xl font-bold text-slate-900">{formatBytes(data.totals.total_tx)}</p>
             </div>
           </div>
@@ -121,7 +123,7 @@ export default function TrafficChart() {
           {data.history.length > 0 && (
             <>
               <div className="p-4 bg-white rounded-lg border border-slate-200">
-                <h4 className="text-sm font-semibold text-slate-700 mb-4">Traffic Over Time</h4>
+                <h4 className="text-sm font-semibold text-slate-700 mb-4">{t('trafficOverTime')}</h4>
                 <div className="relative" style={{ height: '250px', width: '100%' }}>
                   <svg width="100%" height="250" viewBox="0 0 800 250" preserveAspectRatio="none">
                     {(() => {
@@ -181,11 +183,11 @@ export default function TrafficChart() {
                 <div className="flex gap-6 justify-center mt-4 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-1 bg-blue-600 rounded"></div>
-                    <span className="text-slate-600">Received</span>
+                    <span className="text-slate-600">{t('received')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-1 bg-green-600 rounded"></div>
-                    <span className="text-slate-600">Transmitted</span>
+                    <span className="text-slate-600">{t('transmitted')}</span>
                   </div>
                 </div>
               </div>
@@ -195,13 +197,13 @@ export default function TrafficChart() {
                   <thead className="bg-slate-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">
-                        Time Period
+                        {t('timePeriod')}
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">
-                        RX
+                        {t('rx')}
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">
-                        TX
+                        {t('tx')}
                       </th>
                     </tr>
                   </thead>
@@ -231,9 +233,9 @@ export default function TrafficChart() {
     {showResetDialog && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-          <h3 className="text-lg font-bold text-red-600 mb-4">Confirm Reset</h3>
+          <h3 className="text-lg font-bold text-red-600 mb-4">{t('confirmReset')}</h3>
           <p className="text-slate-700 mb-6">
-            Are you sure you want to delete all traffic history? This action cannot be undone.
+            {t('resetWarning')}
           </p>
           <div className="flex gap-3">
             <button
@@ -241,14 +243,14 @@ export default function TrafficChart() {
               disabled={resetting}
               className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50"
             >
-              {resetting ? 'Resetting...' : 'Yes, Reset'}
+              {resetting ? t('resetting') : t('yesReset')}
             </button>
             <button
               onClick={() => setShowResetDialog(false)}
               disabled={resetting}
               className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 disabled:opacity-50"
             >
-              Cancel
+              {t('cancel')}
             </button>
           </div>
         </div>
