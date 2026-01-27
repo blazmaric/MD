@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Network, RefreshCw } from 'lucide-react';
 import { api } from '../api';
+import { useLanguage } from '../LanguageContext';
 
 interface Interface {
   '.id': string;
@@ -13,6 +14,7 @@ interface Interface {
 }
 
 export default function InterfaceList() {
+  const { t } = useLanguage();
   const [interfaces, setInterfaces] = useState<Interface[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -44,9 +46,9 @@ export default function InterfaceList() {
   }
 
   function getStatusText(iface: Interface): string {
-    if (iface.disabled === 'true') return 'DISABLED';
-    if (iface.running === 'true') return 'UP';
-    return 'DOWN';
+    if (iface.disabled === 'true') return t('disabled').toUpperCase();
+    if (iface.running === 'true') return t('up').toUpperCase();
+    return t('down').toUpperCase();
   }
 
   return (
@@ -54,13 +56,13 @@ export default function InterfaceList() {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
           <Network className="w-5 h-5" />
-          Interface Status
+          {t('interfaceStatus')}
         </h3>
         <button
           onClick={fetchInterfaces}
           disabled={loading}
           className="p-2 text-slate-600 hover:text-slate-900 disabled:opacity-50"
-          title="Refresh"
+          title={t('refresh')}
         >
           <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
         </button>
@@ -83,7 +85,7 @@ export default function InterfaceList() {
       </div>
 
       {interfaces.length === 0 && !loading && (
-        <p className="text-center py-8 text-slate-600">No Ethernet interfaces found</p>
+        <p className="text-center py-8 text-slate-600">{t('noInterfacesFound')}</p>
       )}
     </div>
   );

@@ -123,17 +123,40 @@ export async function getLogs() {
 }
 
 export async function ping(address, count = 4, sourceInterface = null) {
+  const controller = new AbortController();
+  const pingTimeout = 30000; // 30 seconds for ping
+  const timeout = setTimeout(() => controller.abort(), pingTimeout);
+
   try {
     const body = { address, count };
     if (sourceInterface) {
       body.interface = sourceInterface;
     }
-    const result = await mtFetch('/rest/ping', {
+
+    const url = `${config.mikrotik.baseUrl}/rest/ping`;
+    const response = await fetch(url, {
       method: 'POST',
-      body: JSON.stringify(body)
+      agent: httpsAgent,
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
     });
-    return result;
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      throw new Error(`MikroTik API error: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json();
   } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') {
+      throw new Error('Ping request timeout after 30 seconds');
+    }
     console.error('Failed to ping:', err.message);
     throw err;
   }

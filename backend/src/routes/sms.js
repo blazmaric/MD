@@ -12,14 +12,14 @@ export default async function smsRoutes(fastify) {
   fastify.post('/sms/send', {
     preHandler: [authenticateMiddleware, requirePermission('send_sms')]
   }, async (request, reply) => {
-    const { phone, message, channel = 0 } = request.body;
+    const { phone, message, port = 'lte1' } = request.body;
 
     if (!phone || !message) {
       return reply.code(400).send({ error: 'Phone number and message are required' });
     }
 
     try {
-      const result = await sendSms(phone, message, channel);
+      const result = await sendSms(phone, message, port);
       return { success: true, result };
     } catch (err) {
       return reply.code(500).send({ error: err.message });

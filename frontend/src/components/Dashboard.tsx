@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Power, AlertTriangle } from 'lucide-react';
 import { api } from '../api';
+import { useLanguage } from '../LanguageContext';
 import type { User, Snapshot } from '../types';
 import SummaryCards from './SummaryCards';
 import LogViewer from './LogViewer';
@@ -16,6 +17,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ user }: DashboardProps) {
+  const { t } = useLanguage();
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [error, setError] = useState('');
   const [showRebootDialog, setShowRebootDialog] = useState(false);
@@ -61,14 +63,14 @@ export default function Dashboard({ user }: DashboardProps) {
       {hasPermission('view_summary') && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-slate-900">System Status</h2>
+            <h2 className="text-2xl font-bold text-slate-900">{t('systemStatus')}</h2>
             {hasPermission('admin_all') && (
               <button
                 onClick={() => setShowRebootDialog(true)}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors flex items-center gap-2"
               >
                 <Power className="w-4 h-4" />
-                Reboot MikroTik
+                {t('rebootMikrotik')}
               </button>
             )}
           </div>
@@ -91,43 +93,43 @@ export default function Dashboard({ user }: DashboardProps) {
 
       {hasPermission('manage_wifi') && (
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">WiFi Scanner (Wlan2.4)</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">{t('wifiScanner')}</h2>
           <WiFiScanner snapshot={snapshot} />
         </div>
       )}
 
       {hasPermission('view_traffic') && (
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">Traffic</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">{t('traffic')}</h2>
           <TrafficChart />
         </div>
       )}
 
       {hasPermission('use_ping') && (
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">Ping Tester</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">{t('pingTester')}</h2>
           <PingTester />
         </div>
       )}
 
       {hasPermission('view_sms') && (
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">SMS</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">{t('sms')}</h2>
           <SmsManager />
         </div>
       )}
 
       {hasPermission('view_logs') && (
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">Logs</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">{t('logs')}</h2>
           <LogViewer />
         </div>
       )}
 
       {!hasPermission('view_summary') && !hasPermission('view_logs') && !hasPermission('view_traffic') && !hasPermission('use_ping') && (
         <div className="text-center py-12">
-          <p className="text-slate-600">You don't have permission to view any dashboard content.</p>
-          <p className="text-sm text-slate-500 mt-2">Contact your administrator for access.</p>
+          <p className="text-slate-600">{t('noPermission')}</p>
+          <p className="text-sm text-slate-500 mt-2">{t('contactAdmin')}</p>
         </div>
       )}
 
@@ -136,10 +138,10 @@ export default function Dashboard({ user }: DashboardProps) {
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
             <div className="flex items-center gap-3 text-red-600 mb-4">
               <AlertTriangle className="w-6 h-6" />
-              <h3 className="text-lg font-bold">Confirm Reboot</h3>
+              <h3 className="text-lg font-bold">{t('confirmReboot')}</h3>
             </div>
             <p className="text-slate-700 mb-6">
-              Are you sure you want to reboot the MikroTik device? This will interrupt all connections for a few minutes.
+              {t('rebootWarning')}
             </p>
             <div className="flex gap-3">
               <button
@@ -147,14 +149,14 @@ export default function Dashboard({ user }: DashboardProps) {
                 disabled={rebooting}
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50"
               >
-                {rebooting ? 'Rebooting...' : 'Yes, Reboot'}
+                {rebooting ? t('rebooting') : t('yesReboot')}
               </button>
               <button
                 onClick={() => setShowRebootDialog(false)}
                 disabled={rebooting}
                 className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 disabled:opacity-50"
               >
-                Cancel
+                {t('cancel')}
               </button>
             </div>
           </div>

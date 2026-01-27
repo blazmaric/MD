@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { api } from '../api';
+import { useLanguage } from '../LanguageContext';
 import type { Log } from '../types';
 
 const LOGS_PER_PAGE = 10;
 
 export default function LogViewer() {
+  const { t } = useLanguage();
   const [logs, setLogs] = useState<Log[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,7 +89,7 @@ export default function LogViewer() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search logs..."
+              placeholder={t('searchLogs')}
               className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -154,21 +156,31 @@ export default function LogViewer() {
             <tbody className="divide-y divide-slate-200">
               {logs.map((log) => (
                 <tr key={log.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
-                    {new Date(log.log_time).toLocaleString()}
+                  <td className="px-2 md:px-4 py-3 whitespace-nowrap text-xs md:text-sm text-slate-600">
+                    <div className="min-w-[100px] md:min-w-[140px]">
+                      {new Date(log.log_time).toLocaleString('sl-SI', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+                  <td className="px-2 md:px-4 py-3 whitespace-nowrap text-xs md:text-sm">
                     <span className="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
                       {log.category}
                     </span>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+                  <td className="px-2 md:px-4 py-3 whitespace-nowrap text-xs md:text-sm">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(log.severity)}`}>
                       {log.severity}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-slate-900">
-                    {log.message}
+                  <td className="px-2 md:px-4 py-3 text-xs md:text-sm text-slate-900 max-w-[200px] md:max-w-none">
+                    <div className="break-words">
+                      {log.message}
+                    </div>
                   </td>
                 </tr>
               ))}
