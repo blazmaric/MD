@@ -1,8 +1,8 @@
 import { query } from '../db.js';
-import { requireAuth } from '../auth.js';
+import { authenticateMiddleware } from '../auth.js';
 
 export default async function layoutRoutes(fastify) {
-  fastify.get('/layout', { preHandler: requireAuth }, async (request, reply) => {
+  fastify.get('/layout', { preHandler: authenticateMiddleware }, async (request, reply) => {
     try {
       const result = await query(
         'SELECT layout_config FROM dashboard_layouts WHERE user_id = $1',
@@ -20,7 +20,7 @@ export default async function layoutRoutes(fastify) {
     }
   });
 
-  fastify.post('/layout', { preHandler: requireAuth }, async (request, reply) => {
+  fastify.post('/layout', { preHandler: authenticateMiddleware }, async (request, reply) => {
     try {
       const { layout } = request.body;
 
@@ -42,7 +42,7 @@ export default async function layoutRoutes(fastify) {
     }
   });
 
-  fastify.delete('/layout', { preHandler: requireAuth }, async (request, reply) => {
+  fastify.delete('/layout', { preHandler: authenticateMiddleware }, async (request, reply) => {
     try {
       await query('DELETE FROM dashboard_layouts WHERE user_id = $1', [request.user.id]);
       return { success: true };
