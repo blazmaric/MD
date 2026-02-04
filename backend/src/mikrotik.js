@@ -56,6 +56,16 @@ export async function getDefaultRoute() {
   }
 }
 
+export async function getCloudStatus() {
+  try {
+    const result = await mtFetch('/rest/ip/cloud');
+    return result[0] || null;
+  } catch (err) {
+    console.error('Failed to get cloud status:', err.message);
+    return null;
+  }
+}
+
 export async function getLteStatus() {
   try {
     const result = await mtFetch('/rest/interface/lte/monitor', {

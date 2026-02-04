@@ -11,17 +11,6 @@ export function getLastSnapshot() {
   return lastSnapshot;
 }
 
-async function getPublicIp() {
-  try {
-    const response = await fetch('https://api.ipify.org?format=json', { timeout: 3000 });
-    const data = await response.json();
-    return data.ip;
-  } catch (err) {
-    console.error('Failed to fetch public IP:', err);
-    return null;
-  }
-}
-
 async function collectSnapshot() {
   const startTime = Date.now();
   const snapshot = {
@@ -50,17 +39,17 @@ async function collectSnapshot() {
   };
 
   try {
-    const [route, lte, wifi, sysres, interfaces, publicIp] = await Promise.all([
+    const [route, lte, wifi, sysres, interfaces, cloud] = await Promise.all([
       mt.getDefaultRoute(),
       mt.getLteStatus(),
       mt.getWifiStatus(),
       mt.getSystemResource(),
       mt.getInterfaces(),
-      getPublicIp()
+      mt.getCloudStatus()
     ]);
 
     snapshot.online = true;
-    snapshot.public_ip = publicIp;
+    snapshot.public_ip = cloud ? cloud['public-address'] : null;
 
     if (route && route.gateway) {
       snapshot.active_uplink = route.gateway;
@@ -125,15 +114,15 @@ async function collectSnapshot() {
     await query(`
       INSERT INTO snapshots (
         snapshot_ts, online, stale, error,
-        active_uplink, gateway_type, lte_operator, lte_rsrp, lte_rsrq, lte_rssi, lte_sinr,
+        active_uplink, gateway_type, public_ip, lte_operator, lte_rsrp, lte_rsrq, lte_rssi, lte_sinr,
         wifi_ssid, wifi_status,
         system_uptime, system_cpu_percent, system_ram_percent,
         current_speed_interface, current_speed_rx, current_speed_tx,
         vxlan_rx_bytes, vxlan_tx_bytes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
     `, [
       snapshot.snapshot_ts, snapshot.online, snapshot.stale, snapshot.error,
-      snapshot.active_uplink, snapshot.gateway_type, snapshot.lte_operator, snapshot.lte_rsrp, snapshot.lte_rsrq,
+      snapshot.active_uplink, snapshot.gateway_type, snapshot.public_ip, snapshot.lte_operator, snapshot.lte_rsrp, snapshot.lte_rsrq,
       snapshot.lte_rssi, snapshot.lte_sinr, snapshot.wifi_ssid, snapshot.wifi_status,
       snapshot.system_uptime, snapshot.system_cpu_percent, snapshot.system_ram_percent,
       snapshot.current_speed_interface, snapshot.current_speed_rx, snapshot.current_speed_tx,

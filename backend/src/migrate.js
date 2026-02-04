@@ -92,6 +92,11 @@ ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS gateway_type TEXT;
 ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS current_speed_interface TEXT;
 `;
 
+const MIGRATION_003 = `
+-- Add public_ip column to snapshots table
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS public_ip TEXT;
+`;
+
 export async function runMigrations() {
   try {
     console.log('Running database migrations...');
@@ -106,7 +111,8 @@ export async function runMigrations() {
 
     const migrations = [
       { name: '001_init', sql: MIGRATION_001 },
-      { name: '002_gateway_and_interface', sql: MIGRATION_002 }
+      { name: '002_gateway_and_interface', sql: MIGRATION_002 },
+      { name: '003_public_ip', sql: MIGRATION_003 }
     ];
 
     for (const migration of migrations) {
