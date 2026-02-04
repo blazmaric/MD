@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Trash2 } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
@@ -11,6 +11,8 @@ export default function TrafficChart() {
   const [loading, setLoading] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; data: any } | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     fetchTraffic();
@@ -54,6 +56,33 @@ export default function TrafficChart() {
       i++;
     }
     return `${value.toFixed(2)} ${units[i]}`;
+  }
+
+  function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
+    if (!data || !svgRef.current) return;
+
+    const svg = svgRef.current;
+    const rect = svg.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+
+    const history = data.history.slice().reverse();
+    const chartWidth = 760;
+    const offsetX = 20;
+    const xStep = chartWidth / Math.max(history.length - 1, 1);
+
+    const index = Math.round((mouseX - offsetX) / xStep);
+
+    if (index >= 0 && index < history.length) {
+      setTooltip({
+        x: e.clientX,
+        y: e.clientY,
+        data: history[index]
+      });
+    }
+  }
+
+  function handleMouseLeave() {
+    setTooltip(null);
   }
 
   return (
@@ -121,110 +150,106 @@ export default function TrafficChart() {
           </div>
 
           {data.history.length > 0 && (
-            <>
-              <div className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">{t('trafficOverTime')}</h4>
-                <div className="relative" style={{ height: '250px', width: '100%' }}>
-                  <svg width="100%" height="250" viewBox="0 0 800 250" preserveAspectRatio="none">
-                    {(() => {
-                      const history = data.history.slice().reverse();
-                      const maxValue = Math.max(
-                        ...history.map(d => Math.max(
-                          parseInt(String(d.rx_bytes_delta)) || 0,
-                          parseInt(String(d.tx_bytes_delta)) || 0
-                        )),
-                        1
-                      );
-                      const chartHeight = 200;
-                      const chartWidth = 760;
-                      const offsetX = 20;
-                      const offsetY = 10;
-                      const points = history.length;
-                      const xStep = chartWidth / Math.max(points - 1, 1);
+            <div className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+              <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">{t('trafficOverTime')}</h4>
+              <div className="relative" style={{ height: '300px', width: '100%' }}>
+                <svg
+                  ref={svgRef}
+                  width="100%"
+                  height="300"
+                  viewBox="0 0 800 300"
+                  preserveAspectRatio="none"
+                  onMouseMove={handleMouseMove}
+                  onMouseLeave={handleMouseLeave}
+                  style={{ cursor: 'crosshair' }}
+                >
+                  {(() => {
+                    const history = data.history.slice().reverse();
+                    const maxValue = Math.max(
+                      ...history.map(d => Math.max(
+                        parseInt(String(d.rx_bytes_delta)) || 0,
+                        parseInt(String(d.tx_bytes_delta)) || 0
+                      )),
+                      1
+                    );
+                    const chartHeight = 250;
+                    const chartWidth = 760;
+                    const offsetX = 20;
+                    const offsetY = 20;
+                    const points = history.length;
+                    const xStep = chartWidth / Math.max(points - 1, 1);
 
-                      const rxPath = history.map((d, i) => {
-                        const x = offsetX + i * xStep;
-                        const value = parseInt(String(d.rx_bytes_delta)) || 0;
-                        const y = offsetY + chartHeight - (value / maxValue * chartHeight);
-                        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
-                      }).join(' ');
+                    const rxPath = history.map((d, i) => {
+                      const x = offsetX + i * xStep;
+                      const value = parseInt(String(d.rx_bytes_delta)) || 0;
+                      const y = offsetY + chartHeight - (value / maxValue * chartHeight);
+                      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                    }).join(' ');
 
-                      const txPath = history.map((d, i) => {
-                        const x = offsetX + i * xStep;
-                        const value = parseInt(String(d.tx_bytes_delta)) || 0;
-                        const y = offsetY + chartHeight - (value / maxValue * chartHeight);
-                        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
-                      }).join(' ');
+                    const txPath = history.map((d, i) => {
+                      const x = offsetX + i * xStep;
+                      const value = parseInt(String(d.tx_bytes_delta)) || 0;
+                      const y = offsetY + chartHeight - (value / maxValue * chartHeight);
+                      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                    }).join(' ');
 
-                      return (
-                        <g>
-                          <line x1={offsetX} y1={offsetY} x2={offsetX} y2={offsetY + chartHeight} stroke="#cbd5e1" strokeWidth="1" />
-                          <line x1={offsetX} y1={offsetY + chartHeight} x2={offsetX + chartWidth} y2={offsetY + chartHeight} stroke="#cbd5e1" strokeWidth="1" />
-                          <path d={rxPath} fill="none" stroke="#3b82f6" strokeWidth="2.5" />
-                          <path d={txPath} fill="none" stroke="#10b981" strokeWidth="2.5" />
-                          {history.map((d, i) => {
-                            const x = offsetX + i * xStep;
-                            const rxValue = parseInt(String(d.rx_bytes_delta)) || 0;
-                            const txValue = parseInt(String(d.tx_bytes_delta)) || 0;
-                            const rxY = offsetY + chartHeight - (rxValue / maxValue * chartHeight);
-                            const txY = offsetY + chartHeight - (txValue / maxValue * chartHeight);
-                            return (
-                              <g key={i}>
-                                <circle cx={x} cy={rxY} r="4" fill="#3b82f6" />
-                                <circle cx={x} cy={txY} r="4" fill="#10b981" />
-                              </g>
-                            );
-                          })}
-                        </g>
-                      );
-                    })()}
-                  </svg>
+                    return (
+                      <g>
+                        <line x1={offsetX} y1={offsetY} x2={offsetX} y2={offsetY + chartHeight} stroke="#cbd5e1" strokeWidth="1" />
+                        <line x1={offsetX} y1={offsetY + chartHeight} x2={offsetX + chartWidth} y2={offsetY + chartHeight} stroke="#cbd5e1" strokeWidth="1" />
+                        <path d={rxPath} fill="none" stroke="#3b82f6" strokeWidth="2.5" />
+                        <path d={txPath} fill="none" stroke="#10b981" strokeWidth="2.5" />
+                        {history.map((d, i) => {
+                          const x = offsetX + i * xStep;
+                          const rxValue = parseInt(String(d.rx_bytes_delta)) || 0;
+                          const txValue = parseInt(String(d.tx_bytes_delta)) || 0;
+                          const rxY = offsetY + chartHeight - (rxValue / maxValue * chartHeight);
+                          const txY = offsetY + chartHeight - (txValue / maxValue * chartHeight);
+                          return (
+                            <g key={i}>
+                              <circle cx={x} cy={rxY} r="4" fill="#3b82f6" />
+                              <circle cx={x} cy={txY} r="4" fill="#10b981" />
+                            </g>
+                          );
+                        })}
+                      </g>
+                    );
+                  })()}
+                </svg>
+                {tooltip && (
+                  <div
+                    className="fixed z-50 bg-slate-900 dark:bg-slate-700 text-white text-xs rounded-lg shadow-lg p-3 pointer-events-none"
+                    style={{
+                      left: `${tooltip.x + 10}px`,
+                      top: `${tooltip.y - 10}px`,
+                      transform: 'translateY(-100%)'
+                    }}
+                  >
+                    <div className="font-semibold mb-1">
+                      {new Date(tooltip.data.time_bucket).toLocaleString()}
+                    </div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-3 h-1 bg-blue-600 rounded"></div>
+                      <span>RX: {formatBytes(tooltip.data.rx_bytes_delta)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-1 bg-green-600 rounded"></div>
+                      <span>TX: {formatBytes(tooltip.data.tx_bytes_delta)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-6 justify-center mt-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-1 bg-blue-600 rounded"></div>
+                  <span className="text-slate-600 dark:text-slate-400">{t('received')}</span>
                 </div>
-                <div className="flex gap-6 justify-center mt-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-1 bg-blue-600 rounded"></div>
-                    <span className="text-slate-600 dark:text-slate-400">{t('received')}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-1 bg-green-600 rounded"></div>
-                    <span className="text-slate-600 dark:text-slate-400">{t('transmitted')}</span>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-1 bg-green-600 rounded"></div>
+                  <span className="text-slate-600 dark:text-slate-400">{t('transmitted')}</span>
                 </div>
               </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-slate-50 dark:bg-slate-700">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase">
-                        {t('timePeriod')}
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 dark:text-slate-400 uppercase">
-                        {t('rx')}
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 dark:text-slate-400 uppercase">
-                        {t('tx')}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                    {data.history.slice(0, 10).map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
-                        <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
-                          {new Date(item.time_bucket).toLocaleString()}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-right text-slate-900 dark:text-slate-100">
-                          {formatBytes(item.rx_bytes_delta)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-right text-slate-900 dark:text-slate-100">
-                          {formatBytes(item.tx_bytes_delta)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
+            </div>
           )}
         </div>
       )}
