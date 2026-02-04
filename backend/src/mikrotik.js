@@ -164,7 +164,7 @@ export async function ping(address, count = 4, sourceInterface = null) {
 
 export async function rebootSystem() {
   try {
-    await mtFetch('/rest/system/reboot', { method: 'POST', body: '{}' });
+    await mtFetch('/rest/system/reboot', { method: 'POST' });
     return { success: true };
   } catch (err) {
     console.error('Failed to reboot:', err.message);
@@ -183,8 +183,9 @@ export async function getSmsInbox() {
 
 export async function deleteSms(smsId) {
   try {
-    await mtFetch(`/rest/tool/sms/inbox/${smsId}`, {
-      method: 'DELETE'
+    await mtFetch('/rest/tool/sms/inbox/remove', {
+      method: 'POST',
+      body: JSON.stringify({ '.id': smsId })
     });
     return { success: true };
   } catch (err) {

@@ -8,7 +8,6 @@ import LogViewer from './LogViewer';
 import TrafficChart from './TrafficChart';
 import PingTester from './PingTester';
 import SmsManager from './SmsManager';
-import WiFiScanner from './WiFiScanner';
 import InterfaceList from './InterfaceList';
 import Wlan5Clients from './Wlan5Clients';
 
@@ -88,14 +87,7 @@ export default function Dashboard({ user }: DashboardProps) {
       )}
 
       {hasPermission('view_summary') && (
-        <Wlan5Clients />
-      )}
-
-      {hasPermission('manage_wifi') && (
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">{t('wifiScanner')}</h2>
-          <WiFiScanner snapshot={snapshot} />
-        </div>
+        <Wlan5Clients snapshot={snapshot} />
       )}
 
       {hasPermission('view_traffic') && (
