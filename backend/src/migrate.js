@@ -105,6 +105,23 @@ ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS gps_altitude NUMERIC(8,2);
 ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS gps_speed NUMERIC(6,2);
 `;
 
+const MIGRATION_005 = `
+-- Create dashboard layouts table for customizable dashboard
+CREATE TABLE IF NOT EXISTS dashboard_layouts (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  layout_config JSONB NOT NULL DEFAULT '[]'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_dashboard_layouts_user_id ON dashboard_layouts(user_id);
+
+-- Add trigger for updated_at
+CREATE TRIGGER dashboard_layouts_updated_at
+BEFORE UPDATE ON dashboard_layouts
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();
+`;
+
 export async function runMigrations() {
   try {
     console.log('Running database migrations...');
@@ -121,7 +138,8 @@ export async function runMigrations() {
       { name: '001_init', sql: MIGRATION_001 },
       { name: '002_gateway_and_interface', sql: MIGRATION_002 },
       { name: '003_public_ip', sql: MIGRATION_003 },
-      { name: '004_gps_data', sql: MIGRATION_004 }
+      { name: '004_gps_data', sql: MIGRATION_004 },
+      { name: '005_dashboard_layouts', sql: MIGRATION_005 }
     ];
 
     for (const migration of migrations) {

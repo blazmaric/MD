@@ -135,4 +135,18 @@ export const api = {
     delete: (id: string) =>
       apiFetch(`/users/${id}`, { method: 'DELETE' }),
   },
+
+  layout: {
+    get: () =>
+      apiFetch('/layout'),
+
+    save: (layout: any[]) =>
+      apiFetch('/layout', {
+        method: 'POST',
+        body: JSON.stringify({ layout }),
+      }),
+
+    reset: () =>
+      apiFetch('/layout', { method: 'DELETE' }),
+  },
 };

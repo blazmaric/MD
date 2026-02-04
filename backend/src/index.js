@@ -17,6 +17,7 @@ import systemRoutes from './routes/system.js';
 import smsRoutes from './routes/sms.js';
 import wifiRoutes from './routes/wifi.js';
 import interfacesRoutes from './routes/interfaces.js';
+import layoutRoutes from './routes/layout.js';
 
 const fastify = Fastify({
   logger: {
@@ -45,6 +46,7 @@ fastify.register(systemRoutes, { prefix: '/api' });
 fastify.register(smsRoutes, { prefix: '/api' });
 fastify.register(wifiRoutes, { prefix: '/api' });
 fastify.register(interfacesRoutes, { prefix: '/api' });
+fastify.register(layoutRoutes, { prefix: '/api' });
 
 async function start() {
   try {
