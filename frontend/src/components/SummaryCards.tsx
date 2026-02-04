@@ -116,7 +116,7 @@ export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) 
           <div className="space-y-4">
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Javni IP: <span className="font-normal">84.20.110.5</span>
+                Javni IP: <span className="font-normal">{snapshot.public_ip || 'N/A'}</span>
               </p>
             </div>
 

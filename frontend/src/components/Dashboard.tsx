@@ -10,7 +10,6 @@ import PingTester from './PingTester';
 import SmsManager from './SmsManager';
 import InterfaceList from './InterfaceList';
 import Wlan5Clients from './Wlan5Clients';
-import WiFiScanner from './WiFiScanner';
 
 interface DashboardProps {
   user: User;
@@ -77,10 +76,6 @@ export default function Dashboard({ user }: DashboardProps) {
 
       {hasPermission('view_summary') && (
         <Wlan5Clients />
-      )}
-
-      {hasPermission('view_summary') && (
-        <WiFiScanner snapshot={snapshot} />
       )}
 
       {hasPermission('view_traffic') && (

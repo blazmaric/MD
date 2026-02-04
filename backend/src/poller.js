@@ -11,6 +11,17 @@ export function getLastSnapshot() {
   return lastSnapshot;
 }
 
+async function getPublicIp() {
+  try {
+    const response = await fetch('https://api.ipify.org?format=json', { timeout: 3000 });
+    const data = await response.json();
+    return data.ip;
+  } catch (err) {
+    console.error('Failed to fetch public IP:', err);
+    return null;
+  }
+}
+
 async function collectSnapshot() {
   const startTime = Date.now();
   const snapshot = {
@@ -20,6 +31,7 @@ async function collectSnapshot() {
     error: null,
     active_uplink: null,
     gateway_type: null,
+    public_ip: null,
     lte_operator: null,
     lte_rsrp: null,
     lte_rsrq: null,
@@ -38,15 +50,17 @@ async function collectSnapshot() {
   };
 
   try {
-    const [route, lte, wifi, sysres, interfaces] = await Promise.all([
+    const [route, lte, wifi, sysres, interfaces, publicIp] = await Promise.all([
       mt.getDefaultRoute(),
       mt.getLteStatus(),
       mt.getWifiStatus(),
       mt.getSystemResource(),
-      mt.getInterfaces()
+      mt.getInterfaces(),
+      getPublicIp()
     ]);
 
     snapshot.online = true;
+    snapshot.public_ip = publicIp;
 
     if (route && route.gateway) {
       snapshot.active_uplink = route.gateway;

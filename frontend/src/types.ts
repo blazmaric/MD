@@ -14,6 +14,7 @@ export interface Snapshot {
   error?: string;
   active_uplink?: string;
   gateway_type?: string;
+  public_ip?: string;
   lte_operator?: string;
   lte_rsrp?: number;
   lte_rsrq?: number;

@@ -40,53 +40,52 @@ export default function InterfaceList() {
   }
 
   function getStatusColor(iface: Interface): string {
-    if (iface.disabled === 'true') return 'bg-gray-500';
+    if (iface.disabled === 'true') return 'bg-slate-400';
     if (iface.running === 'true') return 'bg-green-500';
     return 'bg-red-500';
   }
 
   function getStatusText(iface: Interface): string {
-    if (iface.disabled === 'true') return t('disabled').toUpperCase();
-    if (iface.running === 'true') return t('up').toUpperCase();
-    return t('down').toUpperCase();
+    if (iface.disabled === 'true') return 'NEAKTIVNO';
+    if (iface.running === 'true') return 'AKTIVNO';
+    return 'NEAKTIVNO';
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
           <Network className="w-5 h-5" />
-          {t('interfaceStatus')}
+          Stanje vmesnikov
         </h3>
         <button
           onClick={fetchInterfaces}
           disabled={loading}
-          className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-50"
+          className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg disabled:opacity-50 transition-colors"
           title={t('refresh')}
         >
           <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-        {interfaces.map((iface) => (
-          <div
-            key={iface['.id']}
-            className="p-4 border border-slate-200 dark:border-slate-700 rounded-lg text-center"
-          >
-            <div className={`w-4 h-4 rounded-full mx-auto mb-2 ${getStatusColor(iface)}`} />
-            <div className="font-semibold text-slate-900 dark:text-slate-100">{iface.name}</div>
-            <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">{getStatusText(iface)}</div>
-            {iface.running === 'true' && iface['link-rate'] && (
-              <div className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">{iface['link-rate']}</div>
-            )}
-          </div>
-        ))}
-      </div>
+      <div className="p-6">
+        <div className="flex flex-wrap gap-3">
+          {interfaces.map((iface) => (
+            <div
+              key={iface['.id']}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600"
+            >
+              <div className={`w-3 h-3 rounded-full ${getStatusColor(iface)}`} />
+              <span className="font-semibold text-slate-900 dark:text-slate-100">{iface.name}</span>
+              <span className="text-xs text-slate-600 dark:text-slate-400">{getStatusText(iface)}</span>
+            </div>
+          ))}
+        </div>
 
-      {interfaces.length === 0 && !loading && (
-        <p className="text-center py-8 text-slate-600 dark:text-slate-400">{t('noInterfacesFound')}</p>
-      )}
+        {interfaces.length === 0 && !loading && (
+          <p className="text-center py-8 text-slate-600 dark:text-slate-400">{t('noInterfacesFound')}</p>
+        )}
+      </div>
     </div>
   );
 }
