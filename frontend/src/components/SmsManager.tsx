@@ -71,9 +71,9 @@ export default function SmsManager() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <MessageSquare className="w-5 h-5" />
             {t('sendSms')}
           </h3>
@@ -81,7 +81,7 @@ export default function SmsManager() {
 
         <form onSubmit={handleSend} className="space-y-4">
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-2">
+            <label htmlFor="phone" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               {t('phoneNumber')}
             </label>
             <input
@@ -90,13 +90,13 @@ export default function SmsManager() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+386..."
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="message" className="block text-sm font-medium text-slate-700 mb-2">
+            <label htmlFor="message" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               {t('message')}
             </label>
             <textarea
@@ -105,20 +105,20 @@ export default function SmsManager() {
               onChange={(e) => setMessage(e.target.value)}
               rows={4}
               maxLength={160}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
               required
             />
-            <p className="text-xs text-slate-500 mt-1">{message.length}/160 {t('characters')}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{message.length}/160 {t('characters')}</p>
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg text-red-700 dark:text-red-400 text-sm">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+            <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg text-green-700 dark:text-green-400 text-sm">
               {success}
             </div>
           )}
@@ -134,13 +134,13 @@ export default function SmsManager() {
         </form>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-900">{t('smsInbox')}</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('smsInbox')}</h3>
           <button
             onClick={fetchInbox}
             disabled={loading}
-            className="p-2 text-slate-600 hover:text-slate-900 disabled:opacity-50"
+            className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-50"
             title={t('refresh')}
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
@@ -148,41 +148,41 @@ export default function SmsManager() {
         </div>
 
         {allMessages.length === 0 ? (
-          <p className="text-center py-8 text-slate-600">{t('noMessages')}</p>
+          <p className="text-center py-8 text-slate-600 dark:text-slate-400">{t('noMessages')}</p>
         ) : (
           <>
             <div className="space-y-3">
               {allMessages.slice((currentPage - 1) * SMS_PER_PAGE, currentPage * SMS_PER_PAGE).map((msg) => (
-                <div key={msg['.id']} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <div key={msg['.id']} className="p-4 bg-slate-50 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600">
                   <div className="flex justify-between items-start mb-2">
-                    <span className="font-semibold text-slate-900">{msg.phone}</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">{msg.phone}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-500">{msg.timestamp}</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">{msg.timestamp}</span>
                       <button
                         onClick={() => handleDelete(msg['.id'])}
                         disabled={deleting === msg['.id']}
-                        className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
+                        className="p-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-50"
                         title={t('deleteSms')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
-                  <p className="text-sm text-slate-700">{msg.message}</p>
+                  <p className="text-sm text-slate-700 dark:text-slate-300">{msg.message}</p>
                 </div>
               ))}
             </div>
 
             {Math.ceil(allMessages.length / SMS_PER_PAGE) > 1 && (
-              <div className="mt-4 flex items-center justify-between border-t pt-4">
-                <div className="text-sm text-slate-600">
+              <div className="mt-4 flex items-center justify-between border-t dark:border-slate-700 pt-4">
+                <div className="text-sm text-slate-600 dark:text-slate-400">
                   {t('showing')} {((currentPage - 1) * SMS_PER_PAGE) + 1} {t('to')} {Math.min(currentPage * SMS_PER_PAGE, allMessages.length)} {t('of')} {allMessages.length}
                 </div>
                 <div className="flex gap-1">
                   <button
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm text-slate-700 dark:text-slate-300"
                   >
                     {t('previous')}
                   </button>
@@ -193,7 +193,7 @@ export default function SmsManager() {
                       className={`px-3 py-1 border rounded text-sm ${
                         currentPage === page
                           ? 'bg-blue-600 text-white border-blue-600'
-                          : 'border-slate-300 hover:bg-slate-50'
+                          : 'border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
                       }`}
                     >
                       {page}
@@ -202,7 +202,7 @@ export default function SmsManager() {
                   <button
                     onClick={() => setCurrentPage(Math.min(Math.ceil(allMessages.length / SMS_PER_PAGE), currentPage + 1))}
                     disabled={currentPage === Math.ceil(allMessages.length / SMS_PER_PAGE)}
-                    className="px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm text-slate-700 dark:text-slate-300"
                   >
                     {t('next')}
                   </button>

@@ -80,8 +80,8 @@ export default function LogViewer() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="p-4 border-b border-slate-200">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
+      <div className="p-4 border-b border-slate-200 dark:border-slate-700">
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -90,14 +90,14 @@ export default function LogViewer() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('searchLogs')}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
             />
           </div>
 
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
           >
             <option value="">All Categories</option>
             <option value="wifi">WiFi</option>
@@ -113,7 +113,7 @@ export default function LogViewer() {
           <select
             value={severity}
             onChange={(e) => setSeverity(e.target.value)}
-            className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
           >
             <option value="">All Severities</option>
             <option value="error">Error</option>
@@ -132,31 +132,31 @@ export default function LogViewer() {
 
       <div className="overflow-x-auto">
         {loading ? (
-          <div className="p-8 text-center text-slate-600">Loading logs...</div>
+          <div className="p-8 text-center text-slate-600 dark:text-slate-400">Loading logs...</div>
         ) : logs.length === 0 ? (
-          <div className="p-8 text-center text-slate-600">No logs found</div>
+          <div className="p-8 text-center text-slate-600 dark:text-slate-400">No logs found</div>
         ) : (
           <table className="w-full">
-            <thead className="bg-slate-50">
+            <thead className="bg-slate-50 dark:bg-slate-700">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   Time
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   Category
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   Severity
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   Message
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
               {logs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50">
-                  <td className="px-2 md:px-4 py-3 whitespace-nowrap text-xs md:text-sm text-slate-600">
+                <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                  <td className="px-2 md:px-4 py-3 whitespace-nowrap text-xs md:text-sm text-slate-600 dark:text-slate-400">
                     <div className="min-w-[100px] md:min-w-[140px]">
                       {new Date(log.log_time).toLocaleString('sl-SI', {
                         day: '2-digit',
@@ -168,7 +168,7 @@ export default function LogViewer() {
                     </div>
                   </td>
                   <td className="px-2 md:px-4 py-3 whitespace-nowrap text-xs md:text-sm">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-300">
                       {log.category}
                     </span>
                   </td>
@@ -177,7 +177,7 @@ export default function LogViewer() {
                       {log.severity}
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-3 text-xs md:text-sm text-slate-900 max-w-[200px] md:max-w-none">
+                  <td className="px-2 md:px-4 py-3 text-xs md:text-sm text-slate-900 dark:text-slate-100 max-w-[200px] md:max-w-none">
                     <div className="break-words">
                       {log.message}
                     </div>
@@ -190,15 +190,15 @@ export default function LogViewer() {
       </div>
 
       {totalPages > 1 && !loading && (
-        <div className="p-4 border-t border-slate-200 flex items-center justify-between">
-          <div className="text-sm text-slate-600">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+          <div className="text-sm text-slate-600 dark:text-slate-400">
             Showing {((currentPage - 1) * LOGS_PER_PAGE) + 1} to {Math.min(currentPage * LOGS_PER_PAGE, totalCount)} of {totalCount} logs
           </div>
           <div className="flex gap-1">
             <button
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm text-slate-700 dark:text-slate-300"
             >
               Previous
             </button>
@@ -212,7 +212,7 @@ export default function LogViewer() {
                   className={`px-3 py-1 border rounded text-sm ${
                     currentPage === pageNum
                       ? 'bg-blue-600 text-white border-blue-600'
-                      : 'border-slate-300 hover:bg-slate-50'
+                      : 'border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
                   }`}
                 >
                   {pageNum}
@@ -222,7 +222,7 @@ export default function LogViewer() {
             <button
               onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm text-slate-700 dark:text-slate-300"
             >
               Next
             </button>

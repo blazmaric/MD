@@ -29,11 +29,11 @@ export default function PingTester() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
       <form onSubmit={handlePing} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label htmlFor="address" className="block text-sm font-medium text-slate-700 mb-2">
+            <label htmlFor="address" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               {t('targetAddress')}
             </label>
             <input
@@ -42,20 +42,20 @@ export default function PingTester() {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="8.8.8.8"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="source" className="block text-sm font-medium text-slate-700 mb-2">
+            <label htmlFor="source" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               {t('sourceInterface')}
             </label>
             <select
               id="source"
               value={sourceInterface}
               onChange={(e) => setSourceInterface(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
             >
               <option value="">{t('defaultGateway')}</option>
               <option value="lte1">LTE</option>
@@ -65,7 +65,7 @@ export default function PingTester() {
           </div>
 
           <div>
-            <label htmlFor="count" className="block text-sm font-medium text-slate-700 mb-2">
+            <label htmlFor="count" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               {t('pingCount')}
             </label>
             <input
@@ -75,7 +75,7 @@ export default function PingTester() {
               onChange={(e) => setCount(parseInt(e.target.value, 10))}
               min="1"
               max="10"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
               required
             />
           </div>
@@ -92,15 +92,15 @@ export default function PingTester() {
       </form>
 
       {error && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+        <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg text-red-700 dark:text-red-400">
           {error}
         </div>
       )}
 
       {result && (
-        <div className="mt-6 p-4 bg-slate-50 rounded-lg">
-          <h4 className="font-semibold text-slate-900 mb-3">{t('pingResults')}</h4>
-          <pre className="text-sm text-slate-700 whitespace-pre-wrap font-mono">
+        <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-700 rounded-lg">
+          <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">{t('pingResults')}</h4>
+          <pre className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap font-mono">
             {JSON.stringify(result, null, 2)}
           </pre>
         </div>
