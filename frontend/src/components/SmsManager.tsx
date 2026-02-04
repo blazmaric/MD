@@ -59,11 +59,11 @@ export default function SmsManager() {
       <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-slate-700">
         <div className="p-6">
           <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 uppercase">PREJETO</h4>
-          <div className="space-y-3 max-h-96 overflow-y-auto">
+          <div className="space-y-3 max-h-[420px] overflow-y-auto">
             {messages.length === 0 ? (
               <p className="text-center py-8 text-sm text-slate-600 dark:text-slate-400">Ni sporočil</p>
             ) : (
-              messages.map((msg) => (
+              messages.slice(0, 4).map((msg) => (
                 <div key={msg['.id']} className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-semibold text-slate-900 dark:text-slate-100">{msg.phone}</span>
@@ -72,6 +72,11 @@ export default function SmsManager() {
                   <p className="text-sm text-slate-700 dark:text-slate-300">{msg.message}</p>
                 </div>
               ))
+            )}
+            {messages.length > 4 && (
+              <p className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2">
+                {messages.length - 4} več sporočil...
+              </p>
             )}
           </div>
         </div>

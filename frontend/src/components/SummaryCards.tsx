@@ -28,8 +28,7 @@ export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) 
 
   function formatSpeed(bytesPerSec?: number | string | null): string {
     const numBytes = Number(bytesPerSec);
-    if (isNaN(numBytes) || numBytes == null) return 'TODO';
-    if (numBytes === 0) return 'TODO';
+    if (isNaN(numBytes) || numBytes == null) return '0 bps';
     const bitsPerSec = numBytes * 8;
     const units = ['bps', 'Kbps', 'Mbps', 'Gbps'];
     let i = 0;
@@ -39,6 +38,19 @@ export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) 
       i++;
     }
     return `${value.toFixed(1)} ${units[i]}`;
+  }
+
+  function formatBytes(bytes?: number | string | null): string {
+    const numBytes = Number(bytes);
+    if (isNaN(numBytes) || numBytes == null) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let i = 0;
+    let value = numBytes;
+    while (value >= 1024 && i < units.length - 1) {
+      value /= 1024;
+      i++;
+    }
+    return `${value.toFixed(2)} ${units[i]}`;
   }
 
   return (
@@ -66,12 +78,16 @@ export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) 
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 uppercase">SKUPNA PORABA (VXLAN)</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Download</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">TODO</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Prejeto</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                    {formatBytes(snapshot.vxlan_rx_bytes)}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Upload</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">TODO</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Poslano</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                    {formatBytes(snapshot.vxlan_tx_bytes)}
+                  </p>
                 </div>
               </div>
             </div>

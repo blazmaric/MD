@@ -5,11 +5,13 @@ import { useLanguage } from '../LanguageContext';
 import type { User, Snapshot } from '../types';
 import SummaryCards from './SummaryCards';
 import LogViewer from './LogViewer';
-import TrafficChart from './TrafficChart';
 import PingTester from './PingTester';
 import SmsManager from './SmsManager';
 import InterfaceList from './InterfaceList';
 import Wlan5Clients from './Wlan5Clients';
+import LteStatus from './LteStatus';
+import WlanStatus from './WlanStatus';
+import Wlan5Status from './Wlan5Status';
 
 interface DashboardProps {
   user: User;
@@ -70,20 +72,32 @@ export default function Dashboard({ user }: DashboardProps) {
         </div>
       )}
 
-      {hasPermission('view_summary') && (
-        <InterfaceList />
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {hasPermission('view_summary') && (
+          <InterfaceList />
+        )}
+
+        {hasPermission('use_ping') && (
+          <PingTester />
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {hasPermission('view_summary') && (
+          <LteStatus snapshot={snapshot} />
+        )}
+
+        {hasPermission('view_summary') && (
+          <WlanStatus snapshot={snapshot} />
+        )}
+
+        {hasPermission('view_summary') && (
+          <Wlan5Status />
+        )}
+      </div>
 
       {hasPermission('view_summary') && (
         <Wlan5Clients />
-      )}
-
-      {hasPermission('view_traffic') && (
-        <TrafficChart />
-      )}
-
-      {hasPermission('use_ping') && (
-        <PingTester />
       )}
 
       {hasPermission('view_sms') && (
