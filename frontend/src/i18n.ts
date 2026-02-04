@@ -137,9 +137,14 @@ export const translations = {
     time: 'Čas',
     category: 'Kategorija',
     severity: 'Resnost',
+    messageLog: 'Sporočilo',
     error: 'Napaka',
     warning: 'Opozorilo',
     info: 'Informacija',
+    showingLogs: 'Prikazujem',
+    toLogs: 'do',
+    ofLogs: 'od',
+    logsText: 'dnevnikov',
 
     // Users
     userManagement: 'Upravljanje uporabnikov',
@@ -305,9 +310,14 @@ export const translations = {
     time: 'Time',
     category: 'Category',
     severity: 'Severity',
+    messageLog: 'Message',
     error: 'Error',
     warning: 'Warning',
     info: 'Info',
+    showingLogs: 'Showing',
+    toLogs: 'to',
+    ofLogs: 'of',
+    logsText: 'logs',
 
     // Users
     userManagement: 'User Management',

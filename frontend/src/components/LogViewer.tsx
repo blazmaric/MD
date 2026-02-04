@@ -99,7 +99,7 @@ export default function LogViewer() {
             onChange={(e) => setCategory(e.target.value)}
             className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
           >
-            <option value="">All Categories</option>
+            <option value="">{t('allCategories')}</option>
             <option value="wifi">WiFi</option>
             <option value="vpn">VPN</option>
             <option value="firewall">Firewall</option>
@@ -115,41 +115,41 @@ export default function LogViewer() {
             onChange={(e) => setSeverity(e.target.value)}
             className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
           >
-            <option value="">All Severities</option>
-            <option value="error">Error</option>
-            <option value="warning">Warning</option>
-            <option value="info">Info</option>
+            <option value="">{t('allSeverities')}</option>
+            <option value="error">{t('error')}</option>
+            <option value="warning">{t('warning')}</option>
+            <option value="info">{t('info')}</option>
           </select>
 
           <button
             type="submit"
             className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            Search
+            {t('search')}
           </button>
         </form>
       </div>
 
       <div className="overflow-x-auto">
         {loading ? (
-          <div className="p-8 text-center text-slate-600 dark:text-slate-400">Loading logs...</div>
+          <div className="p-8 text-center text-slate-600 dark:text-slate-400">{t('loadingLogs')}</div>
         ) : logs.length === 0 ? (
-          <div className="p-8 text-center text-slate-600 dark:text-slate-400">No logs found</div>
+          <div className="p-8 text-center text-slate-600 dark:text-slate-400">{t('noLogsFound')}</div>
         ) : (
           <table className="w-full">
             <thead className="bg-slate-50 dark:bg-slate-700">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                  Time
+                  {t('time')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                  Category
+                  {t('category')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                  Severity
+                  {t('severity')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                  Message
+                  {t('messageLog')}
                 </th>
               </tr>
             </thead>
@@ -192,7 +192,7 @@ export default function LogViewer() {
       {totalPages > 1 && !loading && (
         <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
           <div className="text-sm text-slate-600 dark:text-slate-400">
-            Showing {((currentPage - 1) * LOGS_PER_PAGE) + 1} to {Math.min(currentPage * LOGS_PER_PAGE, totalCount)} of {totalCount} logs
+            {t('showingLogs')} {((currentPage - 1) * LOGS_PER_PAGE) + 1} {t('toLogs')} {Math.min(currentPage * LOGS_PER_PAGE, totalCount)} {t('ofLogs')} {totalCount} {t('logsText')}
           </div>
           <div className="flex gap-1">
             <button
@@ -200,7 +200,7 @@ export default function LogViewer() {
               disabled={currentPage === 1}
               className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm text-slate-700 dark:text-slate-300"
             >
-              Previous
+              {t('previous')}
             </button>
             {pageNumbers.map((pageNum, idx) => (
               pageNum === -1 ? (
@@ -224,7 +224,7 @@ export default function LogViewer() {
               disabled={currentPage === totalPages}
               className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm text-slate-700 dark:text-slate-300"
             >
-              Next
+              {t('next')}
             </button>
           </div>
         </div>

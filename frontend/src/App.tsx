@@ -66,19 +66,21 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center space-x-8">
-              <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">MikroTik {t('dashboard')}</h1>
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => setView('dashboard')}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    view === 'dashboard'
-                      ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                  }`}
-                >
-                  {t('dashboard')}
-                </button>
-                {canManageUsers && (
+              <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                MikroTik {canManageUsers ? t('dashboard') : ''}
+              </h1>
+              {canManageUsers && (
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => setView('dashboard')}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      view === 'dashboard'
+                        ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                    }`}
+                  >
+                    {t('dashboard')}
+                  </button>
                   <button
                     onClick={() => setView('users')}
                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -89,8 +91,8 @@ export default function App() {
                   >
                     {t('users')}
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
             <div className="flex items-center space-x-4">
               <button
