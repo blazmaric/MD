@@ -11,7 +11,7 @@ export default function LteStatus({ snapshot }: LteStatusProps) {
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
         <div className="flex items-center gap-2 mb-4">
           <Signal className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">LTE Status</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📶 LTE Status</h3>
         </div>
         <p className="text-slate-600 dark:text-slate-400">Nalaganje...</p>
       </div>
@@ -37,7 +37,7 @@ export default function LteStatus({ snapshot }: LteStatusProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Signal className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">LTE Status</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📶 LTE Status</h3>
           </div>
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
             isLteActive

@@ -12,6 +12,7 @@ import Wlan5Clients from './Wlan5Clients';
 import LteStatus from './LteStatus';
 import WlanStatus from './WlanStatus';
 import Wlan5Status from './Wlan5Status';
+import GpsMap from './GpsMap';
 
 interface DashboardProps {
   user: User;
@@ -62,10 +63,17 @@ export default function Dashboard({ user }: DashboardProps) {
   return (
     <div className="space-y-6">
       {hasPermission('view_summary') && (
-        <div>
+        <div className="space-y-2">
           {error && (
-            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
+            <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
               {error}
+            </div>
+          )}
+          {snapshot && (
+            <div className="text-right">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Osveženo: {new Date(snapshot.snapshot_ts).toLocaleTimeString('sl-SI')}
+              </p>
             </div>
           )}
           <SummaryCards snapshot={snapshot} onReboot={hasPermission('admin_all') ? () => setShowRebootDialog(true) : undefined} />
@@ -96,9 +104,15 @@ export default function Dashboard({ user }: DashboardProps) {
         )}
       </div>
 
-      {hasPermission('view_summary') && (
-        <Wlan5Clients />
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {hasPermission('view_summary') && (
+          <Wlan5Clients />
+        )}
+
+        {hasPermission('view_summary') && (
+          <GpsMap snapshot={snapshot} />
+        )}
+      </div>
 
       {hasPermission('view_sms') && (
         <SmsManager />

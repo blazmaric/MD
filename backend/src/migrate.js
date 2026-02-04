@@ -97,6 +97,14 @@ const MIGRATION_003 = `
 ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS public_ip TEXT;
 `;
 
+const MIGRATION_004 = `
+-- Add GPS columns to snapshots table
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS gps_latitude NUMERIC(10,7);
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS gps_longitude NUMERIC(10,7);
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS gps_altitude NUMERIC(8,2);
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS gps_speed NUMERIC(6,2);
+`;
+
 export async function runMigrations() {
   try {
     console.log('Running database migrations...');
@@ -112,7 +120,8 @@ export async function runMigrations() {
     const migrations = [
       { name: '001_init', sql: MIGRATION_001 },
       { name: '002_gateway_and_interface', sql: MIGRATION_002 },
-      { name: '003_public_ip', sql: MIGRATION_003 }
+      { name: '003_public_ip', sql: MIGRATION_003 },
+      { name: '004_gps_data', sql: MIGRATION_004 }
     ];
 
     for (const migration of migrations) {

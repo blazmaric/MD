@@ -71,7 +71,7 @@ export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) 
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6">Poraba & Hitrost</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6">📊 Poraba & Hitrost</h3>
 
           <div className="space-y-6">
             <div>
@@ -127,7 +127,7 @@ export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) 
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6">Sistem & Viri</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6">💻 Sistem & Viri</h3>
 
           <div className="space-y-4">
             <div>

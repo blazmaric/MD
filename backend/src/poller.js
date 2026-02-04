@@ -35,17 +35,22 @@ async function collectSnapshot() {
     current_speed_rx: null,
     current_speed_tx: null,
     vxlan_rx_bytes: null,
-    vxlan_tx_bytes: null
+    vxlan_tx_bytes: null,
+    gps_latitude: null,
+    gps_longitude: null,
+    gps_altitude: null,
+    gps_speed: null
   };
 
   try {
-    const [route, lte, wifi, sysres, interfaces, cloud] = await Promise.all([
+    const [route, lte, wifi, sysres, interfaces, cloud, gps] = await Promise.all([
       mt.getDefaultRoute(),
       mt.getLteStatus(),
       mt.getWifiStatus(),
       mt.getSystemResource(),
       mt.getInterfaces(),
-      mt.getCloudStatus()
+      mt.getCloudStatus(),
+      mt.getGpsStatus()
     ]);
 
     snapshot.online = true;
@@ -99,6 +104,13 @@ async function collectSnapshot() {
       snapshot.vxlan_tx_bytes = vxlanIface['tx-byte'] || null;
     }
 
+    if (gps && gps.valid === 'yes') {
+      snapshot.gps_latitude = gps.latitude ? parseFloat(gps.latitude) : null;
+      snapshot.gps_longitude = gps.longitude ? parseFloat(gps.longitude) : null;
+      snapshot.gps_altitude = gps.altitude ? parseFloat(gps.altitude) : null;
+      snapshot.gps_speed = gps.speed ? parseFloat(gps.speed) : null;
+    }
+
     const elapsed = Date.now() - startTime;
     snapshot.stale = elapsed > (config.polling.staleSeconds * 1000);
 
@@ -118,15 +130,17 @@ async function collectSnapshot() {
         wifi_ssid, wifi_status,
         system_uptime, system_cpu_percent, system_ram_percent,
         current_speed_interface, current_speed_rx, current_speed_tx,
-        vxlan_rx_bytes, vxlan_tx_bytes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+        vxlan_rx_bytes, vxlan_tx_bytes,
+        gps_latitude, gps_longitude, gps_altitude, gps_speed
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
     `, [
       snapshot.snapshot_ts, snapshot.online, snapshot.stale, snapshot.error,
       snapshot.active_uplink, snapshot.gateway_type, snapshot.public_ip, snapshot.lte_operator, snapshot.lte_rsrp, snapshot.lte_rsrq,
       snapshot.lte_rssi, snapshot.lte_sinr, snapshot.wifi_ssid, snapshot.wifi_status,
       snapshot.system_uptime, snapshot.system_cpu_percent, snapshot.system_ram_percent,
       snapshot.current_speed_interface, snapshot.current_speed_rx, snapshot.current_speed_tx,
-      snapshot.vxlan_rx_bytes, snapshot.vxlan_tx_bytes
+      snapshot.vxlan_rx_bytes, snapshot.vxlan_tx_bytes,
+      snapshot.gps_latitude, snapshot.gps_longitude, snapshot.gps_altitude, snapshot.gps_speed
     ]);
   } catch (err) {
     console.error('Failed to save snapshot to database:', err.message);

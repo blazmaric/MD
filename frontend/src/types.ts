@@ -30,6 +30,10 @@ export interface Snapshot {
   current_speed_tx?: number;
   vxlan_rx_bytes?: number;
   vxlan_tx_bytes?: number;
+  gps_latitude?: number;
+  gps_longitude?: number;
+  gps_altitude?: number;
+  gps_speed?: number;
 }
 
 export interface Log {

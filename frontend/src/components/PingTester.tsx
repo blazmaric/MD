@@ -26,7 +26,7 @@ export default function PingTester() {
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6">Ping Tester</h3>
+      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6">🏓 Ping Tester</h3>
 
       <form onSubmit={handlePing} className="space-y-4">
         <div>

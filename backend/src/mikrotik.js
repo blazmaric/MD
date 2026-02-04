@@ -244,17 +244,34 @@ export async function disconnectWirelessClient(clientId) {
 
 export async function scanWifi(interfaceName) {
   try {
+    const interfaces = await mtFetch('/rest/interface/wireless?.proplist=.id,name');
+    const targetInterface = interfaces.find(iface => iface.name === interfaceName);
+
+    if (!targetInterface) {
+      throw new Error(`Interface ${interfaceName} not found`);
+    }
+
     const result = await mtFetch('/rest/interface/wireless/scan', {
       method: 'POST',
       body: JSON.stringify({
-        numbers: interfaceName,
-        duration: 5
+        '.id': targetInterface['.id'],
+        'duration': '5s'
       })
     });
     return result;
   } catch (err) {
     console.error('Failed to scan WiFi:', err.message);
     throw err;
+  }
+}
+
+export async function getGpsStatus() {
+  try {
+    const result = await mtFetch('/rest/system/gps');
+    return result[0] || null;
+  } catch (err) {
+    console.error('Failed to get GPS status:', err.message);
+    return null;
   }
 }
 

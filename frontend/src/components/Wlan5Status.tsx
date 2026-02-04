@@ -44,7 +44,7 @@ export default function Wlan5Status() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wifi className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">WLAN 5 GHz</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">📡 WLAN 5 GHz</h3>
           </div>
           <div className="flex items-center gap-3">
             <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
