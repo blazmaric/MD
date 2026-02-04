@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Power, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { User, Snapshot } from '../types';
@@ -62,24 +62,12 @@ export default function Dashboard({ user }: DashboardProps) {
     <div className="space-y-6">
       {hasPermission('view_summary') && (
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t('systemStatus')}</h2>
-            {hasPermission('admin_all') && (
-              <button
-                onClick={() => setShowRebootDialog(true)}
-                className="px-4 py-2 bg-red-600 dark:bg-red-500 text-white rounded-lg font-medium hover:bg-red-700 dark:hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transition-colors flex items-center gap-2"
-              >
-                <Power className="w-4 h-4" />
-                {t('rebootMikrotik')}
-              </button>
-            )}
-          </div>
           {error && (
             <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
               {error}
             </div>
           )}
-          <SummaryCards snapshot={snapshot} />
+          <SummaryCards snapshot={snapshot} onReboot={hasPermission('admin_all') ? () => setShowRebootDialog(true) : undefined} />
         </div>
       )}
 
@@ -96,31 +84,19 @@ export default function Dashboard({ user }: DashboardProps) {
       )}
 
       {hasPermission('view_traffic') && (
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">{t('traffic')}</h2>
-          <TrafficChart />
-        </div>
+        <TrafficChart />
       )}
 
       {hasPermission('use_ping') && (
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">{t('pingTester')}</h2>
-          <PingTester />
-        </div>
+        <PingTester />
       )}
 
       {hasPermission('view_sms') && (
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">{t('sms')}</h2>
-          <SmsManager />
-        </div>
+        <SmsManager />
       )}
 
       {hasPermission('view_logs') && (
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">{t('logs')}</h2>
-          <LogViewer />
-        </div>
+        <LogViewer />
       )}
 
       {!hasPermission('view_summary') && !hasPermission('view_logs') && !hasPermission('view_traffic') && !hasPermission('use_ping') && (
