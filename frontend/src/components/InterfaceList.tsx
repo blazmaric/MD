@@ -31,11 +31,13 @@ export default function InterfaceList() {
     try {
       const data = await api.interfaces.list();
       const filteredInterfaces = (data.interfaces || []).filter((iface: Interface) =>
-        iface.name.match(/^ether[1-5]$/)
+        iface.name.match(/^ether[1-4]/)
       );
       setInterfaces(filteredInterfaces.sort((a: Interface, b: Interface) => {
-        const aNum = parseInt(a.name.replace('ether', ''));
-        const bNum = parseInt(b.name.replace('ether', ''));
+        const aMatch = a.name.match(/^ether(\d+)/);
+        const bMatch = b.name.match(/^ether(\d+)/);
+        const aNum = aMatch ? parseInt(aMatch[1]) : 0;
+        const bNum = bMatch ? parseInt(bMatch[1]) : 0;
         return aNum - bNum;
       }));
     } catch (err) {
