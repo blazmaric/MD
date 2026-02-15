@@ -111,7 +111,7 @@ export default function WiFiScanner({ snapshot }: WiFiScannerProps) {
                     {network.security && <Lock className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Channel: {network.channel} | Frequency: {network.frequency} | Signal: {network['signal-strength']} dBm
+                    {network.address} | Ch: {network.channel} | Signal: {network.signal} dBm
                   </div>
                 </div>
                 {selectedSsid === network.ssid && (

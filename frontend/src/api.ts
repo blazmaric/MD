@@ -74,7 +74,10 @@ export const api = {
 
   system: {
     reboot: () =>
-      apiFetch('/system/reboot', { method: 'POST' }),
+      apiFetch('/system/reboot', {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }),
   },
 
   sms: {

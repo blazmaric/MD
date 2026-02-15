@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Network, RefreshCw, Wifi, Activity } from 'lucide-react';
+import { Network, RefreshCw } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 
@@ -31,9 +31,9 @@ export default function InterfaceList() {
     try {
       const data = await api.interfaces.list();
       const filteredInterfaces = (data.interfaces || []).filter((iface: Interface) =>
-        iface.name.startsWith('ether') || iface.name.startsWith('lte') || iface.name.startsWith('wlan')
+        iface.name.match(/^ether[1-5]$/)
       );
-      setInterfaces(filteredInterfaces);
+      setInterfaces(filteredInterfaces.sort((a: Interface, b: Interface) => a.name.localeCompare(b.name)));
     } catch (err) {
       console.error('Failed to fetch interfaces:', err);
     } finally {
@@ -59,45 +59,36 @@ export default function InterfaceList() {
     return t('down');
   }
 
-  function getInterfaceIcon(name: string) {
-    if (name.startsWith('wlan')) return <Wifi className="w-4 h-4" />;
-    if (name.startsWith('lte')) return <Activity className="w-4 h-4" />;
-    return <Network className="w-4 h-4" />;
-  }
-
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
-      <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-          <Network className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <Network className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           {t('interfaceStatus')}
         </h3>
         <button
           onClick={fetchInterfaces}
           disabled={loading}
-          className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg disabled:opacity-50 transition-colors"
+          className="p-1.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg disabled:opacity-50 transition-colors"
           title={t('refresh')}
         >
-          <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
-      <div className="p-4 sm:p-6">
-        <div className="space-y-2">
+      <div className="p-3">
+        <div className="space-y-1.5">
           {interfaces.map((iface) => (
             <div
               key={iface['.id']}
-              className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600"
+              className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-700/50 rounded border border-slate-200 dark:border-slate-600"
             >
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${getStatusColor(iface)} animate-pulse`} />
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 min-w-0">
-                  {getInterfaceIcon(iface.name)}
-                  <span className="font-semibold text-slate-900 dark:text-slate-100 truncate">{iface.name}</span>
-                </div>
+              <div className="flex items-center gap-2 min-w-0">
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusColor(iface)}`} />
+                <span className="font-medium text-sm text-slate-900 dark:text-slate-100">{iface.name}</span>
               </div>
 
-              <span className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ml-2 ${getStatusBadge(iface)}`}>
+              <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${getStatusBadge(iface)}`}>
                 {getStatusText(iface)}
               </span>
             </div>
@@ -105,7 +96,7 @@ export default function InterfaceList() {
         </div>
 
         {interfaces.length === 0 && !loading && (
-          <p className="text-center py-8 text-slate-600 dark:text-slate-400">{t('noInterfacesFound')}</p>
+          <p className="text-center py-6 text-sm text-slate-600 dark:text-slate-400">{t('noInterfacesFound')}</p>
         )}
       </div>
     </div>

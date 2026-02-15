@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { MapPin, Navigation, Satellite, Mountain, Gauge } from 'lucide-react';
+import { MapPin, Satellite, Mountain, Gauge } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
 import L from 'leaflet';
@@ -20,7 +20,7 @@ interface GpsMapProps {
 function MapUpdater({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
   useEffect(() => {
-    map.setView([lat, lng], 13);
+    map.setView([lat, lng], 16);
   }, [lat, lng, map]);
   return null;
 }
@@ -28,13 +28,6 @@ function MapUpdater({ lat, lng }: { lat: number; lng: number }) {
 export default function GpsMap({ snapshot }: GpsMapProps) {
   const { t } = useLanguage();
   const hasGps = snapshot?.gps_valid && snapshot?.gps_latitude && snapshot?.gps_longitude;
-
-  const openInMaps = () => {
-    if (hasGps) {
-      const url = `https://www.google.com/maps?q=${snapshot.gps_latitude},${snapshot.gps_longitude}`;
-      window.open(url, '_blank');
-    }
-  };
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
@@ -75,7 +68,7 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
             <div className="h-64 rounded-lg overflow-hidden border-2 border-green-200 dark:border-green-800 shadow-lg">
               <MapContainer
                 center={[snapshot.gps_latitude!, snapshot.gps_longitude!]}
-                zoom={13}
+                zoom={16}
                 className="h-full w-full"
                 zoomControl={true}
               >
@@ -154,14 +147,6 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                 {t('fix')}: {snapshot.gps_datetime_fix}
               </div>
             )}
-
-            <button
-              onClick={openInMaps}
-              className="w-full px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 dark:from-green-500 dark:to-emerald-500 dark:hover:from-green-600 dark:hover:to-emerald-600 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-            >
-              <Navigation className="w-4 h-4" />
-              {t('openInMaps')}
-            </button>
           </div>
         )}
       </div>

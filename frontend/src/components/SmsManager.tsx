@@ -64,40 +64,40 @@ export default function SmsManager() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-slate-700">
-        <div className="p-6">
-          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 uppercase">{t('smsReceived')}</h4>
-          <div className="space-y-3 max-h-[420px] overflow-y-auto">
+        <div className="p-4">
+          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 uppercase">{t('smsReceived')}</h4>
+          <div className="space-y-2 max-h-[240px] overflow-y-auto">
             {messages.length === 0 ? (
-              <p className="text-center py-8 text-sm text-slate-600 dark:text-slate-400">{t('noMessages')}</p>
+              <p className="text-center py-6 text-sm text-slate-600 dark:text-slate-400">{t('noMessages')}</p>
             ) : (
-              messages.slice(0, 4).map((msg) => (
-                <div key={msg['.id']} className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">{msg.phone}</span>
+              messages.slice(0, 2).map((msg) => (
+                <div key={msg['.id']} className="p-2.5 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">{msg.phone}</span>
                     <span className="text-xs text-slate-500 dark:text-slate-400">{msg.timestamp}</span>
                   </div>
                   <p className="text-sm text-slate-700 dark:text-slate-300">{msg.message}</p>
                 </div>
               ))
             )}
-            {messages.length > 4 && (
-              <p className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2">
-                {messages.length - 4} {t('moreMessages')}
+            {messages.length > 2 && (
+              <p className="text-center text-xs text-slate-500 dark:text-slate-400 pt-1">
+                +{messages.length - 2} {t('moreMessages')}
               </p>
             )}
           </div>
         </div>
 
-        <div className="p-6">
-          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 uppercase">{t('smsSendLabel')}</h4>
-          <form onSubmit={handleSend} className="space-y-4">
+        <div className="p-4">
+          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 uppercase">{t('smsSendLabel')}</h4>
+          <form onSubmit={handleSend} className="space-y-3">
             <div>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+386"
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                 required
               />
             </div>
@@ -106,9 +106,9 @@ export default function SmsManager() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder={t('messagePlaceholder')}
-                rows={6}
+                rows={3}
                 maxLength={160}
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
+                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
                 required
               />
             </div>

@@ -264,20 +264,33 @@ export async function scanWifi(interfaceName) {
     const result = await mtFetch('/rest/interface/wireless/scan', {
       method: 'POST',
       body: JSON.stringify({
-        numbers: targetInterface['.id'],
-        duration: '10s'
+        '.id': targetInterface['.id'],
+        'rounds': '1'
       })
     });
 
     console.log(`WiFi scan completed, found ${result.length} networks`);
 
-    const mapped = result.map(network => ({
+    const filtered = result.filter(network => network.ssid && network.ssid !== '');
+
+    const grouped = filtered.reduce((acc, network) => {
+      const addr = network.address;
+      if (!acc[addr] || parseInt(network.sig || '0', 10) > parseInt(acc[addr].sig || '0', 10)) {
+        acc[addr] = network;
+      }
+      return acc;
+    }, {});
+
+    const mapped = Object.values(grouped).map(network => ({
       ssid: network.ssid || '',
-      signal: parseInt(network['signal-strength'] || '0', 10),
-      frequency: parseInt(network.frequency || '0', 10),
+      address: network.address || '',
+      signal: parseInt(network.sig || '0', 10),
       channel: network.channel || '',
+      frequency: parseInt(network.frequency || '0', 10),
       security: network.security || ''
     }));
+
+    mapped.sort((a, b) => b.signal - a.signal);
 
     return mapped;
   } catch (err) {

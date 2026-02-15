@@ -72,8 +72,9 @@ export interface SmsMessage {
 
 export interface WiFiNetwork {
   ssid: string;
-  'signal-strength': number;
-  frequency: string;
+  address: string;
+  signal: number;
+  frequency: number;
   channel: string;
   security: string;
 }

@@ -3,7 +3,13 @@ import { rebootSystem } from '../mikrotik.js';
 
 export default async function systemRoutes(fastify) {
   fastify.post('/system/reboot', {
-    preHandler: [authenticateMiddleware, requirePermission('system_reboot', 'admin_all')]
+    preHandler: [authenticateMiddleware, requirePermission('system_reboot', 'admin_all')],
+    schema: {
+      body: {
+        type: 'object',
+        additionalProperties: true
+      }
+    }
   }, async (request, reply) => {
     try {
       const result = await rebootSystem();
