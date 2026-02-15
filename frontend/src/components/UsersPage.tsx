@@ -1,15 +1,26 @@
 import { useState, useEffect } from 'react';
-import { UserPlus, Edit, Trash2, Shield } from 'lucide-react';
+import { UserPlus, Edit, Trash2, Shield, Ban } from 'lucide-react';
 import { api } from '../api';
 import type { User } from '../types';
 
 const AVAILABLE_PERMISSIONS = [
-  { value: 'view_summary', label: 'View Summary' },
-  { value: 'view_logs', label: 'View Logs' },
-  { value: 'view_traffic', label: 'View Traffic' },
-  { value: 'use_ping', label: 'Use Ping' },
-  { value: 'manage_users', label: 'Manage Users' },
-  { value: 'admin_all', label: 'Admin (All Permissions)' },
+  { value: 'admin_all', label: 'Admin (All Permissions)', group: 'Admin' },
+  { value: 'view_system_status', label: 'View System Status Card', group: 'Dashboard' },
+  { value: 'view_lte_status', label: 'View LTE Status Card', group: 'Dashboard' },
+  { value: 'view_wlan_status', label: 'View WLAN 2.4 Status Card', group: 'Dashboard' },
+  { value: 'view_wlan5_status', label: 'View WLAN 5 Status Card', group: 'Dashboard' },
+  { value: 'view_wlan5_clients', label: 'View WLAN5 Clients', group: 'Dashboard' },
+  { value: 'view_interface_list', label: 'View Interface List', group: 'Dashboard' },
+  { value: 'view_summary_cards', label: 'View Summary Cards (Usage & Speed)', group: 'Dashboard' },
+  { value: 'view_gps', label: 'View GPS Location', group: 'Dashboard' },
+  { value: 'view_traffic', label: 'View Traffic Chart', group: 'Features' },
+  { value: 'view_logs', label: 'View System Logs', group: 'Features' },
+  { value: 'view_sms', label: 'View SMS Inbox', group: 'Features' },
+  { value: 'send_sms', label: 'Send & Delete SMS', group: 'Features' },
+  { value: 'use_ping', label: 'Use Ping Tester', group: 'Features' },
+  { value: 'manage_wifi', label: 'Manage WiFi (Scan & Connect)', group: 'Features' },
+  { value: 'manage_users', label: 'Manage Users', group: 'Admin' },
+  { value: 'system_reboot', label: 'System Reboot', group: 'Admin' },
 ];
 
 export default function UsersPage() {
@@ -81,8 +92,21 @@ export default function UsersPage() {
     }
   }
 
-  async function handleDelete(user: User) {
+  async function handleDisable(user: User) {
     if (!confirm(`Are you sure you want to disable user "${user.username}"?`)) {
+      return;
+    }
+
+    try {
+      await api.users.disable(user.id);
+      fetchUsers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to disable user');
+    }
+  }
+
+  async function handleDelete(user: User) {
+    if (!confirm(`Are you sure you want to PERMANENTLY DELETE user "${user.username}"? This action cannot be undone!`)) {
       return;
     }
 
@@ -182,18 +206,31 @@ export default function UsersPage() {
                     {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => openEditModal(user)}
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-4"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(user)}
-                      className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        onClick={() => openEditModal(user)}
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
+                        title="Edit user"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      {user.is_active ? (
+                        <button
+                          onClick={() => handleDisable(user)}
+                          className="text-orange-600 dark:text-orange-400 hover:text-orange-900 dark:hover:text-orange-300"
+                          title="Disable user"
+                        >
+                          <Ban className="w-4 h-4" />
+                        </button>
+                      ) : null}
+                      <button
+                        onClick={() => handleDelete(user)}
+                        className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                        title="Permanently delete user"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -242,20 +279,27 @@ export default function UsersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                     Permissions
                   </label>
-                  <div className="space-y-2">
-                    {AVAILABLE_PERMISSIONS.map((perm) => (
-                      <label key={perm.value} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={formData.permissions.includes(perm.value)}
-                          onChange={() => togglePermission(perm.value)}
-                          className="w-4 h-4 text-blue-600 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500"
-                        />
-                        <span className="ml-2 text-sm text-slate-700 dark:text-slate-300">{perm.label}</span>
-                      </label>
+                  <div className="space-y-4">
+                    {['Admin', 'Dashboard', 'Features'].map((group) => (
+                      <div key={group}>
+                        <h4 className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-2">{group}</h4>
+                        <div className="space-y-2 pl-2">
+                          {AVAILABLE_PERMISSIONS.filter(p => p.group === group).map((perm) => (
+                            <label key={perm.value} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={formData.permissions.includes(perm.value)}
+                                onChange={() => togglePermission(perm.value)}
+                                className="w-4 h-4 text-blue-600 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500"
+                              />
+                              <span className="ml-2 text-sm text-slate-700 dark:text-slate-300">{perm.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>

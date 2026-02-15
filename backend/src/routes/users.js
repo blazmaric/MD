@@ -98,16 +98,30 @@ export default async function usersRoutes(fastify) {
     preHandler: [authenticateMiddleware, requirePermission('manage_users')]
   }, async (request, reply) => {
     const { id } = request.params;
+    const { permanent = false } = request.query;
 
-    const result = await query(
-      'UPDATE users SET is_active = false WHERE id = $1 RETURNING id',
-      [id]
-    );
+    if (permanent === 'true') {
+      const result = await query(
+        'DELETE FROM users WHERE id = $1 RETURNING id',
+        [id]
+      );
 
-    if (result.rows.length === 0) {
-      return reply.code(404).send({ error: 'User not found' });
+      if (result.rows.length === 0) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
+      return { success: true, message: 'User permanently deleted' };
+    } else {
+      const result = await query(
+        'UPDATE users SET is_active = false WHERE id = $1 RETURNING id',
+        [id]
+      );
+
+      if (result.rows.length === 0) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
+      return { success: true, message: 'User disabled' };
     }
-
-    return { success: true };
   });
 }

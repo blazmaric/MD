@@ -132,8 +132,11 @@ export const api = {
         body: JSON.stringify(data),
       }),
 
-    delete: (id: string) =>
+    disable: (id: string) =>
       apiFetch(`/users/${id}`, { method: 'DELETE' }),
+
+    delete: (id: string) =>
+      apiFetch(`/users/${id}?permanent=true`, { method: 'DELETE' }),
   },
 
   layout: {

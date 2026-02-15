@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Activity } from 'lucide-react';
+import { Activity, X } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 
@@ -25,6 +25,11 @@ export default function PingTester() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleClear() {
+    setResult(null);
+    setError('');
   }
 
   return (
@@ -92,10 +97,22 @@ export default function PingTester() {
         )}
 
         {result && (
-          <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-700 rounded-lg">
-            <pre className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap font-mono">
-              {typeof result === 'string' ? result : JSON.stringify(result, null, 2)}
-            </pre>
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t('pingResults')}</h4>
+              <button
+                onClick={handleClear}
+                className="p-1.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                title="Clear results"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 bg-slate-50 dark:bg-slate-700 rounded-lg max-h-80 overflow-y-auto">
+              <pre className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap font-mono break-all">
+                {typeof result === 'string' ? result : JSON.stringify(result, null, 2)}
+              </pre>
+            </div>
           </div>
         )}
       </div>
