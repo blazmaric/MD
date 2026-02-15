@@ -46,17 +46,17 @@ export default function InterfaceList() {
   }
 
   function getStatusText(iface: Interface): string {
-    if (iface.disabled === 'true') return 'NEAKTIVNO';
-    if (iface.running === 'true') return 'AKTIVNO';
-    return 'NEAKTIVNO';
+    if (iface.disabled === 'true') return t('disabled');
+    if (iface.running === 'true') return t('up');
+    return t('down');
   }
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-          <Network className="w-5 h-5" />
-          🔌 Stanje vmesnikov
+          <Network className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          {t('interfaceStatus')}
         </h3>
         <button
           onClick={fetchInterfaces}

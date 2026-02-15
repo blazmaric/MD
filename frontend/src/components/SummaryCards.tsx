@@ -1,4 +1,4 @@
-import { Power, AlertCircle } from 'lucide-react';
+import { Power, AlertCircle, TrendingUp, Zap, Server } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
 
@@ -69,90 +69,89 @@ export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) 
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6">📊 Poraba & Hitrost</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-800 dark:to-slate-800 rounded-xl shadow-lg border border-blue-100 dark:border-slate-700 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-blue-600 rounded-lg">
+              <TrendingUp className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('usageAndSpeed')}</h3>
+          </div>
 
           <div className="space-y-6">
             <div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 uppercase">SKUPNA PORABA (VXLAN)</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 uppercase font-medium">{t('totalUsageVxlan')}</p>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Prejeto</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('received')}</p>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                     {formatBytes(snapshot.vxlan_rx_bytes)}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Poslano</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('transmitted')}</p>
+                  <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
                     {formatBytes(snapshot.vxlan_tx_bytes)}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 uppercase">TRENUTNA HITROST (AKTIVNI WAN)</p>
+            <div className="border-t border-blue-200 dark:border-slate-700 pt-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <p className="text-sm text-slate-600 dark:text-slate-400 uppercase font-medium">{t('currentSpeedWan')}</p>
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Download</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('download')}</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                     {formatSpeed(snapshot.current_speed_rx)}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Upload</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('upload')}</p>
+                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                     {formatSpeed(snapshot.current_speed_tx)}
                   </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 uppercase">KVALITETA POVEZAVE (DO GATEWAYA)</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Latenca</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">25 ms</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Jitter</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">3 ms</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6">💻 Sistem & Viri</h3>
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-slate-600 rounded-lg">
+              <Server className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('systemResources')}</h3>
+          </div>
 
           <div className="space-y-4">
-            <div>
+            <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Javni IP: <span className="font-normal">{snapshot.public_ip || 'N/A'}</span>
+                {t('publicIp')}: <span className="font-normal text-slate-600 dark:text-slate-300">{snapshot.public_ip || 'N/A'}</span>
               </p>
             </div>
 
-            <div>
+            <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Delovanje: <span className="font-normal">{formatUptime(snapshot.system_uptime)}</span>
+                {t('uptime')}: <span className="font-normal text-slate-600 dark:text-slate-300">{formatUptime(snapshot.system_uptime)}</span>
               </p>
             </div>
 
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-4">
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-slate-900 dark:text-slate-100">CPU</span>
-                  <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{t('cpu')}</span>
+                  <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
                     {snapshot.system_cpu_percent != null ? Number(snapshot.system_cpu_percent).toFixed(0) : '0'}%
                   </span>
                 </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
                   <div
-                    className="bg-yellow-500 h-2 rounded-full transition-all"
+                    className="bg-gradient-to-r from-amber-400 to-amber-600 h-3 rounded-full transition-all duration-300"
                     style={{ width: `${snapshot.system_cpu_percent || 0}%` }}
                   ></div>
                 </div>
@@ -160,14 +159,14 @@ export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) 
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-slate-900 dark:text-slate-100">Pomnilnik</span>
-                  <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{t('memory')}</span>
+                  <span className="text-sm font-bold text-teal-600 dark:text-teal-400">
                     {snapshot.system_ram_percent != null ? Number(snapshot.system_ram_percent).toFixed(0) : '0'}%
                   </span>
                 </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
                   <div
-                    className="bg-teal-500 h-2 rounded-full transition-all"
+                    className="bg-gradient-to-r from-teal-400 to-teal-600 h-3 rounded-full transition-all duration-300"
                     style={{ width: `${snapshot.system_ram_percent || 0}%` }}
                   ></div>
                 </div>
@@ -178,10 +177,10 @@ export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) 
               <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                 <button
                   onClick={onReboot}
-                  className="w-full px-6 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                  className="w-full px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 >
                   <Power className="w-5 h-5" />
-                  Ponovno zaženi
+                  {t('rebootButton')}
                 </button>
               </div>
             )}
