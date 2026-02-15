@@ -112,6 +112,9 @@ export const api = {
 
     disconnectClient: (clientId: string) =>
       apiFetch(`/wifi/client/${clientId}`, { method: 'DELETE' }),
+
+    wlan5Status: () =>
+      apiFetch('/wifi/wlan5/status'),
   },
 
   interfaces: {

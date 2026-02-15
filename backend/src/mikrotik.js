@@ -65,7 +65,6 @@ export async function getDefaultRoute() {
 export async function getCloudStatus() {
   try {
     const result = await mtFetch('/rest/ip/cloud');
-    console.log('Cloud status result:', JSON.stringify(result, null, 2));
     return result[0] || null;
   } catch (err) {
     console.error('Failed to get cloud status:', err.message);
@@ -169,7 +168,6 @@ export async function ping(address, count = 4, sourceInterface = null) {
     }
 
     const results = await response.json();
-    console.log('Ping raw results:', JSON.stringify(results, null, 2));
 
     const parsed = results.map((result, index) => {
       const timeMatch = result.time?.match(/(\d+)ms/) || result['avg-rtt']?.match(/(\d+)ms/);
@@ -250,16 +248,11 @@ export async function sendSms(phoneNumber, message, port = 'lte1') {
 export async function getWirelessRegistrationTable(interfaceName) {
   try {
     const clients = await mtFetch(`/rest/interface/wireless/registration-table?interface=${interfaceName}`);
-    console.log(`Registration table for ${interfaceName}:`, JSON.stringify(clients, null, 2));
 
-    // Get the wireless interface info to get SSID
     const interfaces = await mtFetch('/rest/interface/wireless');
     const targetInterface = interfaces.find(iface => iface.name === interfaceName);
     const ssid = targetInterface?.ssid || 'N/A';
 
-    console.log(`Interface ${interfaceName} SSID:`, ssid);
-
-    // Enrich clients with SSID from interface
     return clients.map(client => ({
       ...client,
       ssid: ssid
@@ -291,8 +284,6 @@ export async function scanWifi(interfaceName) {
       throw new Error(`Wireless interface '${interfaceName}' not found. Available interfaces: ${interfaces.map(i => i.name).join(', ')}`);
     }
 
-    console.log(`Starting WiFi scan on interface ${interfaceName} (${targetInterface['.id']})`);
-
     const result = await mtFetch('/rest/interface/wireless/scan', {
       method: 'POST',
       body: JSON.stringify({
@@ -301,11 +292,7 @@ export async function scanWifi(interfaceName) {
       })
     });
 
-    console.log(`WiFi scan raw result:`, JSON.stringify(result, null, 2));
-    console.log(`WiFi scan completed, found ${result.length} networks`);
-
     const filtered = result.filter(network => network.ssid && network.ssid !== '');
-    console.log(`After filtering empty SSIDs: ${filtered.length} networks`);
 
     const grouped = filtered.reduce((acc, network) => {
       const addr = network.address;
@@ -326,11 +313,59 @@ export async function scanWifi(interfaceName) {
 
     mapped.sort((a, b) => b.signal - a.signal);
 
-    console.log(`Final mapped networks: ${mapped.length}`);
     return mapped;
   } catch (err) {
     console.error('Failed to scan WiFi:', err.message, err.stack);
     throw err;
+  }
+}
+
+export async function getWlan5Status() {
+  try {
+    const interfaces = await mtFetch('/rest/interface/wireless');
+    const wlan5Interface = interfaces.find(iface => iface.name === 'wlan5');
+
+    if (!wlan5Interface) {
+      return null;
+    }
+
+    const monitorResult = await mtFetch('/rest/interface/wireless/monitor', {
+      method: 'POST',
+      body: JSON.stringify({
+        '.id': wlan5Interface['.id'],
+        once: 'true'
+      })
+    });
+
+    const monitor = monitorResult[0] || {};
+
+    const [rxByte1, txByte1] = [wlan5Interface['rx-byte'], wlan5Interface['tx-byte']];
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const interfacesAfter = await mtFetch('/rest/interface/wireless');
+    const wlan5After = interfacesAfter.find(iface => iface.name === 'wlan5');
+    const [rxByte2, txByte2] = [wlan5After['rx-byte'], wlan5After['tx-byte']];
+
+    const rxMbps = ((parseInt(rxByte2) - parseInt(rxByte1)) * 8) / 1000000;
+    const txMbps = ((parseInt(txByte2) - parseInt(txByte1)) * 8) / 1000000;
+
+    return {
+      ...wlan5Interface,
+      ssid: wlan5Interface.ssid || 'N/A',
+      authenticatedClients: parseInt(monitor['authenticated-clients'] || '0'),
+      registeredClients: parseInt(monitor['registered-clients'] || '0'),
+      channel: monitor.channel || 'N/A',
+      noiseFloor: monitor['noise-floor'] || 'N/A',
+      ccq: monitor['overall-tx-ccq'] || 'N/A',
+      status: monitor.status || 'N/A',
+      wirelessProtocol: monitor['wireless-protocol'] || 'N/A',
+      wmmEnabled: monitor['wmm-enabled'] === 'true',
+      rxMbps: rxMbps.toFixed(2),
+      txMbps: txMbps.toFixed(2)
+    };
+  } catch (err) {
+    console.error('Failed to get WLAN 5 status:', err.message);
+    return null;
   }
 }
 

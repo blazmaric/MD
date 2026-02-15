@@ -3,21 +3,25 @@ import { Wifi, RefreshCw } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 
-interface Wlan5Interface {
-  '.id': string;
-  name: string;
-  ssid?: string;
-  frequency?: string;
-  'channel-width'?: string;
-  'tx-power'?: string;
+interface Wlan5Status {
+  ssid: string;
+  authenticatedClients: number;
+  registeredClients: number;
+  channel: string;
+  noiseFloor: string;
+  ccq: string;
+  status: string;
+  wirelessProtocol: string;
+  wmmEnabled: boolean;
+  rxMbps: string;
+  txMbps: string;
   disabled?: string;
   running?: string;
 }
 
 export default function Wlan5Status() {
   const { t } = useLanguage();
-  const [wlan5Info, setWlan5Info] = useState<Wlan5Interface | null>(null);
-  const [clientCount, setClientCount] = useState(0);
+  const [wlan5Info, setWlan5Info] = useState<Wlan5Status | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -29,14 +33,8 @@ export default function Wlan5Status() {
   async function fetchWlan5Info() {
     setLoading(true);
     try {
-      const [interfaceData, clientsData] = await Promise.all([
-        api.interfaces.listAll(),
-        api.wifi.registrationTable('wlan5')
-      ]);
-
-      const wlan5 = interfaceData.interfaces?.find((iface: Wlan5Interface) => iface.name === 'wlan5');
-      setWlan5Info(wlan5 || null);
-      setClientCount(clientsData.clients?.length || 0);
+      const data = await api.wifi.wlan5Status();
+      setWlan5Info(data.status);
     } catch (err) {
       console.error('Failed to fetch WLAN 5 info:', err);
     } finally {
@@ -79,29 +77,59 @@ export default function Wlan5Status() {
         {!wlan5Info ? (
           <p className="text-center text-slate-600 dark:text-slate-400">{t('loading')}</p>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
               <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">SSID</p>
-              <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                {wlan5Info.ssid || 'N/A'}
+              <p className="text-base font-bold text-blue-600 dark:text-blue-400">
+                {wlan5Info.ssid}
               </p>
             </div>
             <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
               <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">{t('connectedClients')}</p>
-              <p className="text-lg font-bold text-sky-600 dark:text-sky-400">
-                {clientCount}
+              <p className="text-base font-bold text-sky-600 dark:text-sky-400">
+                {wlan5Info.authenticatedClients}
               </p>
             </div>
             <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
-              <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">{t('frequencyLabel')}</p>
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                {wlan5Info.frequency ? `${wlan5Info.frequency} MHz` : 'N/A'}
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">Status</p>
+              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                {wlan5Info.status}
               </p>
             </div>
             <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
-              <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">{t('channelWidth')}</p>
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                {wlan5Info['channel-width'] || 'N/A'}
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">Channel</p>
+              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                {wlan5Info.channel}
+              </p>
+            </div>
+            <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">Noise Floor</p>
+              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                {wlan5Info.noiseFloor} dBm
+              </p>
+            </div>
+            <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">CCQ</p>
+              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                {wlan5Info.ccq}%
+              </p>
+            </div>
+            <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">RX Speed</p>
+              <p className="text-xs font-semibold text-green-600 dark:text-green-400">
+                {wlan5Info.rxMbps} Mbps
+              </p>
+            </div>
+            <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">TX Speed</p>
+              <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">
+                {wlan5Info.txMbps} Mbps
+              </p>
+            </div>
+            <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">Protocol</p>
+              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                {wlan5Info.wirelessProtocol}
               </p>
             </div>
           </div>
