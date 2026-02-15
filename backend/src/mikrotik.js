@@ -262,7 +262,16 @@ export async function scanWifi(interfaceName) {
     });
 
     console.log(`WiFi scan completed, found ${result.length} networks`);
-    return result;
+
+    const mapped = result.map(network => ({
+      ssid: network.ssid || '',
+      signal: parseInt(network['signal-strength'] || '0', 10),
+      frequency: parseInt(network.frequency || '0', 10),
+      channel: network.channel || '',
+      security: network.security || ''
+    }));
+
+    return mapped;
   } catch (err) {
     console.error('Failed to scan WiFi:', err.message);
     throw err;

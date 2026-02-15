@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { Search, AlertCircle, AlertTriangle, Info, FileText } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { Log } from '../types';
@@ -73,15 +73,27 @@ export default function LogViewer() {
 
   function getSeverityColor(sev: string): string {
     switch (sev) {
-      case 'error': return 'text-red-600 bg-red-50';
-      case 'warning': return 'text-yellow-600 bg-yellow-50';
-      default: return 'text-blue-600 bg-blue-50';
+      case 'error': return 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30 border-red-200 dark:border-red-800';
+      case 'warning': return 'text-yellow-700 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800';
+      default: return 'text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800';
+    }
+  }
+
+  function getSeverityIcon(sev: string) {
+    switch (sev) {
+      case 'error': return <AlertCircle className="w-4 h-4" />;
+      case 'warning': return <AlertTriangle className="w-4 h-4" />;
+      default: return <Info className="w-4 h-4" />;
     }
   }
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
-      <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+      <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex items-center gap-3 mb-4">
+          <FileText className="w-6 h-6 text-slate-600 dark:text-slate-400" />
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{t('logs')}</h3>
+        </div>
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -155,30 +167,32 @@ export default function LogViewer() {
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
               {logs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
-                  <td className="px-2 md:px-4 py-3 whitespace-nowrap text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                    <div className="min-w-[100px] md:min-w-[140px]">
+                <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                    <div className="font-mono">
                       {new Date(log.log_time).toLocaleString('sl-SI', {
                         day: '2-digit',
                         month: '2-digit',
                         year: '2-digit',
                         hour: '2-digit',
-                        minute: '2-digit'
+                        minute: '2-digit',
+                        second: '2-digit'
                       })}
                     </div>
                   </td>
-                  <td className="px-2 md:px-4 py-3 whitespace-nowrap text-xs md:text-sm">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-300">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm">
+                    <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
                       {log.category}
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-3 whitespace-nowrap text-xs md:text-sm">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(log.severity)}`}>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${getSeverityColor(log.severity)}`}>
+                      {getSeverityIcon(log.severity)}
                       {log.severity}
                     </span>
                   </td>
-                  <td className="px-2 md:px-4 py-3 text-xs md:text-sm text-slate-900 dark:text-slate-100 max-w-[200px] md:max-w-none">
-                    <div className="break-words">
+                  <td className="px-4 py-4 text-sm text-slate-900 dark:text-slate-100">
+                    <div className="break-words max-w-2xl">
                       {log.message}
                     </div>
                   </td>
