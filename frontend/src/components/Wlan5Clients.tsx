@@ -31,6 +31,7 @@ export default function Wlan5Clients() {
     setLoading(true);
     try {
       const data = await api.wifi.registrationTable('wlan5');
+      console.log('Wlan5 Clients Data:', data.clients);
       setClients(data.clients || []);
     } catch (err) {
       console.error('Failed to fetch wireless clients:', err);
