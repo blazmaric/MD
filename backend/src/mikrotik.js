@@ -138,9 +138,9 @@ export async function getLogs() {
   }
 }
 
-export async function ping(address, count = 4, sourceInterface = null) {
+export async function ping(address, count = 3, sourceInterface = null) {
   const controller = new AbortController();
-  const pingTimeout = 30000; // 30 seconds for ping
+  const pingTimeout = 10000; // 10 seconds for ping
   const timeout = setTimeout(() => controller.abort(), pingTimeout);
 
   try {
@@ -171,7 +171,7 @@ export async function ping(address, count = 4, sourceInterface = null) {
   } catch (err) {
     clearTimeout(timeout);
     if (err.name === 'AbortError') {
-      throw new Error('Ping request timeout after 30 seconds');
+      throw new Error('Ping request timeout after 10 seconds');
     }
     console.error('Failed to ping:', err.message);
     throw err;

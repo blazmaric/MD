@@ -91,15 +91,30 @@ export default function Dashboard({ user }: DashboardProps) {
 
       {hasPermission('view_wlan5_clients') && <Wlan5Clients />}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {hasPermission('view_interfaces') && <InterfaceList />}
-        {hasPermission('use_ping') && <PingTester />}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {hasPermission('view_interfaces') && (
+          <div className="w-full">
+            <InterfaceList />
+          </div>
+        )}
+        {hasPermission('use_ping') && (
+          <div className="w-full">
+            <PingTester />
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {hasPermission('view_gps') && <GpsMap snapshot={snapshot} />}
-        {hasPermission('view_sms') && <SmsManager />}
-      </div>
+      {hasPermission('view_gps') && (
+        <div className="w-full">
+          <GpsMap snapshot={snapshot} />
+        </div>
+      )}
+
+      {hasPermission('view_sms') && (
+        <div className="w-full">
+          <SmsManager />
+        </div>
+      )}
 
       {hasPermission('view_logs') && <LogViewer />}
 

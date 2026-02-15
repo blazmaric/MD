@@ -19,7 +19,7 @@ export default function PingTester() {
     setLoading(true);
 
     try {
-      const data = await api.ping.send(address, 4, sourceInterface || undefined);
+      const data = await api.ping.send(address, 3, sourceInterface || undefined);
       setResult(data.result);
       setShowModal(true);
     } catch (err) {

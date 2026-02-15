@@ -31,9 +31,13 @@ export default function InterfaceList() {
     try {
       const data = await api.interfaces.list();
       const filteredInterfaces = (data.interfaces || []).filter((iface: Interface) =>
-        iface.name.match(/^ether[1-5]$/)
+        iface.name.match(/^ether[1-9]$|^ether[1-9][0-9]$/)
       );
-      setInterfaces(filteredInterfaces.sort((a: Interface, b: Interface) => a.name.localeCompare(b.name)));
+      setInterfaces(filteredInterfaces.sort((a: Interface, b: Interface) => {
+        const aNum = parseInt(a.name.replace('ether', ''));
+        const bNum = parseInt(b.name.replace('ether', ''));
+        return aNum - bNum;
+      }));
     } catch (err) {
       console.error('Failed to fetch interfaces:', err);
     } finally {
