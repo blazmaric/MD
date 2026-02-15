@@ -7,12 +7,15 @@ interface WirelessClient {
   '.id': string;
   interface: string;
   'mac-address': string;
+  address?: string;
+  comment?: string;
   'signal-strength': string;
-  'signal-to-noise': string;
+  'signal-to-noise'?: string;
   'tx-rate': string;
   'rx-rate': string;
-  uptime: string;
+  uptime?: string;
   bytes?: string;
+  'last-activity'?: string;
 }
 
 export default function Wlan5Clients() {
@@ -31,7 +34,6 @@ export default function Wlan5Clients() {
     setLoading(true);
     try {
       const data = await api.wifi.registrationTable('wlan5');
-      console.log('Wlan5 Clients Data:', data.clients);
       setClients(data.clients || []);
     } catch (err) {
       console.error('Failed to fetch wireless clients:', err);
@@ -80,16 +82,25 @@ export default function Wlan5Clients() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50">
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
+                  {t('deviceName')}
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
+                  {t('ipAddress')}
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
                   {t('macAddress')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
                   {t('signal')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
                   {t('rxTxSpeed')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
+                  {t('uptime')}
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
                   {t('clientActions')}
                 </th>
               </tr>
@@ -97,20 +108,30 @@ export default function Wlan5Clients() {
             <tbody>
               {clients.map((client) => (
                 <tr key={client['.id']} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                  <td className="px-6 py-4 text-sm font-mono text-slate-900 dark:text-slate-100">
+                  <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
+                    {client.comment || '-'}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-mono text-slate-900 dark:text-slate-100">
+                    {client.address || '-'}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-mono text-slate-700 dark:text-slate-300">
                     {client['mac-address']}
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">
+                  <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
                     {client['signal-strength']} dBm
+                    {client['signal-to-noise'] && ` (${client['signal-to-noise']})`}
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">
+                  <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
                     {client['tx-rate']} / {client['rx-rate']}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
+                    {client.uptime || '-'}
+                  </td>
+                  <td className="px-4 py-3">
                     <button
                       onClick={() => handleDisconnect(client['.id'], client['mac-address'])}
                       disabled={disconnecting === client['.id']}
-                      className="px-4 py-1.5 text-sm text-red-600 dark:text-red-400 border border-red-600 dark:border-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors"
+                      className="px-3 py-1 text-sm text-red-600 dark:text-red-400 border border-red-600 dark:border-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors"
                     >
                       {t('disconnectBtn')}
                     </button>
