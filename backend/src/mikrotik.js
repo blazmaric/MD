@@ -9,10 +9,11 @@ const authHeader = 'Basic ' + Buffer.from(
 
 const httpsAgent = new https.Agent({
   keepAlive: true,
-  keepAliveMsecs: 30000,
-  maxSockets: 5,
-  maxFreeSockets: 2,
+  keepAliveMsecs: 60000,
+  maxSockets: 15,
+  maxFreeSockets: 10,
   timeout: 60000,
+  scheduling: 'lifo',
   checkServerIdentity: (hostname, cert) => {
     return undefined;
   }

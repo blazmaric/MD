@@ -240,7 +240,7 @@ export function startPollers() {
   pollerInterval = setInterval(collectSnapshot, config.polling.summarySeconds * 1000);
 
   collectLogs();
-  logPollerInterval = setInterval(collectLogs, 60 * 1000);
+  logPollerInterval = setInterval(collectLogs, 120 * 1000);
 
   collectTraffic();
   trafficPollerInterval = setInterval(collectTraffic, 300 * 1000);
