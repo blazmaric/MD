@@ -18,6 +18,7 @@ interface Interface {
 export default function InterfaceList() {
   const { t } = useLanguage();
   const [interfaces, setInterfaces] = useState<Interface[]>([]);
+  const [publicIp, setPublicIp] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -31,7 +32,7 @@ export default function InterfaceList() {
     try {
       const data = await api.interfaces.list();
       const filteredInterfaces = (data.interfaces || []).filter((iface: Interface) =>
-        iface.name.match(/^ether[1-4]/)
+        iface.name.match(/^ether\d+/)
       );
       setInterfaces(filteredInterfaces.sort((a: Interface, b: Interface) => {
         const aMatch = a.name.match(/^ether(\d+)/);
@@ -40,6 +41,7 @@ export default function InterfaceList() {
         const bNum = bMatch ? parseInt(bMatch[1]) : 0;
         return aNum - bNum;
       }));
+      setPublicIp(data.publicIp || null);
     } catch (err) {
       console.error('Failed to fetch interfaces:', err);
     } finally {
@@ -96,6 +98,13 @@ export default function InterfaceList() {
       </div>
 
       <div className="p-3">
+        {publicIp && (
+          <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded text-center">
+            <p className="text-xs text-slate-600 dark:text-slate-400 mb-0.5">Public IP</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{publicIp}</p>
+          </div>
+        )}
+
         <div className="space-y-2">
           {interfaces.map((iface) => (
             <div
