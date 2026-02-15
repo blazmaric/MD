@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Users } from 'lucide-react';
 import { api } from '../api';
+import { useLanguage } from '../LanguageContext';
 
 interface WirelessClient {
   '.id': string;
@@ -15,6 +16,7 @@ interface WirelessClient {
 }
 
 export default function Wlan5Clients() {
+  const { t } = useLanguage();
   const [clients, setClients] = useState<WirelessClient[]>([]);
   const [loading, setLoading] = useState(false);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export default function Wlan5Clients() {
   }
 
   async function handleDisconnect(clientId: string, mac: string) {
-    if (!confirm(`Disconnect client ${mac}?`)) return;
+    if (!confirm(`${t('confirmDisconnectClient')} ${mac}?`)) return;
 
     setDisconnecting(clientId);
     try {
@@ -54,43 +56,40 @@ export default function Wlan5Clients() {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-          👥 Povezani klienti (wlan5)
-        </h3>
+        <div className="flex items-center gap-2">
+          <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            {t('wlan5Clients')}
+          </h3>
+        </div>
         <button
           onClick={fetchClients}
           disabled={loading}
           className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg disabled:opacity-50 transition-colors"
-          title="Refresh"
+          title={t('refresh')}
         >
           <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
       {clients.length === 0 ? (
-        <p className="text-center py-8 text-slate-600 dark:text-slate-400">No active clients</p>
+        <p className="text-center py-8 text-slate-600 dark:text-slate-400">{t('noActiveClients')}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700">
+              <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50">
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
-                  MAC Naslov
+                  {t('macAddress')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
-                  IP Naslov
+                  {t('signal')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
-                  Ime naprave
+                  {t('rxTxSpeed')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
-                  Signal
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
-                  RX/TX Hitrost
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">
-                  Akcije
+                  {t('clientActions')}
                 </th>
               </tr>
             </thead>
@@ -99,12 +98,6 @@ export default function Wlan5Clients() {
                 <tr key={client['.id']} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                   <td className="px-6 py-4 text-sm font-mono text-slate-900 dark:text-slate-100">
                     {client['mac-address']}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">
-                    192.168.1.101
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">
-                    Uporabnik-PC
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">
                     {client['signal-strength']} dBm
@@ -118,7 +111,7 @@ export default function Wlan5Clients() {
                       disabled={disconnecting === client['.id']}
                       className="px-4 py-1.5 text-sm text-red-600 dark:text-red-400 border border-red-600 dark:border-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors"
                     >
-                      Prekini
+                      {t('disconnectBtn')}
                     </button>
                   </td>
                 </tr>

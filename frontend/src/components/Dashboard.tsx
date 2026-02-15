@@ -76,6 +76,12 @@ export default function Dashboard({ user }: DashboardProps) {
         </div>
       )}
 
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {hasPermission('view_lte') && <LteStatus snapshot={snapshot} />}
+        {hasPermission('view_wlan24') && <WlanStatus snapshot={snapshot} />}
+        {hasPermission('view_wlan5') && <Wlan5Status />}
+      </div>
+
       {(hasPermission('view_traffic') || hasPermission('view_system')) && (
         <SummaryCards
           snapshot={snapshot}
@@ -83,23 +89,18 @@ export default function Dashboard({ user }: DashboardProps) {
         />
       )}
 
+      {hasPermission('view_wlan5_clients') && <Wlan5Clients />}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {hasPermission('view_interfaces') && <InterfaceList />}
         {hasPermission('use_ping') && <PingTester />}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {hasPermission('view_lte') && <LteStatus snapshot={snapshot} />}
-        {hasPermission('view_wlan24') && <WlanStatus snapshot={snapshot} />}
-        {hasPermission('view_wlan5') && <Wlan5Status />}
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {hasPermission('view_wlan5_clients') && <Wlan5Clients />}
         {hasPermission('view_gps') && <GpsMap snapshot={snapshot} />}
+        {hasPermission('view_sms') && <SmsManager />}
       </div>
 
-      {hasPermission('view_sms') && <SmsManager />}
       {hasPermission('view_logs') && <LogViewer />}
 
       {showRebootDialog && (
