@@ -35,66 +35,65 @@ export default function LteStatus({ snapshot }: LteStatusProps) {
   const signalQuality = getSignalQuality(snapshot.lte_rsrp);
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
-      <div className="border-b border-slate-200 dark:border-slate-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Signal className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('lteStatus')}</h3>
-          </div>
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
-            isLteActive
-              ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
-              : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
-          }`}>
-            <div className={`w-2 h-2 rounded-full ${isLteActive ? 'bg-purple-500' : 'bg-slate-400'}`}></div>
-            {isLteActive ? t('active') : t('inactive')}
-          </div>
+    <div className="bg-gradient-to-br from-rose-50 to-pink-50 dark:from-slate-800 dark:to-slate-800 rounded-xl shadow-lg border border-rose-100 dark:border-slate-700">
+      <div className="flex items-center gap-3 mb-4 px-6 pt-6">
+        <div className="p-2 bg-rose-600 rounded-lg">
+          <Signal className="w-6 h-6 text-white" />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('lteStatus')}</h3>
+        </div>
+        <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
+          isLteActive
+            ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400'
+            : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+        }`}>
+          <div className={`w-2 h-2 rounded-full ${isLteActive ? 'bg-rose-500' : 'bg-slate-400'}`}></div>
+          {isLteActive ? t('active') : t('inactive')}
         </div>
       </div>
 
-      <div className="p-6">
+      <div className="px-6 pb-6">
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('operator')}</p>
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                {snapshot.lte_operator || 'N/A'}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('signalQuality')}</p>
-              <p className={`text-sm font-semibold ${signalQuality.color}`}>
-                {signalQuality.label}
-              </p>
-            </div>
+          <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
+            <p className="text-xs text-slate-600 dark:text-slate-400 mb-2 uppercase font-medium">{t('operator')}</p>
+            <p className="text-lg font-bold text-rose-600 dark:text-rose-400">
+              {snapshot.lte_operator || 'N/A'}
+            </p>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-500 dark:text-slate-400">RSRP</span>
-              <span className="text-xs font-medium text-slate-900 dark:text-slate-100">
-                {snapshot.lte_rsrp ? `${snapshot.lte_rsrp} dBm` : 'N/A'}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-500 dark:text-slate-400">RSRQ</span>
-              <span className="text-xs font-medium text-slate-900 dark:text-slate-100">
-                {snapshot.lte_rsrq ? `${snapshot.lte_rsrq} dB` : 'N/A'}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-500 dark:text-slate-400">RSSI</span>
-              <span className="text-xs font-medium text-slate-900 dark:text-slate-100">
-                {snapshot.lte_rssi ? `${snapshot.lte_rssi} dBm` : 'N/A'}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-500 dark:text-slate-400">SINR</span>
-              <span className="text-xs font-medium text-slate-900 dark:text-slate-100">
-                {snapshot.lte_sinr ? `${snapshot.lte_sinr} dB` : 'N/A'}
-              </span>
-            </div>
+          <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
+            <p className="text-xs text-slate-600 dark:text-slate-400 mb-2 uppercase font-medium">{t('signalQuality')}</p>
+            <p className={`text-lg font-bold ${signalQuality.color}`}>
+              {signalQuality.label}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 bg-white/60 dark:bg-slate-700/40 rounded-lg p-3 space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">RSRP</span>
+            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              {snapshot.lte_rsrp ? `${snapshot.lte_rsrp} dBm` : 'N/A'}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">RSRQ</span>
+            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              {snapshot.lte_rsrq ? `${snapshot.lte_rsrq} dB` : 'N/A'}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">RSSI</span>
+            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              {snapshot.lte_rssi ? `${snapshot.lte_rssi} dBm` : 'N/A'}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">SINR</span>
+            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              {snapshot.lte_sinr ? `${snapshot.lte_sinr} dB` : 'N/A'}
+            </span>
           </div>
         </div>
       </div>

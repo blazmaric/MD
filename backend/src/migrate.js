@@ -129,6 +129,13 @@ ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS gps_valid BOOLEAN;
 ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS gps_datetime_fix TEXT;
 `;
 
+const MIGRATION_007 = `
+-- Add WiFi signal and rate columns to snapshots table
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS wifi_signal INTEGER;
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS wifi_tx_rate TEXT;
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS wifi_rx_rate TEXT;
+`;
+
 export async function runMigrations() {
   try {
     console.log('Running database migrations...');
@@ -147,7 +154,8 @@ export async function runMigrations() {
       { name: '003_public_ip', sql: MIGRATION_003 },
       { name: '004_gps_data', sql: MIGRATION_004 },
       { name: '005_dashboard_layouts', sql: MIGRATION_005 },
-      { name: '006_gps_extended', sql: MIGRATION_006 }
+      { name: '006_gps_extended', sql: MIGRATION_006 },
+      { name: '007_wifi_signal_rate', sql: MIGRATION_007 }
     ];
 
     for (const migration of migrations) {

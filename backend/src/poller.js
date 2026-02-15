@@ -28,6 +28,9 @@ async function collectSnapshot() {
     lte_sinr: null,
     wifi_ssid: null,
     wifi_status: null,
+    wifi_signal: null,
+    wifi_tx_rate: null,
+    wifi_rx_rate: null,
     system_uptime: null,
     system_cpu_percent: null,
     system_ram_percent: null,
@@ -93,6 +96,9 @@ async function collectSnapshot() {
     if (wifi) {
       snapshot.wifi_ssid = wifi.ssid || null;
       snapshot.wifi_status = wifi.status || null;
+      snapshot.wifi_signal = wifi['signal-strength'] ? parseInt(wifi['signal-strength'], 10) : null;
+      snapshot.wifi_tx_rate = wifi['tx-rate'] || null;
+      snapshot.wifi_rx_rate = wifi['rx-rate'] || null;
     }
 
     if (sysres) {
@@ -147,16 +153,16 @@ async function collectSnapshot() {
       INSERT INTO snapshots (
         snapshot_ts, online, stale, error,
         active_uplink, gateway_type, public_ip, lte_operator, lte_rsrp, lte_rsrq, lte_rssi, lte_sinr,
-        wifi_ssid, wifi_status,
+        wifi_ssid, wifi_status, wifi_signal, wifi_tx_rate, wifi_rx_rate,
         system_uptime, system_cpu_percent, system_ram_percent,
         current_speed_interface, current_speed_rx, current_speed_tx,
         vxlan_rx_bytes, vxlan_tx_bytes,
         gps_latitude, gps_longitude, gps_altitude, gps_speed, gps_satellites, gps_valid, gps_datetime_fix
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)
     `, [
       snapshot.snapshot_ts, snapshot.online, snapshot.stale, snapshot.error,
       snapshot.active_uplink, snapshot.gateway_type, snapshot.public_ip, snapshot.lte_operator, snapshot.lte_rsrp, snapshot.lte_rsrq,
-      snapshot.lte_rssi, snapshot.lte_sinr, snapshot.wifi_ssid, snapshot.wifi_status,
+      snapshot.lte_rssi, snapshot.lte_sinr, snapshot.wifi_ssid, snapshot.wifi_status, snapshot.wifi_signal, snapshot.wifi_tx_rate, snapshot.wifi_rx_rate,
       snapshot.system_uptime, snapshot.system_cpu_percent, snapshot.system_ram_percent,
       snapshot.current_speed_interface, snapshot.current_speed_rx, snapshot.current_speed_tx,
       snapshot.vxlan_rx_bytes, snapshot.vxlan_tx_bytes,

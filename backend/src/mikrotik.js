@@ -19,7 +19,7 @@ const httpsAgent = new https.Agent({
   }
 });
 
-async function mtFetch(path, options = {}) {
+export async function mtFetch(path, options = {}) {
   const url = `${config.mikrotik.baseUrl}${path}`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), config.polling.requestTimeoutMs);
