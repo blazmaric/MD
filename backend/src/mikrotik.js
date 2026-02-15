@@ -8,6 +8,11 @@ const authHeader = 'Basic ' + Buffer.from(
 ).toString('base64');
 
 const httpsAgent = new https.Agent({
+  keepAlive: true,
+  keepAliveMsecs: 30000,
+  maxSockets: 5,
+  maxFreeSockets: 2,
+  timeout: 60000,
   checkServerIdentity: (hostname, cert) => {
     return undefined;
   }
