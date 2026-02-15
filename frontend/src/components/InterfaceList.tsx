@@ -11,8 +11,10 @@ interface Interface {
   disabled: string;
   'actual-mtu'?: string;
   'link-rate'?: string;
-  'rx-byte'?: string;
-  'tx-byte'?: string;
+  traffic?: {
+    'rx-bits-per-second'?: string;
+    'tx-bits-per-second'?: string;
+  };
 }
 
 export default function InterfaceList() {
@@ -31,16 +33,14 @@ export default function InterfaceList() {
     setLoading(true);
     try {
       const data = await api.interfaces.list();
-      const filteredInterfaces = (data.interfaces || []).filter((iface: Interface) =>
-        iface.name.match(/^ether\d+/)
-      );
-      setInterfaces(filteredInterfaces.sort((a: Interface, b: Interface) => {
+      const sortedInterfaces = (data.interfaces || []).sort((a: Interface, b: Interface) => {
         const aMatch = a.name.match(/^ether(\d+)/);
         const bMatch = b.name.match(/^ether(\d+)/);
         const aNum = aMatch ? parseInt(aMatch[1]) : 0;
         const bNum = bMatch ? parseInt(bMatch[1]) : 0;
         return aNum - bNum;
-      }));
+      });
+      setInterfaces(sortedInterfaces);
       setPublicIp(data.publicIp || null);
     } catch (err) {
       console.error('Failed to fetch interfaces:', err);
@@ -49,16 +49,19 @@ export default function InterfaceList() {
     }
   }
 
-  function formatBytes(bytes?: string | number): string {
-    const numBytes = Number(bytes);
-    if (isNaN(numBytes) || numBytes == null) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  function formatBitsPerSecond(bps?: string | number): string {
+    const numBps = Number(bps);
+    if (isNaN(numBps) || numBps == null || numBps === 0) return '0 bps';
+
+    const units = ['bps', 'Kbps', 'Mbps', 'Gbps'];
     let i = 0;
-    let value = numBytes;
-    while (value >= 1024 && i < units.length - 1) {
-      value /= 1024;
+    let value = numBps;
+
+    while (value >= 1000 && i < units.length - 1) {
+      value /= 1000;
       i++;
     }
+
     return `${value.toFixed(1)} ${units[i]}`;
   }
 
@@ -120,10 +123,10 @@ export default function InterfaceList() {
                   {getStatusText(iface)}
                 </span>
               </div>
-              {iface.running === 'true' && (
+              {iface.running === 'true' && iface.traffic && (
                 <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 pl-4">
-                  <span>RX: {formatBytes(iface['rx-byte'])}</span>
-                  <span>TX: {formatBytes(iface['tx-byte'])}</span>
+                  <span>RX: {formatBitsPerSecond(iface.traffic['rx-bits-per-second'])}</span>
+                  <span>TX: {formatBitsPerSecond(iface.traffic['tx-bits-per-second'])}</span>
                 </div>
               )}
             </div>
