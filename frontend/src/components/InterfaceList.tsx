@@ -81,7 +81,7 @@ export default function InterfaceList() {
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-700">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
           <Network className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           {t('interfaceStatus')}
@@ -96,49 +96,24 @@ export default function InterfaceList() {
         </button>
       </div>
 
-      <div className="p-6">
-        <div className="space-y-3">
+      <div className="p-4 sm:p-6">
+        <div className="space-y-2">
           {interfaces.map((iface) => (
             <div
               key={iface['.id']}
-              className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
+              className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600"
             >
-              <div className="flex items-center gap-4 flex-1">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${getStatusColor(iface)} animate-pulse`} />
-                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                    {getInterfaceIcon(iface.name)}
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">{iface.name}</span>
-                  </div>
-                </div>
-
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(iface)}`}>
-                  {getStatusText(iface)}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-6 text-sm">
-                {iface.type && (
-                  <div className="text-slate-600 dark:text-slate-400">
-                    <span className="font-medium">{iface.type}</span>
-                  </div>
-                )}
-                {iface['actual-mtu'] && (
-                  <div className="text-slate-600 dark:text-slate-400">
-                    <span className="text-xs">MTU:</span> <span className="font-medium">{iface['actual-mtu']}</span>
-                  </div>
-                )}
-                <div className="flex gap-4 text-xs">
-                  <div className="text-right">
-                    <div className="text-slate-500 dark:text-slate-400">RX</div>
-                    <div className="font-medium text-blue-600 dark:text-blue-400">{formatBytes(iface['rx-byte'])}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-slate-500 dark:text-slate-400">TX</div>
-                    <div className="font-medium text-cyan-600 dark:text-cyan-400">{formatBytes(iface['tx-byte'])}</div>
-                  </div>
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${getStatusColor(iface)} animate-pulse`} />
+                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 min-w-0">
+                  {getInterfaceIcon(iface.name)}
+                  <span className="font-semibold text-slate-900 dark:text-slate-100 truncate">{iface.name}</span>
                 </div>
               </div>
+
+              <span className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ml-2 ${getStatusBadge(iface)}`}>
+                {getStatusText(iface)}
+              </span>
             </div>
           ))}
         </div>
