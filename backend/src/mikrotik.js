@@ -179,7 +179,10 @@ export async function ping(address, count = 4, sourceInterface = null) {
 
 export async function rebootSystem() {
   try {
-    await mtFetch('/rest/system/reboot', { method: 'POST' });
+    await mtFetch('/rest/system/reboot', {
+      method: 'POST',
+      body: JSON.stringify({})
+    });
     return { success: true };
   } catch (err) {
     console.error('Failed to reboot:', err.message);
