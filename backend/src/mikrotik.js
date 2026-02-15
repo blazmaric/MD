@@ -232,7 +232,21 @@ export async function sendSms(phoneNumber, message, port = 'lte1') {
 
 export async function getWirelessRegistrationTable(interfaceName) {
   try {
-    return await mtFetch(`/rest/interface/wireless/registration-table?interface=${interfaceName}`);
+    const clients = await mtFetch(`/rest/interface/wireless/registration-table?interface=${interfaceName}`);
+    console.log(`Registration table for ${interfaceName}:`, JSON.stringify(clients, null, 2));
+
+    // Get the wireless interface info to get SSID
+    const interfaces = await mtFetch('/rest/interface/wireless');
+    const targetInterface = interfaces.find(iface => iface.name === interfaceName);
+    const ssid = targetInterface?.ssid || 'N/A';
+
+    console.log(`Interface ${interfaceName} SSID:`, ssid);
+
+    // Enrich clients with SSID from interface
+    return clients.map(client => ({
+      ...client,
+      ssid: ssid
+    }));
   } catch (err) {
     console.error('Failed to get registration table:', err.message);
     return [];
@@ -265,18 +279,20 @@ export async function scanWifi(interfaceName) {
     const result = await mtFetch('/rest/interface/wireless/scan', {
       method: 'POST',
       body: JSON.stringify({
-        '.id': targetInterface['.id'],
-        'rounds': '1'
+        numbers: targetInterface['.id'],
+        duration: '10'
       })
     });
 
+    console.log(`WiFi scan raw result:`, JSON.stringify(result, null, 2));
     console.log(`WiFi scan completed, found ${result.length} networks`);
 
     const filtered = result.filter(network => network.ssid && network.ssid !== '');
+    console.log(`After filtering empty SSIDs: ${filtered.length} networks`);
 
     const grouped = filtered.reduce((acc, network) => {
       const addr = network.address;
-      if (!acc[addr] || parseInt(network.sig || '0', 10) > parseInt(acc[addr].sig || '0', 10)) {
+      if (!acc[addr] || parseInt(network.signal || network.sig || '0', 10) > parseInt(acc[addr].signal || acc[addr].sig || '0', 10)) {
         acc[addr] = network;
       }
       return acc;
@@ -285,7 +301,7 @@ export async function scanWifi(interfaceName) {
     const mapped = Object.values(grouped).map(network => ({
       ssid: network.ssid || '',
       address: network.address || '',
-      signal: parseInt(network.sig || '0', 10),
+      signal: parseInt(network.signal || network.sig || '0', 10),
       channel: network.channel || '',
       frequency: parseInt(network.frequency || '0', 10),
       security: network.security || ''
@@ -293,9 +309,10 @@ export async function scanWifi(interfaceName) {
 
     mapped.sort((a, b) => b.signal - a.signal);
 
+    console.log(`Final mapped networks: ${mapped.length}`);
     return mapped;
   } catch (err) {
-    console.error('Failed to scan WiFi:', err.message);
+    console.error('Failed to scan WiFi:', err.message, err.stack);
     throw err;
   }
 }
