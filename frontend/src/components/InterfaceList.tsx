@@ -65,20 +65,6 @@ export default function InterfaceList() {
     return <Network className="w-4 h-4" />;
   }
 
-  function formatBytes(bytes?: string): string {
-    if (!bytes) return '0 B';
-    const numBytes = parseInt(bytes, 10);
-    if (isNaN(numBytes)) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let i = 0;
-    let value = numBytes;
-    while (value >= 1024 && i < units.length - 1) {
-      value /= 1024;
-      i++;
-    }
-    return `${value.toFixed(2)} ${units[i]}`;
-  }
-
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
       <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-700">
