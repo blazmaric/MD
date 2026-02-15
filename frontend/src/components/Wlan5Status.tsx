@@ -30,7 +30,7 @@ export default function Wlan5Status() {
     setLoading(true);
     try {
       const [interfaceData, clientsData] = await Promise.all([
-        api.interfaces.list(),
+        api.interfaces.listAll(),
         api.wifi.registrationTable('wlan5')
       ]);
 

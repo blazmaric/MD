@@ -13,7 +13,7 @@ export default async function pingRoutes(fastify) {
 
     try {
       const result = await ping(address, count, sourceInterface);
-      return { success: true, result };
+      return result;
     } catch (err) {
       return reply.code(500).send({ error: err.message });
     }

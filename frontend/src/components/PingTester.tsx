@@ -3,11 +3,18 @@ import { Activity, X } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 
+interface PingResult {
+  seq: number;
+  time: number | null;
+  timeout: boolean;
+  host: string;
+}
+
 export default function PingTester() {
   const { t } = useLanguage();
   const [address, setAddress] = useState('8.8.8.8');
   const [sourceInterface, setSourceInterface] = useState('');
-  const [result, setResult] = useState<string | null>(null);
+  const [results, setResults] = useState<PingResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -17,40 +24,18 @@ export default function PingTester() {
     setLoading(true);
 
     try {
-      const data = await api.ping.send(address, 3, sourceInterface || undefined);
-      const rawResult = data.result;
-
-      // Parse result to extract average time or timeout
-      if (typeof rawResult === 'string') {
-        const timeoutMatch = rawResult.match(/timeout/i);
-        const avgMatch = rawResult.match(/avg-rtt=(\d+)ms/);
-
-        if (timeoutMatch) {
-          setResult(`${address} - Timed out`);
-        } else if (avgMatch) {
-          setResult(`${address} - ${avgMatch[1]} ms`);
-        } else {
-          // Fallback: look for any time value
-          const anyTimeMatch = rawResult.match(/time=(\d+)/);
-          if (anyTimeMatch) {
-            setResult(`${address} - ${anyTimeMatch[1]} ms`);
-          } else {
-            setResult(`${address} - Response received`);
-          }
-        }
-      } else {
-        setResult(`${address} - Response received`);
-      }
+      const data = await api.ping.send(address, 4, sourceInterface || undefined);
+      setResults(data.pings || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ping failed');
-      setResult(null);
+      setResults([]);
     } finally {
       setLoading(false);
     }
   }
 
   function handleClear() {
-    setResult(null);
+    setResults([]);
     setError('');
   }
 
@@ -118,13 +103,23 @@ export default function PingTester() {
           </div>
         )}
 
-        {result && (
+        {results.length > 0 && (
           <div className="mt-3 space-y-2">
-            <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded border border-slate-200 dark:border-slate-600">
-              <p className="text-sm font-medium text-slate-900 dark:text-slate-100 text-center">
-                {result}
-              </p>
-            </div>
+            {results.map((ping) => (
+              <div
+                key={ping.seq}
+                className="p-2 bg-slate-50 dark:bg-slate-700/50 rounded border border-slate-200 dark:border-slate-600"
+              >
+                <p className="text-xs font-medium text-slate-900 dark:text-slate-100">
+                  Ping #{ping.seq} - {ping.host}:{' '}
+                  {ping.timeout ? (
+                    <span className="text-red-600 dark:text-red-400">Timeout</span>
+                  ) : (
+                    <span className="text-green-600 dark:text-green-400">{ping.time} ms</span>
+                  )}
+                </p>
+              </div>
+            ))}
             <button
               onClick={handleClear}
               className="w-full px-3 py-2 text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-1"

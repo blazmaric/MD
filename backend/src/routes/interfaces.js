@@ -10,6 +10,9 @@ export default async function interfacesRoutes(fastify) {
       getCloudStatus()
     ]);
 
+    console.log('Cloud status in interfaces endpoint:', cloudStatus);
+    console.log('Public IP:', cloudStatus?.['public-address']);
+
     const etherInterfaces = interfaces.filter(iface => iface.name.match(/^ether\d+/));
 
     const trafficData = await Promise.all(
@@ -25,5 +28,12 @@ export default async function interfacesRoutes(fastify) {
       interfaces: interfacesWithTraffic,
       publicIp: cloudStatus?.['public-address'] || null
     };
+  });
+
+  fastify.get('/interfaces/all', {
+    preHandler: [authenticateMiddleware, requirePermission('view_summary')]
+  }, async () => {
+    const interfaces = await getInterfaces();
+    return { interfaces };
   });
 }

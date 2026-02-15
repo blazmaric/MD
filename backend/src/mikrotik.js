@@ -65,6 +65,7 @@ export async function getDefaultRoute() {
 export async function getCloudStatus() {
   try {
     const result = await mtFetch('/rest/ip/cloud');
+    console.log('Cloud status result:', JSON.stringify(result, null, 2));
     return result[0] || null;
   } catch (err) {
     console.error('Failed to get cloud status:', err.message);
@@ -138,9 +139,9 @@ export async function getLogs() {
   }
 }
 
-export async function ping(address, count = 3, sourceInterface = null) {
+export async function ping(address, count = 4, sourceInterface = null) {
   const controller = new AbortController();
-  const pingTimeout = 10000; // 10 seconds for ping
+  const pingTimeout = 15000;
   const timeout = setTimeout(() => controller.abort(), pingTimeout);
 
   try {
@@ -167,11 +168,27 @@ export async function ping(address, count = 3, sourceInterface = null) {
       throw new Error(`MikroTik API error: ${response.status} ${response.statusText}`);
     }
 
-    return await response.json();
+    const results = await response.json();
+    console.log('Ping raw results:', JSON.stringify(results, null, 2));
+
+    const parsed = results.map((result, index) => {
+      const timeMatch = result.time?.match(/(\d+)ms/) || result['avg-rtt']?.match(/(\d+)ms/);
+      const time = timeMatch ? parseInt(timeMatch[1]) : null;
+      const timeout = result.timeout === 'true' || result.status === 'timeout';
+
+      return {
+        seq: index + 1,
+        time: timeout ? null : time,
+        timeout: timeout,
+        host: result.host || address
+      };
+    });
+
+    return { pings: parsed };
   } catch (err) {
     clearTimeout(timeout);
     if (err.name === 'AbortError') {
-      throw new Error('Ping request timeout after 10 seconds');
+      throw new Error('Ping request timeout after 15 seconds');
     }
     console.error('Failed to ping:', err.message);
     throw err;

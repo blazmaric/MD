@@ -117,6 +117,8 @@ export const api = {
   interfaces: {
     list: () =>
       apiFetch('/interfaces'),
+    listAll: () =>
+      apiFetch('/interfaces/all'),
   },
 
   users: {
