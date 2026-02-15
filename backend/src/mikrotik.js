@@ -285,7 +285,10 @@ export async function scanWifi(interfaceName) {
 
 export async function getGpsStatus() {
   try {
-    const result = await mtFetch('/rest/system/gps');
+    const result = await mtFetch('/rest/system/gps/monitor', {
+      method: 'POST',
+      body: JSON.stringify({ once: true })
+    });
     return result[0] || null;
   } catch (err) {
     console.error('Failed to get GPS status:', err.message);

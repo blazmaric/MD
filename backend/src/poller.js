@@ -108,15 +108,15 @@ async function collectSnapshot() {
     }
 
     if (gps) {
-      snapshot.gps_valid = gps.valid === 'yes';
+      snapshot.gps_valid = gps.valid === 'yes' || gps.valid === 'true' || gps.valid === true;
       snapshot.gps_satellites = gps.satellites ? parseInt(gps.satellites, 10) : null;
-      snapshot.gps_datetime_fix = gps['date-time-fix'] || null;
+      snapshot.gps_datetime_fix = gps['date-and-time'] || gps['date-time-fix'] || null;
 
-      if (gps.valid === 'yes') {
+      if (snapshot.gps_valid) {
         snapshot.gps_latitude = gps.latitude ? parseFloat(gps.latitude) : null;
         snapshot.gps_longitude = gps.longitude ? parseFloat(gps.longitude) : null;
-        snapshot.gps_altitude = gps.altitude ? parseFloat(gps.altitude) : null;
-        snapshot.gps_speed = gps.speed ? parseFloat(gps.speed) : null;
+        snapshot.gps_altitude = gps.altitude ? parseFloat(gps.altitude.replace(/\s*m$/, '')) : null;
+        snapshot.gps_speed = gps.speed ? parseFloat(gps.speed.replace(/\s*km\/h$/, '')) : null;
       }
     }
 
@@ -202,16 +202,31 @@ async function collectTraffic() {
 }
 
 function parseDuration(duration) {
-  const parts = duration.match(/(\d+)w(\d+)d(\d+):(\d+):(\d+)/);
-  if (!parts) return null;
+  let totalSeconds = 0;
 
-  const weeks = parseInt(parts[1], 10);
-  const days = parseInt(parts[2], 10);
-  const hours = parseInt(parts[3], 10);
-  const minutes = parseInt(parts[4], 10);
-  const seconds = parseInt(parts[5], 10);
+  const weekMatch = duration.match(/(\d+)w/);
+  if (weekMatch) totalSeconds += parseInt(weekMatch[1], 10) * 7 * 24 * 3600;
 
-  return (weeks * 7 * 24 * 3600) + (days * 24 * 3600) + (hours * 3600) + (minutes * 60) + seconds;
+  const dayMatch = duration.match(/(\d+)d/);
+  if (dayMatch) totalSeconds += parseInt(dayMatch[1], 10) * 24 * 3600;
+
+  const hourMatch = duration.match(/(\d+)h/);
+  if (hourMatch) totalSeconds += parseInt(hourMatch[1], 10) * 3600;
+
+  const minuteMatch = duration.match(/(\d+)m/);
+  if (minuteMatch) totalSeconds += parseInt(minuteMatch[1], 10) * 60;
+
+  const secondMatch = duration.match(/(\d+)s/);
+  if (secondMatch) totalSeconds += parseInt(secondMatch[1], 10);
+
+  const colonMatch = duration.match(/(\d+):(\d+):(\d+)/);
+  if (colonMatch) {
+    totalSeconds += parseInt(colonMatch[1], 10) * 3600;
+    totalSeconds += parseInt(colonMatch[2], 10) * 60;
+    totalSeconds += parseInt(colonMatch[3], 10);
+  }
+
+  return totalSeconds > 0 ? totalSeconds : null;
 }
 
 function parseLogTime(timeStr) {
