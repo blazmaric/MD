@@ -100,6 +100,7 @@ export const translations = {
     // Wlan5 Clients
     wlan5Clients: 'Povezani klienti (wlan5)',
     noActiveClients: 'Ni aktivnih klientov',
+    connectedClients: 'Povezanih klientov',
     macAddress: 'MAC Naslov',
     ipAddress: 'IP Naslov',
     deviceName: 'Ime naprave',
@@ -330,6 +331,7 @@ export const translations = {
     // Wlan5 Clients
     wlan5Clients: 'Connected Clients (wlan5)',
     noActiveClients: 'No active clients',
+    connectedClients: 'Connected Clients',
     macAddress: 'MAC Address',
     ipAddress: 'IP Address',
     deviceName: 'Device Name',

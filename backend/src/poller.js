@@ -59,15 +59,26 @@ async function collectSnapshot() {
     snapshot.online = true;
     snapshot.public_ip = cloud ? cloud['public-address'] : null;
 
-    if (route && route.gateway) {
-      snapshot.active_uplink = route.gateway;
+    if (route) {
+      if (route.gateway) {
+        snapshot.active_uplink = route.gateway;
+      }
 
-      if (route['gateway-status'] && route['gateway-status'].includes(config.mikrotik.interfaces.lte)) {
-        snapshot.gateway_type = 'LTE';
-      } else if (route['gateway-status'] && route['gateway-status'].includes(config.mikrotik.interfaces.wlan)) {
-        snapshot.gateway_type = 'WiFi';
-      } else {
-        snapshot.gateway_type = 'Unknown';
+      let activeInterface = null;
+      if (route['immediate-gw'] && route['immediate-gw'].includes('%')) {
+        activeInterface = route['immediate-gw'].split('%')[1];
+      } else if (route.interface) {
+        activeInterface = route.interface;
+      }
+
+      if (activeInterface) {
+        if (activeInterface === config.mikrotik.interfaces.lte) {
+          snapshot.gateway_type = 'LTE';
+        } else if (activeInterface === config.mikrotik.interfaces.wlan) {
+          snapshot.gateway_type = 'WiFi';
+        } else {
+          snapshot.gateway_type = 'Unknown';
+        }
       }
     }
 

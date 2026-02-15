@@ -17,6 +17,7 @@ interface Wlan5Interface {
 export default function Wlan5Status() {
   const { t } = useLanguage();
   const [wlan5Info, setWlan5Info] = useState<Wlan5Interface | null>(null);
+  const [clientCount, setClientCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -28,9 +29,14 @@ export default function Wlan5Status() {
   async function fetchWlan5Info() {
     setLoading(true);
     try {
-      const data = await api.interfaces.list();
-      const wlan5 = data.interfaces?.find((iface: Wlan5Interface) => iface.name === 'wlan5');
+      const [interfaceData, clientsData] = await Promise.all([
+        api.interfaces.list(),
+        api.wifi.registrationTable('wlan5')
+      ]);
+
+      const wlan5 = interfaceData.interfaces?.find((iface: Wlan5Interface) => iface.name === 'wlan5');
       setWlan5Info(wlan5 || null);
+      setClientCount(clientsData.clients?.length || 0);
     } catch (err) {
       console.error('Failed to fetch WLAN 5 info:', err);
     } finally {
@@ -81,6 +87,12 @@ export default function Wlan5Status() {
               </p>
             </div>
             <div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('connectedClients')}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {clientCount}
+              </p>
+            </div>
+            <div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('frequencyLabel')}</p>
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {wlan5Info.frequency ? `${wlan5Info.frequency} MHz` : 'N/A'}
@@ -90,12 +102,6 @@ export default function Wlan5Status() {
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('channelWidth')}</p>
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {wlan5Info['channel-width'] || 'N/A'}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('txPower')}</p>
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                {wlan5Info['tx-power'] ? `${wlan5Info['tx-power']} dBm` : 'N/A'}
               </p>
             </div>
           </div>

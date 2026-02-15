@@ -31,7 +31,7 @@ export default function InterfaceList() {
     try {
       const data = await api.interfaces.list();
       const filteredInterfaces = (data.interfaces || []).filter((iface: Interface) =>
-        iface.name.match(/^ether[1-9]$|^ether[1-9][0-9]$/)
+        iface.name.match(/^ether[1-5]$/)
       );
       setInterfaces(filteredInterfaces.sort((a: Interface, b: Interface) => {
         const aNum = parseInt(a.name.replace('ether', ''));
@@ -43,6 +43,19 @@ export default function InterfaceList() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function formatBytes(bytes?: string | number): string {
+    const numBytes = Number(bytes);
+    if (isNaN(numBytes) || numBytes == null) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let i = 0;
+    let value = numBytes;
+    while (value >= 1024 && i < units.length - 1) {
+      value /= 1024;
+      i++;
+    }
+    return `${value.toFixed(1)} ${units[i]}`;
   }
 
   function getStatusColor(iface: Interface): string {
@@ -81,20 +94,27 @@ export default function InterfaceList() {
       </div>
 
       <div className="p-3">
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {interfaces.map((iface) => (
             <div
               key={iface['.id']}
-              className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-700/50 rounded border border-slate-200 dark:border-slate-600"
+              className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded border border-slate-200 dark:border-slate-600"
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusColor(iface)}`} />
-                <span className="font-medium text-sm text-slate-900 dark:text-slate-100">{iface.name}</span>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusColor(iface)}`} />
+                  <span className="font-medium text-sm text-slate-900 dark:text-slate-100">{iface.name}</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${getStatusBadge(iface)}`}>
+                  {getStatusText(iface)}
+                </span>
               </div>
-
-              <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${getStatusBadge(iface)}`}>
-                {getStatusText(iface)}
-              </span>
+              {iface.running === 'true' && (
+                <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 pl-4">
+                  <span>RX: {formatBytes(iface['rx-byte'])}</span>
+                  <span>TX: {formatBytes(iface['tx-byte'])}</span>
+                </div>
+              )}
             </div>
           ))}
         </div>

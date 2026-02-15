@@ -65,62 +65,58 @@ export default function SmsManager() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-slate-700">
         <div className="p-4">
-          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 uppercase">{t('smsReceived')}</h4>
-          <div className="space-y-2 max-h-[240px] overflow-y-auto">
+          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 uppercase">{t('smsReceived')}</h4>
+          <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
             {messages.length === 0 ? (
-              <p className="text-center py-6 text-sm text-slate-600 dark:text-slate-400">{t('noMessages')}</p>
+              <p className="text-center py-3 text-xs text-slate-600 dark:text-slate-400">{t('noMessages')}</p>
             ) : (
-              messages.slice(0, 2).map((msg) => (
-                <div key={msg['.id']} className="p-2.5 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
-                  <div className="flex justify-between items-start mb-1">
-                    <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">{msg.phone}</span>
+              messages.slice(0, 1).map((msg) => (
+                <div key={msg['.id']} className="p-2 bg-slate-50 dark:bg-slate-700/50 rounded border border-slate-200 dark:border-slate-600">
+                  <div className="flex justify-between items-start mb-0.5">
+                    <span className="font-semibold text-xs text-slate-900 dark:text-slate-100">{msg.phone}</span>
                     <span className="text-xs text-slate-500 dark:text-slate-400">{msg.timestamp}</span>
                   </div>
-                  <p className="text-sm text-slate-700 dark:text-slate-300">{msg.message}</p>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 line-clamp-2">{msg.message}</p>
                 </div>
               ))
             )}
-            {messages.length > 2 && (
-              <p className="text-center text-xs text-slate-500 dark:text-slate-400 pt-1">
-                +{messages.length - 2} {t('moreMessages')}
+            {messages.length > 1 && (
+              <p className="text-center text-xs text-slate-500 dark:text-slate-400 pt-0.5">
+                +{messages.length - 1} {t('moreMessages')}
               </p>
             )}
           </div>
         </div>
 
         <div className="p-4">
-          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 uppercase">{t('smsSendLabel')}</h4>
-          <form onSubmit={handleSend} className="space-y-3">
-            <div>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+386"
-                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                required
-              />
-            </div>
-            <div>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder={t('messagePlaceholder')}
-                rows={3}
-                maxLength={160}
-                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
-                required
-              />
-            </div>
+          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 uppercase">{t('smsSendLabel')}</h4>
+          <form onSubmit={handleSend} className="space-y-2">
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+386"
+              className="w-full px-2.5 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+              required
+            />
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder={t('messagePlaceholder')}
+              rows={2}
+              maxLength={160}
+              className="w-full px-2.5 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
+              required
+            />
             {error && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg text-red-700 dark:text-red-400 text-sm">
+              <div className="p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded text-red-700 dark:text-red-400 text-xs">
                 {error}
               </div>
             )}
             <button
               type="submit"
               disabled={sending}
-              className="w-full px-6 py-3 bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white text-sm rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+              className="w-full px-4 py-2 bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white text-xs rounded font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow hover:shadow-md"
             >
               {sending ? t('smsSending') : t('smsSend')}
             </button>
