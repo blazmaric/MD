@@ -1,4 +1,4 @@
-import { MapPin, Navigation } from 'lucide-react';
+import { MapPin, Navigation, Satellite } from 'lucide-react';
 import type { Snapshot } from '../types';
 
 interface GpsMapProps {
@@ -6,7 +6,7 @@ interface GpsMapProps {
 }
 
 export default function GpsMap({ snapshot }: GpsMapProps) {
-  const hasGps = snapshot?.gps_latitude && snapshot?.gps_longitude;
+  const hasGps = snapshot?.gps_valid && snapshot?.gps_latitude && snapshot?.gps_longitude;
 
   const openInMaps = () => {
     if (hasGps) {
@@ -36,7 +36,18 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
         {!hasGps ? (
           <div className="text-center py-8">
             <MapPin className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-600 dark:text-slate-400">GPS signal ni na voljo</p>
+            <p className="text-slate-600 dark:text-slate-400 mb-2">GPS signal ni na voljo</p>
+            {snapshot && (
+              <div className="text-xs text-slate-500 dark:text-slate-500 space-y-1">
+                {snapshot.gps_satellites !== null && snapshot.gps_satellites !== undefined && (
+                  <p className="flex items-center justify-center gap-2">
+                    <Satellite className="w-3 h-3" />
+                    {snapshot.gps_satellites} satelitov
+                  </p>
+                )}
+                <p>Status: {snapshot.gps_valid ? 'Fixing...' : 'No fix'}</p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -57,20 +68,35 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 border border-slate-200 dark:border-slate-600">
-                <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Nadmorska višina</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Višina</p>
                 <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  {snapshot.gps_altitude ? `${snapshot.gps_altitude.toFixed(1)} m` : 'N/A'}
+                  {snapshot.gps_altitude != null ? `${snapshot.gps_altitude.toFixed(1)} m` : 'N/A'}
                 </p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 border border-slate-200 dark:border-slate-600">
                 <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Hitrost</p>
                 <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  {snapshot.gps_speed ? `${snapshot.gps_speed.toFixed(1)} km/h` : '0 km/h'}
+                  {snapshot.gps_speed != null ? `${snapshot.gps_speed.toFixed(1)} km/h` : 'N/A'}
+                </p>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 border border-slate-200 dark:border-slate-600">
+                <div className="flex items-center gap-1">
+                  <Satellite className="w-3 h-3 text-slate-600 dark:text-slate-400" />
+                  <p className="text-xs text-slate-600 dark:text-slate-400">Sateliti</p>
+                </div>
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-1">
+                  {snapshot.gps_satellites ?? 'N/A'}
                 </p>
               </div>
             </div>
+
+            {snapshot.gps_datetime_fix && (
+              <div className="text-xs text-slate-500 dark:text-slate-400 text-center">
+                Fix: {snapshot.gps_datetime_fix}
+              </div>
+            )}
 
             <button
               onClick={openInMaps}

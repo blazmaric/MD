@@ -39,7 +39,10 @@ async function collectSnapshot() {
     gps_latitude: null,
     gps_longitude: null,
     gps_altitude: null,
-    gps_speed: null
+    gps_speed: null,
+    gps_satellites: null,
+    gps_valid: null,
+    gps_datetime_fix: null
   };
 
   try {
@@ -104,11 +107,17 @@ async function collectSnapshot() {
       snapshot.vxlan_tx_bytes = vxlanIface['tx-byte'] || null;
     }
 
-    if (gps && gps.valid === 'yes') {
-      snapshot.gps_latitude = gps.latitude ? parseFloat(gps.latitude) : null;
-      snapshot.gps_longitude = gps.longitude ? parseFloat(gps.longitude) : null;
-      snapshot.gps_altitude = gps.altitude ? parseFloat(gps.altitude) : null;
-      snapshot.gps_speed = gps.speed ? parseFloat(gps.speed) : null;
+    if (gps) {
+      snapshot.gps_valid = gps.valid === 'yes';
+      snapshot.gps_satellites = gps.satellites ? parseInt(gps.satellites, 10) : null;
+      snapshot.gps_datetime_fix = gps['date-time-fix'] || null;
+
+      if (gps.valid === 'yes') {
+        snapshot.gps_latitude = gps.latitude ? parseFloat(gps.latitude) : null;
+        snapshot.gps_longitude = gps.longitude ? parseFloat(gps.longitude) : null;
+        snapshot.gps_altitude = gps.altitude ? parseFloat(gps.altitude) : null;
+        snapshot.gps_speed = gps.speed ? parseFloat(gps.speed) : null;
+      }
     }
 
     const elapsed = Date.now() - startTime;
@@ -131,8 +140,8 @@ async function collectSnapshot() {
         system_uptime, system_cpu_percent, system_ram_percent,
         current_speed_interface, current_speed_rx, current_speed_tx,
         vxlan_rx_bytes, vxlan_tx_bytes,
-        gps_latitude, gps_longitude, gps_altitude, gps_speed
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
+        gps_latitude, gps_longitude, gps_altitude, gps_speed, gps_satellites, gps_valid, gps_datetime_fix
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
     `, [
       snapshot.snapshot_ts, snapshot.online, snapshot.stale, snapshot.error,
       snapshot.active_uplink, snapshot.gateway_type, snapshot.public_ip, snapshot.lte_operator, snapshot.lte_rsrp, snapshot.lte_rsrq,
@@ -140,7 +149,7 @@ async function collectSnapshot() {
       snapshot.system_uptime, snapshot.system_cpu_percent, snapshot.system_ram_percent,
       snapshot.current_speed_interface, snapshot.current_speed_rx, snapshot.current_speed_tx,
       snapshot.vxlan_rx_bytes, snapshot.vxlan_tx_bytes,
-      snapshot.gps_latitude, snapshot.gps_longitude, snapshot.gps_altitude, snapshot.gps_speed
+      snapshot.gps_latitude, snapshot.gps_longitude, snapshot.gps_altitude, snapshot.gps_speed, snapshot.gps_satellites, snapshot.gps_valid, snapshot.gps_datetime_fix
     ]);
   } catch (err) {
     console.error('Failed to save snapshot to database:', err.message);

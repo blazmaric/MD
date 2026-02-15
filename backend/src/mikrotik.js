@@ -244,20 +244,24 @@ export async function disconnectWirelessClient(clientId) {
 
 export async function scanWifi(interfaceName) {
   try {
-    const interfaces = await mtFetch('/rest/interface/wireless?.proplist=.id,name');
+    const interfaces = await mtFetch('/rest/interface/wireless');
     const targetInterface = interfaces.find(iface => iface.name === interfaceName);
 
     if (!targetInterface) {
-      throw new Error(`Interface ${interfaceName} not found`);
+      throw new Error(`Wireless interface '${interfaceName}' not found. Available interfaces: ${interfaces.map(i => i.name).join(', ')}`);
     }
+
+    console.log(`Starting WiFi scan on interface ${interfaceName} (${targetInterface['.id']})`);
 
     const result = await mtFetch('/rest/interface/wireless/scan', {
       method: 'POST',
       body: JSON.stringify({
-        '.id': targetInterface['.id'],
-        'duration': '5s'
+        numbers: targetInterface['.id'],
+        duration: '10s'
       })
     });
+
+    console.log(`WiFi scan completed, found ${result.length} networks`);
     return result;
   } catch (err) {
     console.error('Failed to scan WiFi:', err.message);

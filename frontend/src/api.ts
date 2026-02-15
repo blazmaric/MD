@@ -149,4 +149,9 @@ export const api = {
     reset: () =>
       apiFetch('/layout', { method: 'DELETE' }),
   },
+
+  gps: {
+    get: () =>
+      apiFetch('/gps'),
+  },
 };

@@ -34,6 +34,9 @@ export interface Snapshot {
   gps_longitude?: number;
   gps_altitude?: number;
   gps_speed?: number;
+  gps_satellites?: number;
+  gps_valid?: boolean;
+  gps_datetime_fix?: string;
 }
 
 export interface Log {

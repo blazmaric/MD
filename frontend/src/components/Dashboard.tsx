@@ -37,40 +37,40 @@ interface DashboardProps {
 
 const DEFAULT_LAYOUTS: { [key: string]: Layout[] } = {
   lg: [
-    { i: 'summary', x: 0, y: 0, w: 12, h: 2, minW: 6, minH: 2 },
-    { i: 'interfaces', x: 0, y: 2, w: 6, h: 3, minW: 3, minH: 2 },
-    { i: 'ping', x: 6, y: 2, w: 6, h: 3, minW: 3, minH: 2 },
-    { i: 'lte', x: 0, y: 5, w: 4, h: 3, minW: 3, minH: 2 },
-    { i: 'wlan24', x: 4, y: 5, w: 4, h: 3, minW: 3, minH: 2 },
-    { i: 'wlan5', x: 8, y: 5, w: 4, h: 3, minW: 3, minH: 2 },
-    { i: 'wlan5clients', x: 0, y: 8, w: 6, h: 4, minW: 4, minH: 3 },
-    { i: 'gps', x: 6, y: 8, w: 6, h: 4, minW: 4, minH: 3 },
-    { i: 'sms', x: 0, y: 12, w: 12, h: 5, minW: 6, minH: 4 },
-    { i: 'logs', x: 0, y: 17, w: 12, h: 6, minW: 6, minH: 4 },
+    { i: 'summary', x: 0, y: 0, w: 12, h: 2, minW: 12, maxW: 12, minH: 2, maxH: 3 },
+    { i: 'interfaces', x: 0, y: 2, w: 6, h: 4, minW: 4, minH: 3 },
+    { i: 'ping', x: 6, y: 2, w: 6, h: 4, minW: 4, minH: 3 },
+    { i: 'lte', x: 0, y: 6, w: 4, h: 4, minW: 4, minH: 3 },
+    { i: 'wlan24', x: 4, y: 6, w: 4, h: 4, minW: 4, minH: 3 },
+    { i: 'wlan5', x: 8, y: 6, w: 4, h: 4, minW: 4, minH: 3 },
+    { i: 'wlan5clients', x: 0, y: 10, w: 6, h: 5, minW: 4, minH: 4 },
+    { i: 'gps', x: 6, y: 10, w: 6, h: 5, minW: 4, minH: 4 },
+    { i: 'sms', x: 0, y: 15, w: 12, h: 6, minW: 6, minH: 5 },
+    { i: 'logs', x: 0, y: 21, w: 12, h: 7, minW: 6, minH: 5 },
   ],
   md: [
-    { i: 'summary', x: 0, y: 0, w: 10, h: 2, minW: 5, minH: 2 },
-    { i: 'interfaces', x: 0, y: 2, w: 5, h: 3, minW: 3, minH: 2 },
-    { i: 'ping', x: 5, y: 2, w: 5, h: 3, minW: 3, minH: 2 },
-    { i: 'lte', x: 0, y: 5, w: 5, h: 3, minW: 3, minH: 2 },
-    { i: 'wlan24', x: 5, y: 5, w: 5, h: 3, minW: 3, minH: 2 },
-    { i: 'wlan5', x: 0, y: 8, w: 5, h: 3, minW: 3, minH: 2 },
-    { i: 'wlan5clients', x: 5, y: 8, w: 5, h: 4, minW: 3, minH: 3 },
-    { i: 'gps', x: 0, y: 12, w: 10, h: 4, minW: 4, minH: 3 },
-    { i: 'sms', x: 0, y: 16, w: 10, h: 5, minW: 5, minH: 4 },
-    { i: 'logs', x: 0, y: 21, w: 10, h: 6, minW: 5, minH: 4 },
+    { i: 'summary', x: 0, y: 0, w: 10, h: 2, minW: 10, maxW: 10, minH: 2, maxH: 3 },
+    { i: 'interfaces', x: 0, y: 2, w: 5, h: 4, minW: 5, minH: 3 },
+    { i: 'ping', x: 5, y: 2, w: 5, h: 4, minW: 5, minH: 3 },
+    { i: 'lte', x: 0, y: 6, w: 5, h: 4, minW: 5, minH: 3 },
+    { i: 'wlan24', x: 5, y: 6, w: 5, h: 4, minW: 5, minH: 3 },
+    { i: 'wlan5', x: 0, y: 10, w: 5, h: 4, minW: 5, minH: 3 },
+    { i: 'wlan5clients', x: 5, y: 10, w: 5, h: 5, minW: 5, minH: 4 },
+    { i: 'gps', x: 0, y: 15, w: 10, h: 5, minW: 5, minH: 4 },
+    { i: 'sms', x: 0, y: 20, w: 10, h: 6, minW: 10, minH: 5 },
+    { i: 'logs', x: 0, y: 26, w: 10, h: 7, minW: 10, minH: 5 },
   ],
   sm: [
-    { i: 'summary', x: 0, y: 0, w: 6, h: 2, minW: 6, minH: 2 },
-    { i: 'interfaces', x: 0, y: 2, w: 6, h: 3, minW: 6, minH: 2 },
-    { i: 'ping', x: 0, y: 5, w: 6, h: 3, minW: 6, minH: 2 },
-    { i: 'lte', x: 0, y: 8, w: 6, h: 3, minW: 6, minH: 2 },
-    { i: 'wlan24', x: 0, y: 11, w: 6, h: 3, minW: 6, minH: 2 },
-    { i: 'wlan5', x: 0, y: 14, w: 6, h: 3, minW: 6, minH: 2 },
-    { i: 'wlan5clients', x: 0, y: 17, w: 6, h: 4, minW: 6, minH: 3 },
-    { i: 'gps', x: 0, y: 21, w: 6, h: 4, minW: 6, minH: 3 },
-    { i: 'sms', x: 0, y: 25, w: 6, h: 5, minW: 6, minH: 4 },
-    { i: 'logs', x: 0, y: 30, w: 6, h: 6, minW: 6, minH: 4 },
+    { i: 'summary', x: 0, y: 0, w: 6, h: 2, minW: 6, maxW: 6, minH: 2, maxH: 3 },
+    { i: 'interfaces', x: 0, y: 2, w: 6, h: 4, minW: 6, minH: 3 },
+    { i: 'ping', x: 0, y: 6, w: 6, h: 4, minW: 6, minH: 3 },
+    { i: 'lte', x: 0, y: 10, w: 6, h: 4, minW: 6, minH: 3 },
+    { i: 'wlan24', x: 0, y: 14, w: 6, h: 4, minW: 6, minH: 3 },
+    { i: 'wlan5', x: 0, y: 18, w: 6, h: 4, minW: 6, minH: 3 },
+    { i: 'wlan5clients', x: 0, y: 22, w: 6, h: 5, minW: 6, minH: 4 },
+    { i: 'gps', x: 0, y: 27, w: 6, h: 5, minW: 6, minH: 4 },
+    { i: 'sms', x: 0, y: 32, w: 6, h: 6, minW: 6, minH: 5 },
+    { i: 'logs', x: 0, y: 38, w: 6, h: 7, minW: 6, minH: 5 },
   ],
 };
 
@@ -309,7 +309,9 @@ export default function Dashboard({ user }: DashboardProps) {
         breakpoints={{ lg: 1200, md: 996, sm: 768 }}
         cols={{ lg: 12, md: 10, sm: 6 }}
         width={width}
-        rowHeight={60}
+        rowHeight={70}
+        margin={[16, 16]}
+        containerPadding={[0, 0]}
         onLayoutChange={onLayoutChange}
       >
         {widgets.map(widget => (

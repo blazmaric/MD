@@ -122,6 +122,13 @@ FOR EACH ROW
 EXECUTE FUNCTION update_updated_at();
 `;
 
+const MIGRATION_006 = `
+-- Add additional GPS columns to snapshots table
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS gps_satellites INTEGER;
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS gps_valid BOOLEAN;
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS gps_datetime_fix TEXT;
+`;
+
 export async function runMigrations() {
   try {
     console.log('Running database migrations...');
@@ -139,7 +146,8 @@ export async function runMigrations() {
       { name: '002_gateway_and_interface', sql: MIGRATION_002 },
       { name: '003_public_ip', sql: MIGRATION_003 },
       { name: '004_gps_data', sql: MIGRATION_004 },
-      { name: '005_dashboard_layouts', sql: MIGRATION_005 }
+      { name: '005_dashboard_layouts', sql: MIGRATION_005 },
+      { name: '006_gps_extended', sql: MIGRATION_006 }
     ];
 
     for (const migration of migrations) {
