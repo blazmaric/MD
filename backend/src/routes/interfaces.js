@@ -9,9 +9,6 @@ export default async function interfacesRoutes(fastify) {
     const interfaces = await getInterfaces();
     const snapshot = getLastSnapshot();
 
-    console.log('Snapshot:', snapshot);
-    console.log('Public IP:', snapshot?.public_ip);
-
     const etherInterfaces = interfaces.filter(iface => iface.name.match(/^ether\d+/));
 
     const trafficData = await Promise.all(

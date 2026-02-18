@@ -209,7 +209,7 @@ export default function App() {
         {view === 'dashboard' ? (
           <Dashboard user={user} />
         ) : (
-          <UsersPage />
+          <UsersPage currentUser={user} />
         )}
       </main>
     </div>

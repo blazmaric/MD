@@ -3,7 +3,7 @@ import { UserPlus, Edit, Trash2, Shield, Ban } from 'lucide-react';
 import { api } from '../api';
 import type { User } from '../types';
 
-const AVAILABLE_PERMISSIONS = [
+const ALL_PERMISSIONS = [
   { value: 'admin_all', label: 'Admin (All Permissions)', group: 'Admin' },
   { value: 'view_system_status', label: 'View System Status Card', group: 'Dashboard' },
   { value: 'view_lte_status', label: 'View LTE Status Card', group: 'Dashboard' },
@@ -23,7 +23,11 @@ const AVAILABLE_PERMISSIONS = [
   { value: 'system_reboot', label: 'System Reboot', group: 'Admin' },
 ];
 
-export default function UsersPage() {
+interface UsersPageProps {
+  currentUser: User;
+}
+
+export default function UsersPage({ currentUser }: UsersPageProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -35,6 +39,11 @@ export default function UsersPage() {
     is_active: true
   });
   const [error, setError] = useState('');
+
+  const isAdmin = currentUser.permissions.includes('admin_all');
+  const AVAILABLE_PERMISSIONS = isAdmin
+    ? ALL_PERMISSIONS
+    : ALL_PERMISSIONS.filter(p => p.value !== 'admin_all' && p.value !== 'manage_users' && p.value !== 'system_reboot');
 
   useEffect(() => {
     fetchUsers();
