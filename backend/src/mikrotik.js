@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import https from 'https';
 import tls from 'tls';
+import { Client } from 'ssh2';
 import { config } from './config.js';
 
 const authHeader = 'Basic ' + Buffer.from(
@@ -284,59 +285,105 @@ export async function disconnectWirelessClient(clientId) {
   }
 }
 
+function executeSSHCommand(command) {
+  return new Promise((resolve, reject) => {
+    const conn = new Client();
+    let output = '';
+
+    conn.on('ready', () => {
+      conn.exec(command, (err, stream) => {
+        if (err) {
+          conn.end();
+          return reject(err);
+        }
+
+        stream.on('close', () => {
+          conn.end();
+          resolve(output);
+        }).on('data', (data) => {
+          output += data.toString();
+        }).stderr.on('data', (data) => {
+          console.error('SSH stderr:', data.toString());
+        });
+      });
+    }).on('error', (err) => {
+      reject(err);
+    }).connect({
+      host: config.mikrotik.host,
+      port: config.mikrotik.sshPort || 22,
+      username: config.mikrotik.user,
+      password: config.mikrotik.pass
+    });
+  });
+}
+
 export async function scanWifi(interfaceName) {
   try {
-    console.log(`[scanWifi] Starting scan for interface: ${interfaceName}`);
+    console.log(`[scanWifi] Starting SSH scan for interface: ${interfaceName}`);
 
-    const interfaces = await mtFetch('/rest/interface/wireless');
-    console.log(`[scanWifi] Found ${interfaces.length} wireless interfaces:`, interfaces.map(i => i.name));
+    const command = `/interface wireless scan ${interfaceName} duration=5`;
+    const output = await executeSSHCommand(command);
 
-    const targetInterface = interfaces.find(iface => iface.name === interfaceName);
+    console.log(`[scanWifi] SSH output length: ${output.length}`);
 
-    if (!targetInterface) {
-      throw new Error(`Wireless interface '${interfaceName}' not found. Available interfaces: ${interfaces.map(i => i.name).join(', ')}`);
+    const lines = output.split('\n').filter(line => line.trim());
+    const networks = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      if (line.match(/^\d+/)) {
+        const parts = line.split(/\s+/);
+
+        let ssidIndex = -1;
+        for (let j = 0; j < parts.length; j++) {
+          if (parts[j].includes(':') && parts[j].match(/^[0-9A-F]{2}:/i)) {
+            ssidIndex = j + 1;
+            break;
+          }
+        }
+
+        if (ssidIndex > 0 && ssidIndex < parts.length) {
+          const address = parts[ssidIndex - 1];
+          const ssid = parts.slice(ssidIndex).join(' ');
+
+          let signalStr = '';
+          for (const part of parts) {
+            if (part.includes('dBm') || part.startsWith('-')) {
+              signalStr = part.replace('dBm', '');
+              break;
+            }
+          }
+
+          const signal = parseInt(signalStr) || -100;
+
+          if (ssid && ssid !== '' && address) {
+            networks.push({
+              ssid: ssid,
+              address: address,
+              signal: signal,
+              channel: '',
+              frequency: 0,
+              security: ''
+            });
+          }
+        }
+      }
     }
 
-    console.log(`[scanWifi] Target interface found:`, { name: targetInterface.name, id: targetInterface['.id'] });
-
-    const result = await mtFetch('/rest/interface/wireless/scan', {
-      method: 'POST',
-      body: JSON.stringify({
-        numbers: targetInterface['.id'],
-        duration: '10'
-      })
-    });
-
-    console.log(`[scanWifi] Raw scan result count: ${result.length}`);
-
-    const filtered = result.filter(network => network.ssid && network.ssid !== '');
-    console.log(`[scanWifi] After filtering empty SSIDs: ${filtered.length}`);
-
-    const grouped = filtered.reduce((acc, network) => {
+    const grouped = networks.reduce((acc, network) => {
       const addr = network.address;
-      if (!acc[addr] || parseInt(network.signal || network.sig || '0', 10) > parseInt(acc[addr].signal || acc[addr].sig || '0', 10)) {
+      if (!acc[addr] || network.signal > acc[addr].signal) {
         acc[addr] = network;
       }
       return acc;
     }, {});
 
-    const mapped = Object.values(grouped).map(network => ({
-      ssid: network.ssid || '',
-      address: network.address || '',
-      signal: parseInt(network.signal || network.sig || '0', 10),
-      channel: network.channel || '',
-      frequency: parseInt(network.frequency || '0', 10),
-      security: network.security || ''
-    }));
+    const result = Object.values(grouped);
+    result.sort((a, b) => b.signal - a.signal);
 
-    mapped.sort((a, b) => b.signal - a.signal);
-
-    console.log(`[scanWifi] Final result count: ${mapped.length}`);
-    if (mapped.length > 0) {
-      console.log(`[scanWifi] Sample network:`, mapped[0]);
-    }
-
-    return mapped;
+    console.log(`[scanWifi] Found ${result.length} unique networks`);
+    return result;
   } catch (err) {
     console.error('Failed to scan WiFi:', err.message, err.stack);
     throw err;

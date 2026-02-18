@@ -8,9 +8,11 @@ export const config = {
 
   mikrotik: {
     baseUrl: process.env.MT_BASE_URL || 'https://172.20.50.6',
+    host: (process.env.MT_BASE_URL || 'https://172.20.50.6').replace(/^https?:\/\//, ''),
     user: process.env.MT_USER || 'api',
     pass: process.env.MT_PASS || '',
     tlsCaPath: process.env.MT_TLS_CA_PATH || '/app/certs/mikrotik-ca.crt',
+    sshPort: parseInt(process.env.MT_SSH_PORT || '22', 10),
     interfaces: {
       lte: process.env.LTE_IFACE || 'lte1',
       wlan: process.env.WLAN_IFACE || 'wlan2.4',
