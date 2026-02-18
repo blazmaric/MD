@@ -361,6 +361,7 @@ export async function scanWifi(interfaceName, db, force = false) {
     const output = await executeSSHCommand(command);
 
     console.log(`[scanWifi] SSH output length: ${output.length}`);
+    console.log(`[scanWifi] First 500 chars:`, output.substring(0, 500));
 
     const lines = output.split('\n').filter(line => line.trim());
     const networks = [];

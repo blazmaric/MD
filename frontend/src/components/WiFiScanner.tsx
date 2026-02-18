@@ -231,7 +231,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
                   </div>
                 </div>
                 {selectedSsid === network.ssid && (
-                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Selected</span>
+                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Izbrano</span>
                 )}
               </div>
             </div>
@@ -239,10 +239,10 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
 
           {selectedSsid && (
             <form onSubmit={handleConnect} className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg space-y-3">
-              <h4 className="font-semibold text-slate-900 dark:text-slate-100">Connect to {selectedSsid}</h4>
+              <h4 className="font-semibold text-slate-900 dark:text-slate-100">Poveži se z {selectedSsid}</h4>
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Password
+                  Geslo
                 </label>
                 <input
                   id="password"
@@ -259,7 +259,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
                   disabled={connecting}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {connecting ? 'Connecting...' : 'Connect'}
+                  {connecting ? 'Povezujem...' : 'Poveži'}
                 </button>
                 <button
                   type="button"
@@ -269,7 +269,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
                   }}
                   className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-300 dark:hover:bg-slate-600"
                 >
-                  Cancel
+                  Prekliči
                 </button>
               </div>
             </form>
