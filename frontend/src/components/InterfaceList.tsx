@@ -101,13 +101,6 @@ export default function InterfaceList() {
       </div>
 
       <div className="p-3">
-        {publicIp && (
-          <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded text-center">
-            <p className="text-xs text-slate-600 dark:text-slate-400 mb-0.5">Public IP</p>
-            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{publicIp}</p>
-          </div>
-        )}
-
         <div className="space-y-2">
           {interfaces.map((iface) => (
             <div
