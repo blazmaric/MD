@@ -322,7 +322,7 @@ export async function checkLteConnectivity() {
     console.log('[checkLteConnectivity] Starting ping test via LTE interface');
 
     const lteInterface = config.mikrotik.interfaces.lte;
-    const command = `/ping 8.8.8.8 interface=${lteInterface} count=1`;
+    const command = `/ping 8.8.8.8%${lteInterface} count=1`;
     const output = await executeSSHCommand(command);
 
     console.log('[checkLteConnectivity] Ping output:', output);

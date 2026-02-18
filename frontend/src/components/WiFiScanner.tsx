@@ -50,24 +50,29 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
 
   async function handleScan(forceMode = false) {
     setError('');
+    setSuccess('');
 
     if (!forceMode) {
+      setCheckingLte(true);
       const isLteConnected = await checkLte();
+      setCheckingLte(false);
 
       if (!isLteConnected) {
-        const forceScan = confirm('LTE interface is not connected. Scanning WiFi may disconnect your current connection.\n\nDo you want to force the scan anyway? (Not recommended if you are connected via WiFi)');
+        setError('LTE interface is not connected. Scanning WiFi may disconnect your current connection.');
+        const forceScan = confirm('⚠️ WARNING: LTE is not connected!\n\nScanning WiFi will temporarily disconnect your current connection. If you are connected via WiFi, you will lose access.\n\nDo you want to force the scan anyway?');
         if (forceScan) {
           return handleScan(true);
         }
         return;
       }
 
-      if (!confirm('Scanning will temporarily disconnect WiFi. LTE is active and will maintain connectivity. Continue?')) {
+      if (!confirm('Scanning will temporarily disconnect WiFi. LTE is active and will maintain connectivity.\n\nContinue with scan?')) {
         return;
       }
     }
 
     setScanning(true);
+    setError('');
     try {
       const data = await api.wifi.scan(forceMode);
       setNetworks(data.networks || []);
@@ -107,7 +112,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
           WiFi Scanner (2.4 GHz)
         </h3>
         <button
-          onClick={handleScan}
+          onClick={() => handleScan()}
           disabled={scanning || checkingLte}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
         >
