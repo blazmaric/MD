@@ -96,7 +96,10 @@ export const api = {
 
   wifi: {
     scan: () =>
-      apiFetch('/wifi/scan', { method: 'POST' }),
+      apiFetch('/wifi/scan', {
+        method: 'POST',
+        body: JSON.stringify({})
+      }),
 
     connect: (ssid: string, password: string) =>
       apiFetch('/wifi/connect', {
