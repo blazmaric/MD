@@ -151,16 +151,16 @@ export default function LogViewer() {
           <table className="w-full">
             <thead className="bg-slate-50 dark:bg-slate-700">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                <th className="px-2 py-2 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase">
                   {t('time')}
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                <th className="px-2 py-2 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase">
                   {t('category')}
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                <th className="px-2 py-2 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase">
                   {t('severity')}
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                <th className="px-2 py-2 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase">
                   {t('messageLog')}
                 </th>
               </tr>
@@ -168,31 +168,29 @@ export default function LogViewer() {
             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
               {logs.map((log) => (
                 <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                  <td className="px-2 py-2 whitespace-nowrap text-xs text-slate-600 dark:text-slate-400">
                     <div className="font-mono">
                       {new Date(log.log_time).toLocaleString('sl-SI', {
                         day: '2-digit',
                         month: '2-digit',
-                        year: '2-digit',
                         hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit'
+                        minute: '2-digit'
                       })}
                     </div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm">
-                    <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                  <td className="px-2 py-2 whitespace-nowrap text-xs">
+                    <span className="px-2 py-1 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                       {log.category}
                     </span>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${getSeverityColor(log.severity)}`}>
+                  <td className="px-2 py-2 whitespace-nowrap text-xs">
+                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${getSeverityColor(log.severity)}`}>
                       {getSeverityIcon(log.severity)}
                       {log.severity}
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-sm text-slate-900 dark:text-slate-100">
-                    <div className="break-words max-w-2xl">
+                  <td className="px-2 py-2 text-xs text-slate-900 dark:text-slate-100">
+                    <div className="break-words">
                       {log.message}
                     </div>
                   </td>

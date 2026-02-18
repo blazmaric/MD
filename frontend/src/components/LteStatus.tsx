@@ -42,6 +42,9 @@ export default function LteStatus({ snapshot }: LteStatusProps) {
         </div>
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('lteStatus')}</h3>
+          {isLteActive && (
+            <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">Primarni Gateway</p>
+          )}
         </div>
         <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
           isLteActive

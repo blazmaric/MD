@@ -81,6 +81,9 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('wlanStatus')}</h3>
+            {isWlanActive && (
+              <p className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">Primarni Gateway</p>
+            )}
           </div>
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
             isWlanActive

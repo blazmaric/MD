@@ -12,6 +12,7 @@ export default function SmsManager() {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const messagesPerPage = 4;
 
@@ -34,12 +35,15 @@ export default function SmsManager() {
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setSending(true);
 
     try {
       await api.sms.send(phone, message);
+      setSuccess(`SMS uspešno poslan na ${phone}`);
       setPhone('');
       setMessage('');
+      setTimeout(() => setSuccess(''), 5000);
       fetchInbox();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send SMS');
@@ -149,6 +153,11 @@ export default function SmsManager() {
             {error && (
               <div className="p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded text-red-700 dark:text-red-400 text-xs">
                 {error}
+              </div>
+            )}
+            {success && (
+              <div className="p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded text-green-700 dark:text-green-400 text-xs">
+                {success}
               </div>
             )}
             <button

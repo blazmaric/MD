@@ -32,7 +32,7 @@ export default async function wifiRoutes(fastify) {
   });
 
   fastify.get('/wifi/registration-table', {
-    preHandler: [authenticateMiddleware, requirePermission('view_summary')]
+    preHandler: [authenticateMiddleware, requirePermission('view_wlan5_clients')]
   }, async (request, reply) => {
     const { interface: interfaceName = 'wlan5' } = request.query;
     try {
@@ -56,7 +56,7 @@ export default async function wifiRoutes(fastify) {
   });
 
   fastify.get('/wifi/wlan5/status', {
-    preHandler: [authenticateMiddleware, requirePermission('view_summary')]
+    preHandler: [authenticateMiddleware, requirePermission('view_wlan5')]
   }, async (request, reply) => {
     try {
       const status = await getWlan5Status();
@@ -67,7 +67,7 @@ export default async function wifiRoutes(fastify) {
   });
 
   fastify.get('/wifi/wlan24/status', {
-    preHandler: [authenticateMiddleware, requirePermission('view_summary')]
+    preHandler: [authenticateMiddleware, requirePermission('view_wlan24')]
   }, async (request, reply) => {
     try {
       const status = await getWlan24Status();
