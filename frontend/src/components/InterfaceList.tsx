@@ -20,7 +20,6 @@ interface Interface {
 export default function InterfaceList() {
   const { t } = useLanguage();
   const [interfaces, setInterfaces] = useState<Interface[]>([]);
-  const [publicIp, setPublicIp] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -41,7 +40,6 @@ export default function InterfaceList() {
         return aNum - bNum;
       });
       setInterfaces(sortedInterfaces);
-      setPublicIp(data.publicIp || null);
     } catch (err) {
       console.error('Failed to fetch interfaces:', err);
     } finally {
