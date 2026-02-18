@@ -7,20 +7,6 @@ let pollerInterval = null;
 let logPollerInterval = null;
 let trafficPollerInterval = null;
 
-function matchesPattern(name, pattern) {
-  if (!pattern) return false;
-  if (pattern === name) return true;
-
-  // Convert RouterOS wildcard pattern to regex
-  // *N matches wlanN, ethN, etc.
-  const regexPattern = pattern
-    .replace(/\*/g, '.*')
-    .replace(/\?/g, '.');
-
-  const regex = new RegExp(`^${regexPattern}$`, 'i');
-  return regex.test(name);
-}
-
 export function getLastSnapshot() {
   return lastSnapshot;
 }
@@ -91,7 +77,7 @@ async function collectSnapshot() {
       if (activeInterface) {
         if (activeInterface === config.mikrotik.interfaces.lte) {
           snapshot.gateway_type = 'LTE';
-        } else if (matchesPattern(activeInterface, config.mikrotik.interfaces.wlan)) {
+        } else if (activeInterface === config.mikrotik.interfaces.wlan) {
           snapshot.gateway_type = 'WiFi';
         } else {
           snapshot.gateway_type = 'Unknown';
