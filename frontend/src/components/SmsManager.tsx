@@ -91,7 +91,15 @@ export default function SmsManager() {
                     <div className="flex justify-between items-start mb-0.5">
                       <span className="font-semibold text-xs text-slate-900 dark:text-slate-100">{msg.phone}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-500 dark:text-slate-400">{msg.timestamp}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          {new Date(msg.timestamp).toLocaleString('sl-SI', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          }).replace(',', '')}
+                        </span>
                         <button
                           onClick={() => handleDelete(msg['.id'])}
                           className="p-1 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
@@ -111,17 +119,17 @@ export default function SmsManager() {
                       disabled={currentPage === 0}
                       className="px-2 py-1 text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded disabled:opacity-50"
                     >
-                      Previous
+                      {t('previous')}
                     </button>
                     <span className="text-xs text-slate-600 dark:text-slate-400">
-                      Page {currentPage + 1} of {Math.ceil(messages.length / messagesPerPage)}
+                      {t('pageOf').replace('{current}', String(currentPage + 1)).replace('{total}', String(Math.ceil(messages.length / messagesPerPage)))}
                     </span>
                     <button
                       onClick={() => setCurrentPage(Math.min(Math.ceil(messages.length / messagesPerPage) - 1, currentPage + 1))}
                       disabled={currentPage >= Math.ceil(messages.length / messagesPerPage) - 1}
                       className="px-2 py-1 text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded disabled:opacity-50"
                     >
-                      Next
+                      {t('next')}
                     </button>
                   </div>
                 )}

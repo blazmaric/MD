@@ -60,7 +60,7 @@ async function collectSnapshot() {
     ]);
 
     snapshot.online = true;
-    snapshot.public_ip = cloud ? cloud['public-address'] : null;
+    snapshot.public_ip = cloud && cloud['public-address'] ? cloud['public-address'] : null;
 
     if (route) {
       if (route.gateway) {

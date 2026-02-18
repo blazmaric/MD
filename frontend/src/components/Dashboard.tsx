@@ -8,7 +8,6 @@ import LogViewer from './LogViewer';
 import PingTester from './PingTester';
 import SmsManager from './SmsManager';
 import InterfaceList from './InterfaceList';
-import Wlan5Clients from './Wlan5Clients';
 import LteStatus from './LteStatus';
 import WlanStatus from './WlanStatus';
 import Wlan5Status from './Wlan5Status';
@@ -88,8 +87,6 @@ export default function Dashboard({ user }: DashboardProps) {
           onReboot={hasPermission('system_reboot') ? () => setShowRebootDialog(true) : undefined}
         />
       )}
-
-      {hasPermission('view_wlan5_clients') && <Wlan5Clients />}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {hasPermission('view_interfaces') && (

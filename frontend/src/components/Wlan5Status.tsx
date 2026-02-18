@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Wifi, RefreshCw } from 'lucide-react';
+import { Wifi, RefreshCw, Users, X } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
+import Wlan5Clients from './Wlan5Clients';
 
 interface Wlan5Status {
   ssid: string;
@@ -20,6 +21,7 @@ export default function Wlan5Status() {
   const { t } = useLanguage();
   const [wlan5Info, setWlan5Info] = useState<Wlan5Status | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showClientsModal, setShowClientsModal] = useState(false);
 
   useEffect(() => {
     fetchWlan5Info();
@@ -81,8 +83,14 @@ export default function Wlan5Status() {
                 {wlan5Info.ssid}
               </p>
             </div>
-            <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
-              <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">{t('connectedClients')}</p>
+            <div
+              onClick={() => setShowClientsModal(true)}
+              className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3 cursor-pointer hover:bg-white/80 dark:hover:bg-slate-700/60 transition-colors"
+            >
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium flex items-center gap-1">
+                <Users className="w-3 h-3" />
+                {t('connectedClients')}
+              </p>
               <p className="text-base font-bold text-sky-600 dark:text-sky-400">
                 {wlan5Info.authenticatedClients}
               </p>
@@ -114,6 +122,28 @@ export default function Wlan5Status() {
           </div>
         )}
       </div>
+
+      {showClientsModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                {t('connectedClients')} - WLAN 5 GHz
+              </h3>
+              <button
+                onClick={() => setShowClientsModal(false)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              </button>
+            </div>
+            <div className="overflow-auto max-h-[calc(80vh-80px)]">
+              <Wlan5Clients />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

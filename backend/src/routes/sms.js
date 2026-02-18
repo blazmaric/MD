@@ -6,6 +6,7 @@ export default async function smsRoutes(fastify) {
     preHandler: [authenticateMiddleware, requirePermission('view_sms')]
   }, async () => {
     const messages = await getSmsInbox();
+    messages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     return { messages };
   });
 

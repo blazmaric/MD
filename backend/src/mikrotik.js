@@ -150,9 +150,14 @@ export async function ping(address, count = 4, sourceInterface = null) {
     }
 
     const url = `${config.mikrotik.baseUrl}/rest/ping`;
+    const dedicatedAgent = new https.Agent({
+      rejectUnauthorized: false,
+      keepAlive: false
+    });
+
     const response = await fetch(url, {
       method: 'POST',
-      agent: httpsAgent,
+      agent: dedicatedAgent,
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json'

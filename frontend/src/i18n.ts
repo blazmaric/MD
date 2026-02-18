@@ -83,6 +83,9 @@ export const translations = {
     interfaceForPing: 'Vmesnik za ping',
     pingButton: 'Ping',
     pinging: 'Pošiljam...',
+    previous: 'Nazaj',
+    next: 'Naprej',
+    pageOf: 'Stran {current} od {total}',
 
     // GPS Map
     gpsLocation: 'GPS Lokacija',
@@ -181,8 +184,6 @@ export const translations = {
     showing: 'Prikazujem',
     to: 'do',
     of: 'od',
-    previous: 'Prejšnja',
-    next: 'Naslednja',
 
     // Logs
     logs: 'Dnevniki',
@@ -314,6 +315,9 @@ export const translations = {
     interfaceForPing: 'Interface for ping',
     pingButton: 'Ping',
     pinging: 'Pinging...',
+    previous: 'Previous',
+    next: 'Next',
+    pageOf: 'Page {current} of {total}',
 
     // GPS Map
     gpsLocation: 'GPS Location',
@@ -412,8 +416,6 @@ export const translations = {
     showing: 'Showing',
     to: 'to',
     of: 'of',
-    previous: 'Previous',
-    next: 'Next',
 
     // Logs
     logs: 'Logs',

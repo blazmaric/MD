@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wifi, Search, X } from 'lucide-react';
+import { Wifi, Search, X, Star } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
@@ -82,7 +82,10 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('wlanStatus')}</h3>
             {isWlanActive && (
-              <p className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">Primarni Gateway</p>
+              <div className="flex items-center gap-1 mt-1">
+                <Star className="w-3.5 h-3.5 text-yellow-500 dark:text-yellow-400 fill-yellow-500 dark:fill-yellow-400" />
+                <p className="text-xs text-yellow-700 dark:text-yellow-400 font-bold uppercase tracking-wide">Primarni Gateway</p>
+              </div>
             )}
           </div>
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
