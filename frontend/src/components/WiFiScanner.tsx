@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wifi, Search, Lock, AlertTriangle } from 'lucide-react';
+import { Wifi, Search, Lock, AlertTriangle, WifiOff } from 'lucide-react';
 import { api } from '../api';
 import type { WiFiNetwork, Snapshot } from '../types';
 
@@ -17,9 +17,17 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
   const [success, setSuccess] = useState('');
   const [lteConnected, setLteConnected] = useState<boolean | null>(null);
   const [checkingLte, setCheckingLte] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'error' | 'warning' | 'success' } | null>(null);
 
   useEffect(() => {
     loadScanResults();
+    checkLte();
+
+    const interval = setInterval(() => {
+      checkLte();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   async function loadScanResults() {
@@ -31,6 +39,11 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
     } catch (err) {
       console.error('Failed to load scan results:', err);
     }
+  }
+
+  function showToast(message: string, type: 'error' | 'warning' | 'success') {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 5000);
   }
 
   async function checkLte() {
@@ -58,14 +71,18 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
 
         if (job.status === 'completed') {
           setNetworks(job.result || []);
-          setSuccess('Scan completed successfully!');
+          const msg = 'Skeniranje uspešno zaključeno!';
+          setSuccess(msg);
+          showToast(msg, 'success');
           setTimeout(() => setSuccess(''), 3000);
           await loadScanResults();
           return true;
         }
 
         if (job.status === 'failed') {
-          setError(job.error || 'Scan failed');
+          const errorMsg = job.error || 'Skeniranje ni uspelo';
+          setError(errorMsg);
+          showToast(errorMsg, 'error');
           return false;
         }
 
@@ -78,7 +95,9 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
       }
     }
 
-    setError('Scan timeout - please try again');
+    const msg = 'Skeniranje časovno poteklo - prosim poskusite znova';
+    setError(msg);
+    showToast(msg, 'error');
     return false;
   }
 
@@ -92,15 +111,13 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
       setCheckingLte(false);
 
       if (!isLteConnected) {
-        setError('LTE interface is not connected. Scanning WiFi may disconnect your current connection.');
-        const forceScan = confirm('⚠️ WARNING: LTE is not connected!\n\nScanning WiFi will temporarily disconnect your current connection. If you are connected via WiFi, you will lose access.\n\nDo you want to force the scan anyway?');
-        if (forceScan) {
-          return handleScan(true);
-        }
+        const msg = 'LTE povezava ni aktivna. Skeniranje ni mogoče, saj bi prekinilo aktivno povezavo.';
+        setError(msg);
+        showToast(msg, 'warning');
         return;
       }
 
-      if (!confirm('Scanning will temporarily disconnect WiFi. LTE is active and will maintain connectivity.\n\nContinue with scan?')) {
+      if (!confirm('Skeniranje bo začasno prekinilo WiFi povezavo. LTE bo ohranil povezljivost.\n\nNadaljujem?')) {
         return;
       }
     }
@@ -112,10 +129,14 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
       if (data.jobId) {
         await pollScanJob(data.jobId);
       } else {
-        setError('Invalid response from server');
+        const msg = 'Neveljaven odgovor strežnika';
+        setError(msg);
+        showToast(msg, 'error');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to scan WiFi');
+      const msg = err instanceof Error ? err.message : 'Napaka pri skeniranju WiFi';
+      setError(msg);
+      showToast(msg, 'error');
     } finally {
       setScanning(false);
     }
@@ -129,11 +150,15 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
 
     try {
       await api.wifi.connect(selectedSsid, password);
-      setSuccess(`Successfully connected to ${selectedSsid}!`);
+      const msg = `Uspešno povezan z ${selectedSsid}!`;
+      setSuccess(msg);
+      showToast(msg, 'success');
       setSelectedSsid('');
       setPassword('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect to WiFi');
+      const msg = err instanceof Error ? err.message : 'Napaka pri povezavi z WiFi';
+      setError(msg);
+      showToast(msg, 'error');
     } finally {
       setConnecting(false);
     }
@@ -148,11 +173,20 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
         </h3>
         <button
           onClick={() => handleScan()}
-          disabled={scanning || checkingLte}
+          disabled={scanning || checkingLte || lteConnected === false}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
         >
-          <Search className="w-4 h-4" />
-          {scanning ? 'Scanning...' : checkingLte ? 'Checking LTE...' : 'Scan Networks'}
+          {lteConnected === false ? (
+            <>
+              <WifiOff className="w-4 h-4" />
+              LTE ni povezan
+            </>
+          ) : (
+            <>
+              <Search className="w-4 h-4" />
+              {scanning ? 'Skeniram...' : checkingLte ? 'Preverjam LTE...' : 'Skeniraj omrežja'}
+            </>
+          )}
         </button>
       </div>
 
@@ -160,8 +194,8 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
         <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg text-red-800 dark:text-red-300 text-sm flex items-start gap-2">
           <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div>
-            <div className="font-semibold mb-1">LTE Not Connected</div>
-            <div>WiFi scanning requires LTE to be connected. Scanning will temporarily disconnect WiFi, so LTE must be available to maintain connectivity.</div>
+            <div className="font-semibold mb-1">LTE ni povezan</div>
+            <div>WiFi skeniranje zahteva aktivno LTE povezavo. Skeniranje začasno prekine WiFi, zato mora biti LTE na voljo za vzdrževanje povezljivosti.</div>
           </div>
         </div>
       )}
@@ -243,8 +277,29 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
         </div>
       )}
 
-      {networks.length === 0 && !scanning && (
-        <p className="text-center py-8 text-slate-600 dark:text-slate-400">No networks found. Click Scan to search for WiFi networks.</p>
+      {networks.length === 0 && !scanning && !error && (
+        <p className="text-center py-8 text-slate-600 dark:text-slate-400">Omrežij ni najdenih. Klikni Skeniraj za iskanje WiFi omrežij.</p>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
+          <div className={`p-4 rounded-lg shadow-lg border flex items-start gap-3 min-w-[320px] max-w-md ${
+            toast.type === 'error' ? 'bg-red-50 dark:bg-red-900/90 border-red-200 dark:border-red-700 text-red-800 dark:text-red-200' :
+            toast.type === 'warning' ? 'bg-yellow-50 dark:bg-yellow-900/90 border-yellow-200 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200' :
+            'bg-green-50 dark:bg-green-900/90 border-green-200 dark:border-green-700 text-green-800 dark:text-green-200'
+          }`}>
+            <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-medium text-sm">{toast.message}</p>
+            </div>
+            <button
+              onClick={() => setToast(null)}
+              className="text-current opacity-70 hover:opacity-100 transition-opacity"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
