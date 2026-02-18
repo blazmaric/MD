@@ -48,6 +48,40 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
     }
   }
 
+  async function pollScanJob(jobId: string) {
+    const maxAttempts = 60;
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      try {
+        const job = await api.wifi.getScanJob(jobId);
+
+        if (job.status === 'completed') {
+          setNetworks(job.result || []);
+          setSuccess('Scan completed successfully!');
+          setTimeout(() => setSuccess(''), 3000);
+          await loadScanResults();
+          return true;
+        }
+
+        if (job.status === 'failed') {
+          setError(job.error || 'Scan failed');
+          return false;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        attempts++;
+      } catch (err) {
+        console.error('Failed to poll job:', err);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        attempts++;
+      }
+    }
+
+    setError('Scan timeout - please try again');
+    return false;
+  }
+
   async function handleScan(forceMode = false) {
     setError('');
     setSuccess('');
@@ -75,10 +109,11 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
     setError('');
     try {
       const data = await api.wifi.scan(forceMode);
-      setNetworks(data.networks || []);
-      setSuccess('Scan completed successfully!');
-      setTimeout(() => setSuccess(''), 3000);
-      await loadScanResults();
+      if (data.jobId) {
+        await pollScanJob(data.jobId);
+      } else {
+        setError('Invalid response from server');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to scan WiFi');
     } finally {

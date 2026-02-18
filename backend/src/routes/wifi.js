@@ -2,15 +2,30 @@ import { authenticateMiddleware, requirePermission } from '../auth.js';
 import { scanWifi, connectWifi, getWirelessRegistrationTable, disconnectWirelessClient, getWlan5Status, getWlan24Status, checkLteConnectivity } from '../mikrotik.js';
 import { config } from '../config.js';
 import * as db from '../db.js';
+import { createJob, updateJob, getJob } from '../jobManager.js';
+import { getLteCache, setLteCache, isLteCheckInProgress, setLteCheckInProgress } from '../lteCache.js';
 
 export default async function wifiRoutes(fastify) {
   fastify.get('/wifi/lte-check', {
     preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     try {
+      const cached = getLteCache();
+      if (cached) {
+        return cached;
+      }
+
+      if (isLteCheckInProgress()) {
+        return { connected: null, checking: true };
+      }
+
+      setLteCheckInProgress(true);
       const isConnected = await checkLteConnectivity();
-      return { connected: isConnected };
+      setLteCache(isConnected);
+
+      return { connected: isConnected, cached: false };
     } catch (err) {
+      setLteCheckInProgress(false);
       return reply.code(500).send({ error: err.message });
     }
   });
@@ -20,8 +35,47 @@ export default async function wifiRoutes(fastify) {
   }, async (request, reply) => {
     try {
       const { force = false } = request.body;
-      const results = await scanWifi(config.mikrotik.interfaces.wlan, db, force);
-      return { networks: results };
+
+      const job = createJob('wifi-scan', {
+        interface: config.mikrotik.interfaces.wlan,
+        force
+      });
+
+      scanWifi(config.mikrotik.interfaces.wlan, db, force)
+        .then(results => {
+          updateJob(job.id, {
+            status: 'completed',
+            progress: 100,
+            result: results
+          });
+        })
+        .catch(err => {
+          updateJob(job.id, {
+            status: 'failed',
+            error: err.message
+          });
+        });
+
+      updateJob(job.id, { status: 'running', progress: 10 });
+
+      return { jobId: job.id, status: 'started' };
+    } catch (err) {
+      return reply.code(500).send({ error: err.message });
+    }
+  });
+
+  fastify.get('/wifi/scan-job/:jobId', {
+    preHandler: [authenticateMiddleware]
+  }, async (request, reply) => {
+    try {
+      const { jobId } = request.params;
+      const job = getJob(jobId);
+
+      if (!job) {
+        return reply.code(404).send({ error: 'Job not found' });
+      }
+
+      return job;
     } catch (err) {
       return reply.code(500).send({ error: err.message });
     }

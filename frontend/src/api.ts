@@ -104,6 +104,9 @@ export const api = {
         body: JSON.stringify({ force })
       }),
 
+    getScanJob: (jobId: string) =>
+      apiFetch(`/wifi/scan-job/${jobId}`),
+
     getScanResults: (interfaceName?: string) => {
       const query = new URLSearchParams();
       if (interfaceName) query.append('interface', interfaceName);
