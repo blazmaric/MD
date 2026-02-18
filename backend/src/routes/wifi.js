@@ -1,7 +1,7 @@
 import { authenticateMiddleware, requirePermission } from '../auth.js';
 import { scanWifi, connectWifi, getWirelessRegistrationTable, disconnectWirelessClient, getWlan5Status, getWlan24Status, checkLteConnectivity } from '../mikrotik.js';
 import { config } from '../config.js';
-import { getDb } from '../db.js';
+import * as db from '../db.js';
 
 export default async function wifiRoutes(fastify) {
   fastify.get('/wifi/lte-check', {
@@ -19,7 +19,6 @@ export default async function wifiRoutes(fastify) {
     preHandler: [authenticateMiddleware, requirePermission('manage_wifi')]
   }, async (request, reply) => {
     try {
-      const db = getDb();
       const results = await scanWifi(config.mikrotik.interfaces.wlan, db);
       return { networks: results };
     } catch (err) {
@@ -32,7 +31,6 @@ export default async function wifiRoutes(fastify) {
   }, async (request, reply) => {
     try {
       const { interface: interfaceName = config.mikrotik.interfaces.wlan } = request.query;
-      const db = getDb();
 
       const result = await db.query(
         `SELECT DISTINCT ON (address)
