@@ -25,6 +25,8 @@ export interface Snapshot {
   wifi_signal?: number;
   wifi_tx_rate?: string;
   wifi_rx_rate?: string;
+  wlan_speed_rx?: number;
+  wlan_speed_tx?: number;
   system_uptime?: number;
   system_cpu_percent?: number;
   system_ram_percent?: number;

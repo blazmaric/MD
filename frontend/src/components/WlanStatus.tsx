@@ -23,6 +23,18 @@ interface Wlan24Status {
   rxRate: string;
 }
 
+function formatSpeed(bytesPerSec: number | null | undefined): string {
+  if (!bytesPerSec) return '0 Kbps';
+
+  const kbps = (bytesPerSec * 8) / 1000;
+  const mbps = kbps / 1000;
+
+  if (mbps >= 1) {
+    return `${mbps.toFixed(1)} Mbps`;
+  }
+  return `${kbps.toFixed(0)} Kbps`;
+}
+
 export default function WlanStatus({ snapshot }: WlanStatusProps) {
   const { t } = useLanguage();
   const [scanning, setScanning] = useState(false);
@@ -115,15 +127,15 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
                   </p>
                 </div>
                 <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">TX Rate</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">TX Speed</p>
                   <p className="text-sm font-bold text-orange-600 dark:text-orange-400">
-                    {wlan24Status.txRate}
+                    {formatSpeed(snapshot?.wlan_speed_tx)}
                   </p>
                 </div>
                 <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">RX Rate</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">RX Speed</p>
                   <p className="text-sm font-bold text-green-600 dark:text-green-400">
-                    {wlan24Status.rxRate}
+                    {formatSpeed(snapshot?.wlan_speed_rx)}
                   </p>
                 </div>
               </div>

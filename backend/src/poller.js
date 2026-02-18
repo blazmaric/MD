@@ -101,6 +101,15 @@ async function collectSnapshot() {
       snapshot.wifi_rx_rate = wifi['rx-rate'] || null;
     }
 
+    const wlanIface = interfaces.find(iface => iface.name === config.mikrotik.interfaces.wlan);
+    if (wlanIface) {
+      const wlanTraffic = await mt.monitorTraffic(config.mikrotik.interfaces.wlan);
+      if (wlanTraffic) {
+        snapshot.wlan_speed_rx = wlanTraffic['rx-bits-per-second'] ? Math.floor(wlanTraffic['rx-bits-per-second'] / 8) : null;
+        snapshot.wlan_speed_tx = wlanTraffic['tx-bits-per-second'] ? Math.floor(wlanTraffic['tx-bits-per-second'] / 8) : null;
+      }
+    }
+
     if (sysres) {
       snapshot.system_uptime = sysres.uptime ? parseDuration(sysres.uptime) : null;
       snapshot.system_cpu_percent = sysres['cpu-load'] || null;

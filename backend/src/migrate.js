@@ -136,6 +136,12 @@ ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS wifi_tx_rate TEXT;
 ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS wifi_rx_rate TEXT;
 `;
 
+const MIGRATION_008 = `
+-- Add WLAN real-time traffic speed columns to snapshots table
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS wlan_speed_rx BIGINT;
+ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS wlan_speed_tx BIGINT;
+`;
+
 export async function runMigrations() {
   try {
     console.log('Running database migrations...');
@@ -155,7 +161,8 @@ export async function runMigrations() {
       { name: '004_gps_data', sql: MIGRATION_004 },
       { name: '005_dashboard_layouts', sql: MIGRATION_005 },
       { name: '006_gps_extended', sql: MIGRATION_006 },
-      { name: '007_wifi_signal_rate', sql: MIGRATION_007 }
+      { name: '007_wifi_signal_rate', sql: MIGRATION_007 },
+      { name: '008_wlan_traffic_speed', sql: MIGRATION_008 }
     ];
 
     for (const migration of migrations) {
