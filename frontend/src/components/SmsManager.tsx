@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, RefreshCw } from 'lucide-react';
+import { MessageSquare, RefreshCw, Trash2 } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { SmsMessage } from '../types';
@@ -12,6 +12,8 @@ export default function SmsManager() {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+  const messagesPerPage = 4;
 
   useEffect(() => {
     fetchInbox();
@@ -46,6 +48,15 @@ export default function SmsManager() {
     }
   }
 
+  async function handleDelete(msgId: string) {
+    try {
+      await api.sms.delete(msgId);
+      fetchInbox();
+    } catch (err) {
+      console.error('Failed to delete SMS:', err);
+    }
+  }
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
       <div className="border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
@@ -66,24 +77,51 @@ export default function SmsManager() {
       <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-slate-700">
         <div className="p-4">
           <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 uppercase">{t('smsReceived')}</h4>
-          <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
+          <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
             {messages.length === 0 ? (
               <p className="text-center py-3 text-xs text-slate-600 dark:text-slate-400">{t('noMessages')}</p>
             ) : (
-              messages.slice(0, 1).map((msg) => (
-                <div key={msg['.id']} className="p-2 bg-slate-50 dark:bg-slate-700/50 rounded border border-slate-200 dark:border-slate-600">
-                  <div className="flex justify-between items-start mb-0.5">
-                    <span className="font-semibold text-xs text-slate-900 dark:text-slate-100">{msg.phone}</span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">{msg.timestamp}</span>
+              <>
+                {messages.slice(currentPage * messagesPerPage, (currentPage + 1) * messagesPerPage).map((msg) => (
+                  <div key={msg['.id']} className="p-2 bg-slate-50 dark:bg-slate-700/50 rounded border border-slate-200 dark:border-slate-600">
+                    <div className="flex justify-between items-start mb-0.5">
+                      <span className="font-semibold text-xs text-slate-900 dark:text-slate-100">{msg.phone}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">{msg.timestamp}</span>
+                        <button
+                          onClick={() => handleDelete(msg['.id'])}
+                          className="p-1 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-700 dark:text-slate-300">{msg.message}</p>
                   </div>
-                  <p className="text-xs text-slate-700 dark:text-slate-300 line-clamp-2">{msg.message}</p>
-                </div>
-              ))
-            )}
-            {messages.length > 1 && (
-              <p className="text-center text-xs text-slate-500 dark:text-slate-400 pt-0.5">
-                +{messages.length - 1} {t('moreMessages')}
-              </p>
+                ))}
+                {messages.length > messagesPerPage && (
+                  <div className="flex justify-between items-center pt-2">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                      disabled={currentPage === 0}
+                      className="px-2 py-1 text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                      Page {currentPage + 1} of {Math.ceil(messages.length / messagesPerPage)}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(Math.min(Math.ceil(messages.length / messagesPerPage) - 1, currentPage + 1))}
+                      disabled={currentPage >= Math.ceil(messages.length / messagesPerPage) - 1}
+                      className="px-2 py-1 text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { authenticateMiddleware, requirePermission } from '../auth.js';
-import { scanWifi, connectWifi, getWirelessRegistrationTable, disconnectWirelessClient, getWlan5Status } from '../mikrotik.js';
+import { scanWifi, connectWifi, getWirelessRegistrationTable, disconnectWirelessClient, getWlan5Status, getWlan24Status } from '../mikrotik.js';
 import { config } from '../config.js';
 
 export default async function wifiRoutes(fastify) {
@@ -60,6 +60,17 @@ export default async function wifiRoutes(fastify) {
   }, async (request, reply) => {
     try {
       const status = await getWlan5Status();
+      return { status };
+    } catch (err) {
+      return reply.code(500).send({ error: err.message });
+    }
+  });
+
+  fastify.get('/wifi/wlan24/status', {
+    preHandler: [authenticateMiddleware, requirePermission('view_summary')]
+  }, async (request, reply) => {
+    try {
+      const status = await getWlan24Status();
       return { status };
     } catch (err) {
       return reply.code(500).send({ error: err.message });

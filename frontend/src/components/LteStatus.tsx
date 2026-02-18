@@ -57,7 +57,7 @@ export default function LteStatus({ snapshot }: LteStatusProps) {
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
             <p className="text-xs text-slate-600 dark:text-slate-400 mb-2 uppercase font-medium">{t('operator')}</p>
-            <p className="text-lg font-bold text-rose-600 dark:text-rose-400">
+            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
               {snapshot.lte_operator || 'N/A'}
             </p>
           </div>

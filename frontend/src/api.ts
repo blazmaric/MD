@@ -115,6 +115,9 @@ export const api = {
 
     wlan5Status: () =>
       apiFetch('/wifi/wlan5/status'),
+
+    wlan24Status: () =>
+      apiFetch('/wifi/wlan24/status'),
   },
 
   interfaces: {

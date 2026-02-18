@@ -7,11 +7,8 @@ interface Wlan5Status {
   ssid: string;
   authenticatedClients: number;
   registeredClients: number;
-  channel: string;
   noiseFloor: string;
-  ccq: string;
   status: string;
-  wirelessProtocol: string;
   wmmEnabled: boolean;
   rxMbps: string;
   txMbps: string;
@@ -77,7 +74,7 @@ export default function Wlan5Status() {
         {!wlan5Info ? (
           <p className="text-center text-slate-600 dark:text-slate-400">{t('loading')}</p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
               <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">SSID</p>
               <p className="text-base font-bold text-blue-600 dark:text-blue-400">
@@ -97,21 +94,9 @@ export default function Wlan5Status() {
               </p>
             </div>
             <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
-              <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">Channel</p>
-              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                {wlan5Info.channel}
-              </p>
-            </div>
-            <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
               <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">Noise Floor</p>
               <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                 {wlan5Info.noiseFloor} dBm
-              </p>
-            </div>
-            <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
-              <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">CCQ</p>
-              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                {wlan5Info.ccq}%
               </p>
             </div>
             <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
@@ -124,12 +109,6 @@ export default function Wlan5Status() {
               <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">TX Speed</p>
               <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">
                 {wlan5Info.txMbps} Mbps
-              </p>
-            </div>
-            <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
-              <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">Protocol</p>
-              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                {wlan5Info.wirelessProtocol}
               </p>
             </div>
           </div>

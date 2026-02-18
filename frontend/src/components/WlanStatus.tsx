@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Wifi, Search, X } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
@@ -15,11 +15,35 @@ interface ScanResult {
   channel: number;
 }
 
+interface Wlan24Status {
+  status: string;
+  ssid: string;
+  signalStrength: string;
+  txRate: string;
+  rxRate: string;
+}
+
 export default function WlanStatus({ snapshot }: WlanStatusProps) {
   const { t } = useLanguage();
   const [scanning, setScanning] = useState(false);
   const [scanResults, setScanResults] = useState<ScanResult[]>([]);
   const [showScanPopup, setShowScanPopup] = useState(false);
+  const [wlan24Status, setWlan24Status] = useState<Wlan24Status | null>(null);
+
+  useEffect(() => {
+    fetchWlan24Status();
+    const interval = setInterval(fetchWlan24Status, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function fetchWlan24Status() {
+    try {
+      const data = await api.wifi.wlan24Status();
+      setWlan24Status(data.status);
+    } catch (err) {
+      console.error('Failed to fetch WLAN 2.4 status:', err);
+    }
+  }
 
   async function handleScan() {
     setScanning(true);
@@ -70,30 +94,30 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
 
         <div className="px-6 pb-6">
           <div className="space-y-4">
-            {isWlanActive && (
+            {wlan24Status && (
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
                   <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">SSID</p>
                   <p className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
-                    {snapshot.wifi_ssid || 'N/A'}
+                    {wlan24Status.ssid}
                   </p>
                 </div>
                 <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
                   <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">{t('signal')}</p>
                   <p className="text-lg font-bold text-teal-600 dark:text-teal-400">
-                    {snapshot.wifi_signal ? `${snapshot.wifi_signal} dBm` : 'N/A'}
+                    {wlan24Status.signalStrength}
                   </p>
                 </div>
                 <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">TX</p>
-                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                    {snapshot.wifi_tx_rate || 'N/A'}
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">TX Rate</p>
+                  <p className="text-sm font-bold text-orange-600 dark:text-orange-400">
+                    {wlan24Status.txRate}
                   </p>
                 </div>
                 <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">RX</p>
-                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                    {snapshot.wifi_rx_rate || 'N/A'}
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">RX Rate</p>
+                  <p className="text-sm font-bold text-green-600 dark:text-green-400">
+                    {wlan24Status.rxRate}
                   </p>
                 </div>
               </div>

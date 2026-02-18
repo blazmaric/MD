@@ -144,7 +144,7 @@ export async function ping(address, count = 4, sourceInterface = null) {
   const timeout = setTimeout(() => controller.abort(), pingTimeout);
 
   try {
-    const body = { address, count };
+    const body = { address, count: count.toString() };
     if (sourceInterface) {
       body.interface = sourceInterface;
     }
@@ -339,32 +339,58 @@ export async function getWlan5Status() {
 
     const monitor = monitorResult[0] || {};
 
-    const [rxByte1, txByte1] = [wlan5Interface['rx-byte'], wlan5Interface['tx-byte']];
+    const rxByte1 = parseInt(wlan5Interface['rx-byte'] || '0');
+    const txByte1 = parseInt(wlan5Interface['tx-byte'] || '0');
+
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     const interfacesAfter = await mtFetch('/rest/interface/wireless');
     const wlan5After = interfacesAfter.find(iface => iface.name === 'wlan5');
-    const [rxByte2, txByte2] = [wlan5After['rx-byte'], wlan5After['tx-byte']];
 
-    const rxMbps = ((parseInt(rxByte2) - parseInt(rxByte1)) * 8) / 1000000;
-    const txMbps = ((parseInt(txByte2) - parseInt(txByte1)) * 8) / 1000000;
+    const rxByte2 = parseInt(wlan5After?.['rx-byte'] || '0');
+    const txByte2 = parseInt(wlan5After?.['tx-byte'] || '0');
+
+    const rxMbps = ((rxByte2 - rxByte1) * 8) / 1000000;
+    const txMbps = ((txByte2 - txByte1) * 8) / 1000000;
 
     return {
       ...wlan5Interface,
       ssid: wlan5Interface.ssid || 'N/A',
       authenticatedClients: parseInt(monitor['authenticated-clients'] || '0'),
       registeredClients: parseInt(monitor['registered-clients'] || '0'),
-      channel: monitor.channel || 'N/A',
       noiseFloor: monitor['noise-floor'] || 'N/A',
-      ccq: monitor['overall-tx-ccq'] || 'N/A',
       status: monitor.status || 'N/A',
-      wirelessProtocol: monitor['wireless-protocol'] || 'N/A',
       wmmEnabled: monitor['wmm-enabled'] === 'true',
       rxMbps: rxMbps.toFixed(2),
       txMbps: txMbps.toFixed(2)
     };
   } catch (err) {
     console.error('Failed to get WLAN 5 status:', err.message);
+    return null;
+  }
+}
+
+export async function getWlan24Status() {
+  try {
+    const monitorResult = await mtFetch('/rest/interface/wireless/monitor', {
+      method: 'POST',
+      body: JSON.stringify({
+        numbers: 'wlan2.4',
+        once: 'true'
+      })
+    });
+
+    const monitor = monitorResult[0] || {};
+
+    return {
+      status: monitor.status || 'N/A',
+      ssid: monitor.ssid || 'N/A',
+      signalStrength: monitor['signal-strength'] || 'N/A',
+      txRate: monitor['tx-rate'] || 'N/A',
+      rxRate: monitor['rx-rate'] || 'N/A'
+    };
+  } catch (err) {
+    console.error('Failed to get WLAN 2.4 status:', err.message);
     return null;
   }
 }
