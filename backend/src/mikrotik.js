@@ -65,7 +65,11 @@ export async function getDefaultRoute() {
 export async function getCloudStatus() {
   try {
     const result = await mtFetch('/rest/ip/cloud');
-    return result[0] || null;
+    // Result can be either an object or an array
+    if (Array.isArray(result)) {
+      return result[0] || null;
+    }
+    return result || null;
   } catch (err) {
     console.error('Failed to get cloud status:', err.message);
     return null;
