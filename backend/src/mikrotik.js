@@ -342,16 +342,20 @@ export async function checkLteConnectivity() {
   }
 }
 
-export async function scanWifi(interfaceName, db) {
+export async function scanWifi(interfaceName, db, force = false) {
   try {
-    console.log(`[scanWifi] Checking LTE connectivity before scanning ${interfaceName}`);
+    if (!force) {
+      console.log(`[scanWifi] Checking LTE connectivity before scanning ${interfaceName}`);
 
-    const lteConnected = await checkLteConnectivity();
-    if (!lteConnected) {
-      throw new Error('LTE interface is not connected. Cannot scan WiFi as it would disconnect the active connection.');
+      const lteConnected = await checkLteConnectivity();
+      if (!lteConnected) {
+        throw new Error('LTE interface is not connected. Cannot scan WiFi as it would disconnect the active connection.');
+      }
+
+      console.log(`[scanWifi] LTE is connected, starting SSH scan for interface: ${interfaceName}`);
+    } else {
+      console.log(`[scanWifi] Force mode enabled, skipping LTE check for ${interfaceName}`);
     }
-
-    console.log(`[scanWifi] LTE is connected, starting SSH scan for interface: ${interfaceName}`);
 
     const command = `/interface wireless scan ${interfaceName} duration=5`;
     const output = await executeSSHCommand(command);

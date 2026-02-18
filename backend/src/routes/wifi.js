@@ -19,7 +19,8 @@ export default async function wifiRoutes(fastify) {
     preHandler: [authenticateMiddleware, requirePermission('manage_wifi')]
   }, async (request, reply) => {
     try {
-      const results = await scanWifi(config.mikrotik.interfaces.wlan, db);
+      const { force = false } = request.body;
+      const results = await scanWifi(config.mikrotik.interfaces.wlan, db, force);
       return { networks: results };
     } catch (err) {
       return reply.code(500).send({ error: err.message });

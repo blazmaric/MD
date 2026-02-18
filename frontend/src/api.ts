@@ -98,10 +98,10 @@ export const api = {
     checkLte: () =>
       apiFetch('/wifi/lte-check'),
 
-    scan: () =>
+    scan: (force = false) =>
       apiFetch('/wifi/scan', {
         method: 'POST',
-        body: JSON.stringify({})
+        body: JSON.stringify({ force })
       }),
 
     getScanResults: (interfaceName?: string) => {

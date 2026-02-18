@@ -48,23 +48,28 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
     }
   }
 
-  async function handleScan() {
+  async function handleScan(forceMode = false) {
     setError('');
 
-    const isLteConnected = await checkLte();
+    if (!forceMode) {
+      const isLteConnected = await checkLte();
 
-    if (!isLteConnected) {
-      setError('LTE interface is not connected. Cannot scan WiFi as it would disconnect the active connection.');
-      return;
-    }
+      if (!isLteConnected) {
+        const forceScan = confirm('LTE interface is not connected. Scanning WiFi may disconnect your current connection.\n\nDo you want to force the scan anyway? (Not recommended if you are connected via WiFi)');
+        if (forceScan) {
+          return handleScan(true);
+        }
+        return;
+      }
 
-    if (!confirm('Scanning will temporarily disconnect WiFi. LTE is active and will maintain connectivity. Continue?')) {
-      return;
+      if (!confirm('Scanning will temporarily disconnect WiFi. LTE is active and will maintain connectivity. Continue?')) {
+        return;
+      }
     }
 
     setScanning(true);
     try {
-      const data = await api.wifi.scan();
+      const data = await api.wifi.scan(forceMode);
       setNetworks(data.networks || []);
       setSuccess('Scan completed successfully!');
       setTimeout(() => setSuccess(''), 3000);
