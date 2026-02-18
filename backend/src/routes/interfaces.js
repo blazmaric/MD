@@ -4,10 +4,13 @@ import { getLastSnapshot } from '../poller.js';
 
 export default async function interfacesRoutes(fastify) {
   fastify.get('/interfaces', {
-    preHandler: [authenticateMiddleware, requirePermission('view_summary')]
+    preHandler: [authenticateMiddleware, requirePermission('view_interface_list')]
   }, async () => {
     const interfaces = await getInterfaces();
     const snapshot = getLastSnapshot();
+
+    console.log('Snapshot:', snapshot);
+    console.log('Public IP:', snapshot?.public_ip);
 
     const etherInterfaces = interfaces.filter(iface => iface.name.match(/^ether\d+/));
 

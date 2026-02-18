@@ -65,11 +65,11 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="h-64 rounded-lg overflow-hidden border-2 border-green-200 dark:border-green-800 shadow-lg">
+            <div className="h-64 rounded-lg overflow-hidden border-2 border-green-200 dark:border-green-800 shadow-lg relative z-0">
               <MapContainer
                 center={[snapshot.gps_latitude!, snapshot.gps_longitude!]}
                 zoom={16}
-                className="h-full w-full"
+                className="h-full w-full z-0"
                 zoomControl={true}
               >
                 <TileLayer

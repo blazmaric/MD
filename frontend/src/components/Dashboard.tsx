@@ -11,8 +11,9 @@ import InterfaceList from './InterfaceList';
 import LteStatus from './LteStatus';
 import WlanStatus from './WlanStatus';
 import Wlan5Status from './Wlan5Status';
+import Wlan5Clients from './Wlan5Clients';
+import TrafficChart from './TrafficChart';
 import GpsMap from './GpsMap';
-import WiFiScanner from './WiFiScanner';
 
 interface DashboardProps {
   user: User;
@@ -74,21 +75,21 @@ export default function Dashboard({ user }: DashboardProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {hasPermission('view_lte') && <LteStatus snapshot={snapshot} />}
-        {hasPermission('view_wlan24') && <WlanStatus snapshot={snapshot} />}
-        {hasPermission('view_wlan5') && <Wlan5Status />}
-      </div>
-
-      {(hasPermission('view_traffic') || hasPermission('view_system')) && (
+      {hasPermission('view_summary_cards') && (
         <SummaryCards
           snapshot={snapshot}
           onReboot={hasPermission('system_reboot') ? () => setShowRebootDialog(true) : undefined}
         />
       )}
 
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {hasPermission('view_lte_status') && <LteStatus snapshot={snapshot} />}
+        {hasPermission('view_wlan_status') && <WlanStatus snapshot={snapshot} />}
+        {hasPermission('view_wlan5_status') && <Wlan5Status />}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {hasPermission('view_interfaces') && (
+        {hasPermission('view_interface_list') && (
           <div className="w-full">
             <InterfaceList />
           </div>
@@ -106,15 +107,17 @@ export default function Dashboard({ user }: DashboardProps) {
         </div>
       )}
 
-      {(hasPermission('view_sms') || hasPermission('send_sms')) && (
+      {hasPermission('view_traffic') && <TrafficChart />}
+
+      {hasPermission('view_wlan5_clients') && (
         <div className="w-full">
-          <SmsManager user={user} />
+          <Wlan5Clients />
         </div>
       )}
 
-      {hasPermission('manage_wifi') && (
+      {hasPermission('view_sms') && (
         <div className="w-full">
-          <WiFiScanner snapshot={snapshot} />
+          <SmsManager user={user} />
         </div>
       )}
 
