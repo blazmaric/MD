@@ -139,7 +139,7 @@ export default function Wlan5Status() {
               </button>
             </div>
             <div className="overflow-auto max-h-[calc(80vh-80px)]">
-              <Wlan5Clients />
+              <Wlan5Clients hideHeader={true} />
             </div>
           </div>
         </div>

@@ -1,14 +1,13 @@
 import { authenticateMiddleware, requirePermission } from '../auth.js';
-import { getInterfaces, getCloudStatus, monitorTraffic } from '../mikrotik.js';
+import { getInterfaces, monitorTraffic } from '../mikrotik.js';
+import { getLastSnapshot } from '../poller.js';
 
 export default async function interfacesRoutes(fastify) {
   fastify.get('/interfaces', {
     preHandler: [authenticateMiddleware, requirePermission('view_summary')]
   }, async () => {
-    const [interfaces, cloudStatus] = await Promise.all([
-      getInterfaces(),
-      getCloudStatus()
-    ]);
+    const interfaces = await getInterfaces();
+    const snapshot = getLastSnapshot();
 
     const etherInterfaces = interfaces.filter(iface => iface.name.match(/^ether\d+/));
 
@@ -23,7 +22,7 @@ export default async function interfacesRoutes(fastify) {
 
     return {
       interfaces: interfacesWithTraffic,
-      publicIp: cloudStatus?.['public-address'] || null
+      publicIp: snapshot?.public_ip || null
     };
   });
 

@@ -2,9 +2,13 @@ import { useState, useEffect } from 'react';
 import { MessageSquare, RefreshCw, Trash2 } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
-import type { SmsMessage } from '../types';
+import type { SmsMessage, User } from '../types';
 
-export default function SmsManager() {
+interface SmsManagerProps {
+  user: User;
+}
+
+export default function SmsManager({ user }: SmsManagerProps) {
   const { t } = useLanguage();
   const [messages, setMessages] = useState<SmsMessage[]>([]);
   const [phone, setPhone] = useState('');
@@ -61,6 +65,13 @@ export default function SmsManager() {
     }
   }
 
+  function hasPermission(permission: string): boolean {
+    return user.permissions.includes(permission) || user.permissions.includes('admin_all');
+  }
+
+  const canViewInbox = hasPermission('view_sms');
+  const canSendSms = hasPermission('send_sms');
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
       <div className="border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
@@ -78,105 +89,115 @@ export default function SmsManager() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-slate-700">
-        <div className="p-4">
-          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 uppercase">{t('smsReceived')}</h4>
-          <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
-            {messages.length === 0 ? (
-              <p className="text-center py-3 text-xs text-slate-600 dark:text-slate-400">{t('noMessages')}</p>
-            ) : (
-              <>
-                {messages.slice(currentPage * messagesPerPage, (currentPage + 1) * messagesPerPage).map((msg) => (
-                  <div key={msg['.id']} className="p-2 bg-slate-50 dark:bg-slate-700/50 rounded border border-slate-200 dark:border-slate-600">
-                    <div className="flex justify-between items-start mb-0.5">
-                      <span className="font-semibold text-xs text-slate-900 dark:text-slate-100">{msg.phone}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {new Date(msg.timestamp).toLocaleString('sl-SI', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric'
-                          }).replace(',', '')}
-                        </span>
-                        <button
-                          onClick={() => handleDelete(msg['.id'])}
-                          className="p-1 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+      <div className={`grid grid-cols-1 ${canViewInbox && canSendSms ? 'md:grid-cols-2 divide-y md:divide-y-0 md:divide-x' : ''} divide-slate-200 dark:divide-slate-700`}>
+        {canViewInbox && (
+          <div className="p-4">
+            <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 uppercase">{t('smsReceived')}</h4>
+            <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
+              {messages.length === 0 ? (
+                <p className="text-center py-3 text-xs text-slate-600 dark:text-slate-400">{t('noMessages')}</p>
+              ) : (
+                <>
+                  {messages.slice(currentPage * messagesPerPage, (currentPage + 1) * messagesPerPage).map((msg) => (
+                    <div key={msg['.id']} className="p-2 bg-slate-50 dark:bg-slate-700/50 rounded border border-slate-200 dark:border-slate-600">
+                      <div className="flex justify-between items-start mb-0.5">
+                        <span className="font-semibold text-xs text-slate-900 dark:text-slate-100">{msg.phone}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {new Date(msg.timestamp).toLocaleString('sl-SI', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            }).replace(',', '')}
+                          </span>
+                          <button
+                            onClick={() => handleDelete(msg['.id'])}
+                            className="p-1 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
+                      <p className="text-xs text-slate-700 dark:text-slate-300">{msg.message}</p>
                     </div>
-                    <p className="text-xs text-slate-700 dark:text-slate-300">{msg.message}</p>
-                  </div>
-                ))}
-                {messages.length > messagesPerPage && (
-                  <div className="flex justify-between items-center pt-2">
-                    <button
-                      onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                      disabled={currentPage === 0}
-                      className="px-2 py-1 text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded disabled:opacity-50"
-                    >
-                      {t('previous')}
-                    </button>
-                    <span className="text-xs text-slate-600 dark:text-slate-400">
-                      {t('pageOf').replace('{current}', String(currentPage + 1)).replace('{total}', String(Math.ceil(messages.length / messagesPerPage)))}
-                    </span>
-                    <button
-                      onClick={() => setCurrentPage(Math.min(Math.ceil(messages.length / messagesPerPage) - 1, currentPage + 1))}
-                      disabled={currentPage >= Math.ceil(messages.length / messagesPerPage) - 1}
-                      className="px-2 py-1 text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded disabled:opacity-50"
-                    >
-                      {t('next')}
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
+                  ))}
+                  {messages.length > messagesPerPage && (
+                    <div className="flex justify-between items-center pt-2">
+                      <button
+                        onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                        disabled={currentPage === 0}
+                        className="px-2 py-1 text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded disabled:opacity-50"
+                      >
+                        {t('previous')}
+                      </button>
+                      <span className="text-xs text-slate-600 dark:text-slate-400">
+                        {t('pageOf').replace('{current}', String(currentPage + 1)).replace('{total}', String(Math.ceil(messages.length / messagesPerPage)))}
+                      </span>
+                      <button
+                        onClick={() => setCurrentPage(Math.min(Math.ceil(messages.length / messagesPerPage) - 1, currentPage + 1))}
+                        disabled={currentPage >= Math.ceil(messages.length / messagesPerPage) - 1}
+                        className="px-2 py-1 text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded disabled:opacity-50"
+                      >
+                        {t('next')}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="p-4">
-          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 uppercase">{t('smsSendLabel')}</h4>
-          <form onSubmit={handleSend} className="space-y-2">
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+386"
-              className="w-full px-2.5 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-              required
-            />
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder={t('messagePlaceholder')}
-              rows={2}
-              maxLength={160}
-              className="w-full px-2.5 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
-              required
-            />
-            {error && (
-              <div className="p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded text-red-700 dark:text-red-400 text-xs">
-                {error}
-              </div>
-            )}
-            {success && (
-              <div className="p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded text-green-700 dark:text-green-400 text-xs">
-                {success}
-              </div>
-            )}
-            <button
-              type="submit"
-              disabled={sending}
-              className="w-full px-4 py-2 bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white text-xs rounded font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow hover:shadow-md"
-            >
-              {sending ? t('smsSending') : t('smsSend')}
-            </button>
-          </form>
-        </div>
+        {canSendSms && (
+          <div className="p-4">
+            <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 uppercase">{t('smsSendLabel')}</h4>
+            <form onSubmit={handleSend} className="space-y-2">
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+386"
+                className="w-full px-2.5 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                required
+              />
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder={t('messagePlaceholder')}
+                rows={2}
+                maxLength={160}
+                className="w-full px-2.5 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
+                required
+              />
+              {error && (
+                <div className="p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded text-red-700 dark:text-red-400 text-xs">
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className="p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded text-green-700 dark:text-green-400 text-xs">
+                  {success}
+                </div>
+              )}
+              <button
+                type="submit"
+                disabled={sending}
+                className="w-full px-4 py-2 bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 text-white text-xs rounded font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow hover:shadow-md"
+              >
+                {sending ? t('smsSending') : t('smsSend')}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {!canViewInbox && !canSendSms && (
+          <div className="p-8 text-center text-slate-600 dark:text-slate-400">
+            Nimate pravic za ogled SMS sporočil
+          </div>
+        )}
       </div>
     </div>
   );

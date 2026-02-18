@@ -18,7 +18,11 @@ interface WirelessClient {
   'last-activity'?: string;
 }
 
-export default function Wlan5Clients() {
+interface Wlan5ClientsProps {
+  hideHeader?: boolean;
+}
+
+export default function Wlan5Clients({ hideHeader = false }: Wlan5ClientsProps) {
   const { t } = useLanguage();
   const [clients, setClients] = useState<WirelessClient[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,23 +61,25 @@ export default function Wlan5Clients() {
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            {t('wlan5Clients')}
-          </h3>
+    <div className={hideHeader ? '' : 'bg-white dark:bg-slate-800 rounded-lg shadow'}>
+      {!hideHeader && (
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              {t('wlan5Clients')}
+            </h3>
+          </div>
+          <button
+            onClick={fetchClients}
+            disabled={loading}
+            className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg disabled:opacity-50 transition-colors"
+            title={t('refresh')}
+          >
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
-        <button
-          onClick={fetchClients}
-          disabled={loading}
-          className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg disabled:opacity-50 transition-colors"
-          title={t('refresh')}
-        >
-          <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
+      )}
 
       {clients.length === 0 ? (
         <p className="text-center py-8 text-slate-600 dark:text-slate-400">{t('noActiveClients')}</p>

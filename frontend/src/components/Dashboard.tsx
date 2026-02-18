@@ -12,6 +12,7 @@ import LteStatus from './LteStatus';
 import WlanStatus from './WlanStatus';
 import Wlan5Status from './Wlan5Status';
 import GpsMap from './GpsMap';
+import WiFiScanner from './WiFiScanner';
 
 interface DashboardProps {
   user: User;
@@ -25,11 +26,9 @@ export default function Dashboard({ user }: DashboardProps) {
   const [rebooting, setRebooting] = useState(false);
 
   useEffect(() => {
-    if (hasPermission('view_summary')) {
-      fetchSummary();
-      const interval = setInterval(fetchSummary, 3000);
-      return () => clearInterval(interval);
-    }
+    fetchSummary();
+    const interval = setInterval(fetchSummary, 3000);
+    return () => clearInterval(interval);
   }, [user]);
 
   async function fetchSummary() {
@@ -107,9 +106,15 @@ export default function Dashboard({ user }: DashboardProps) {
         </div>
       )}
 
-      {hasPermission('view_sms') && (
+      {(hasPermission('view_sms') || hasPermission('send_sms')) && (
         <div className="w-full">
-          <SmsManager />
+          <SmsManager user={user} />
+        </div>
+      )}
+
+      {hasPermission('manage_wifi') && (
+        <div className="w-full">
+          <WiFiScanner snapshot={snapshot} />
         </div>
       )}
 
