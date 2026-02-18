@@ -317,9 +317,41 @@ function executeSSHCommand(command) {
   });
 }
 
-export async function scanWifi(interfaceName) {
+export async function checkLteConnectivity() {
   try {
-    console.log(`[scanWifi] Starting SSH scan for interface: ${interfaceName}`);
+    console.log('[checkLteConnectivity] Starting ping test via LTE interface');
+
+    const lteInterface = config.mikrotik.interfaces.lte;
+    const command = `/ping 8.8.8.8 interface=${lteInterface} count=3`;
+    const output = await executeSSHCommand(command);
+
+    console.log('[checkLteConnectivity] Ping output:', output);
+
+    const lossMatch = output.match(/(\d+)% packet loss/);
+    if (lossMatch) {
+      const packetLoss = parseInt(lossMatch[1], 10);
+      const isConnected = packetLoss < 100;
+      console.log(`[checkLteConnectivity] Packet loss: ${packetLoss}%, Connected: ${isConnected}`);
+      return isConnected;
+    }
+
+    return false;
+  } catch (err) {
+    console.error('[checkLteConnectivity] Failed:', err.message);
+    return false;
+  }
+}
+
+export async function scanWifi(interfaceName, db) {
+  try {
+    console.log(`[scanWifi] Checking LTE connectivity before scanning ${interfaceName}`);
+
+    const lteConnected = await checkLteConnectivity();
+    if (!lteConnected) {
+      throw new Error('LTE interface is not connected. Cannot scan WiFi as it would disconnect the active connection.');
+    }
+
+    console.log(`[scanWifi] LTE is connected, starting SSH scan for interface: ${interfaceName}`);
 
     const command = `/interface wireless scan ${interfaceName} duration=5`;
     const output = await executeSSHCommand(command);
@@ -382,7 +414,18 @@ export async function scanWifi(interfaceName) {
     const result = Object.values(grouped);
     result.sort((a, b) => b.signal - a.signal);
 
-    console.log(`[scanWifi] Found ${result.length} unique networks`);
+    console.log(`[scanWifi] Found ${result.length} unique networks, saving to database`);
+
+    const scannedAt = new Date().toISOString();
+    for (const network of result) {
+      await db.query(
+        `INSERT INTO wifi_scan_results (interface_name, ssid, address, signal, channel, frequency, security, scanned_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [interfaceName, network.ssid, network.address, network.signal, network.channel, network.frequency, network.security, scannedAt]
+      );
+    }
+
+    console.log(`[scanWifi] Saved ${result.length} networks to database`);
     return result;
   } catch (err) {
     console.error('Failed to scan WiFi:', err.message, err.stack);

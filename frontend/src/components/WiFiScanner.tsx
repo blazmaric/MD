@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Wifi, Search, Lock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Wifi, Search, Lock, AlertTriangle } from 'lucide-react';
 import { api } from '../api';
 import type { WiFiNetwork, Snapshot } from '../types';
 
@@ -7,7 +7,7 @@ interface WiFiScannerProps {
   snapshot: Snapshot | null;
 }
 
-export default function WiFiScanner({ snapshot }: WiFiScannerProps) {
+export default function WiFiScanner(_props: WiFiScannerProps) {
   const [networks, setNetworks] = useState<WiFiNetwork[]>([]);
   const [scanning, setScanning] = useState(false);
   const [connecting, setConnecting] = useState(false);
@@ -15,26 +15,60 @@ export default function WiFiScanner({ snapshot }: WiFiScannerProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [lteConnected, setLteConnected] = useState<boolean | null>(null);
+  const [checkingLte, setCheckingLte] = useState(false);
 
-  const lteActive = snapshot?.gateway_type === 'LTE';
+  useEffect(() => {
+    loadScanResults();
+  }, []);
+
+  async function loadScanResults() {
+    try {
+      const data = await api.wifi.getScanResults();
+      if (data.networks && data.networks.length > 0) {
+        setNetworks(data.networks);
+      }
+    } catch (err) {
+      console.error('Failed to load scan results:', err);
+    }
+  }
+
+  async function checkLte() {
+    setCheckingLte(true);
+    try {
+      const data = await api.wifi.checkLte();
+      setLteConnected(data.connected);
+      return data.connected;
+    } catch (err) {
+      console.error('Failed to check LTE:', err);
+      setLteConnected(false);
+      return false;
+    } finally {
+      setCheckingLte(false);
+    }
+  }
 
   async function handleScan() {
-    if (!lteActive) {
-      setError('WiFi scan can only be performed when LTE is active');
+    setError('');
+
+    const isLteConnected = await checkLte();
+
+    if (!isLteConnected) {
+      setError('LTE interface is not connected. Cannot scan WiFi as it would disconnect the active connection.');
       return;
     }
 
-    if (!confirm('Do you really want to scan for WiFi networks? This may temporarily disrupt the WiFi connection.')) {
+    if (!confirm('Scanning will temporarily disconnect WiFi. LTE is active and will maintain connectivity. Continue?')) {
       return;
     }
 
     setScanning(true);
-    setError('');
     try {
       const data = await api.wifi.scan();
       setNetworks(data.networks || []);
       setSuccess('Scan completed successfully!');
       setTimeout(() => setSuccess(''), 3000);
+      await loadScanResults();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to scan WiFi');
     } finally {
@@ -65,22 +99,25 @@ export default function WiFiScanner({ snapshot }: WiFiScannerProps) {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
           <Wifi className="w-5 h-5" />
-          WiFi Scanner
+          WiFi Scanner (2.4 GHz)
         </h3>
         <button
           onClick={handleScan}
-          disabled={scanning || !lteActive}
+          disabled={scanning || checkingLte}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-          title={!lteActive ? 'Scan only available when LTE is active' : 'Scan for networks'}
         >
           <Search className="w-4 h-4" />
-          {scanning ? 'Scanning...' : 'Scan Networks'}
+          {scanning ? 'Scanning...' : checkingLte ? 'Checking LTE...' : 'Scan Networks'}
         </button>
       </div>
 
-      {!lteActive && (
-        <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg text-yellow-800 dark:text-yellow-300 text-sm">
-          WiFi scan is only available when LTE is the active gateway
+      {lteConnected === false && (
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg text-red-800 dark:text-red-300 text-sm flex items-start gap-2">
+          <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <div>
+            <div className="font-semibold mb-1">LTE Not Connected</div>
+            <div>WiFi scanning requires LTE to be connected. Scanning will temporarily disconnect WiFi, so LTE must be available to maintain connectivity.</div>
+          </div>
         </div>
       )}
 

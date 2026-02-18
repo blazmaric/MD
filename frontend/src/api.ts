@@ -95,11 +95,20 @@ export const api = {
   },
 
   wifi: {
+    checkLte: () =>
+      apiFetch('/wifi/lte-check'),
+
     scan: () =>
       apiFetch('/wifi/scan', {
         method: 'POST',
         body: JSON.stringify({})
       }),
+
+    getScanResults: (interfaceName?: string) => {
+      const query = new URLSearchParams();
+      if (interfaceName) query.append('interface', interfaceName);
+      return apiFetch(`/wifi/scan-results?${query.toString()}`);
+    },
 
     connect: (ssid: string, password: string) =>
       apiFetch('/wifi/connect', {

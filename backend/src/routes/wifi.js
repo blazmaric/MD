@@ -1,14 +1,54 @@
 import { authenticateMiddleware, requirePermission } from '../auth.js';
-import { scanWifi, connectWifi, getWirelessRegistrationTable, disconnectWirelessClient, getWlan5Status, getWlan24Status } from '../mikrotik.js';
+import { scanWifi, connectWifi, getWirelessRegistrationTable, disconnectWirelessClient, getWlan5Status, getWlan24Status, checkLteConnectivity } from '../mikrotik.js';
 import { config } from '../config.js';
+import { getDb } from '../db.js';
 
 export default async function wifiRoutes(fastify) {
+  fastify.get('/wifi/lte-check', {
+    preHandler: [authenticateMiddleware]
+  }, async (request, reply) => {
+    try {
+      const isConnected = await checkLteConnectivity();
+      return { connected: isConnected };
+    } catch (err) {
+      return reply.code(500).send({ error: err.message });
+    }
+  });
+
   fastify.post('/wifi/scan', {
     preHandler: [authenticateMiddleware, requirePermission('manage_wifi')]
   }, async (request, reply) => {
     try {
-      const results = await scanWifi(config.mikrotik.interfaces.wlan);
+      const db = getDb();
+      const results = await scanWifi(config.mikrotik.interfaces.wlan, db);
       return { networks: results };
+    } catch (err) {
+      return reply.code(500).send({ error: err.message });
+    }
+  });
+
+  fastify.get('/wifi/scan-results', {
+    preHandler: [authenticateMiddleware]
+  }, async (request, reply) => {
+    try {
+      const { interface: interfaceName = config.mikrotik.interfaces.wlan } = request.query;
+      const db = getDb();
+
+      const result = await db.query(
+        `SELECT DISTINCT ON (address)
+           id, interface_name, ssid, address, signal, channel, frequency, security, scanned_at, created_at
+         FROM wifi_scan_results
+         WHERE interface_name = $1
+           AND scanned_at = (
+             SELECT MAX(scanned_at)
+             FROM wifi_scan_results
+             WHERE interface_name = $1
+           )
+         ORDER BY address, signal DESC`,
+        [interfaceName]
+      );
+
+      return { networks: result.rows };
     } catch (err) {
       return reply.code(500).send({ error: err.message });
     }
