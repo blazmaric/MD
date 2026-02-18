@@ -145,7 +145,7 @@ export async function getLogs() {
 
 export async function ping(address, count = 4, sourceInterface = null) {
   const controller = new AbortController();
-  const pingTimeout = 15000;
+  const pingTimeout = 8000;
   const timeout = setTimeout(() => controller.abort(), pingTimeout);
 
   try {
@@ -196,7 +196,7 @@ export async function ping(address, count = 4, sourceInterface = null) {
   } catch (err) {
     clearTimeout(timeout);
     if (err.name === 'AbortError') {
-      throw new Error('Ping request timeout after 15 seconds');
+      throw new Error('Ping request timeout after 8 seconds');
     }
     console.error('Failed to ping:', err.message);
     throw err;
@@ -322,12 +322,12 @@ export async function checkLteConnectivity() {
     console.log('[checkLteConnectivity] Starting ping test via LTE interface');
 
     const lteInterface = config.mikrotik.interfaces.lte;
-    const command = `/ping 8.8.8.8 interface=${lteInterface} count=3`;
+    const command = `/ping 8.8.8.8 interface=${lteInterface} count=1`;
     const output = await executeSSHCommand(command);
 
     console.log('[checkLteConnectivity] Ping output:', output);
 
-    const lossMatch = output.match(/(\d+)% packet loss/);
+    const lossMatch = output.match(/packet-loss=(\d+)%/);
     if (lossMatch) {
       const packetLoss = parseInt(lossMatch[1], 10);
       const isConnected = packetLoss < 100;
