@@ -286,12 +286,18 @@ export async function disconnectWirelessClient(clientId) {
 
 export async function scanWifi(interfaceName) {
   try {
+    console.log(`[scanWifi] Starting scan for interface: ${interfaceName}`);
+
     const interfaces = await mtFetch('/rest/interface/wireless');
+    console.log(`[scanWifi] Found ${interfaces.length} wireless interfaces:`, interfaces.map(i => i.name));
+
     const targetInterface = interfaces.find(iface => iface.name === interfaceName);
 
     if (!targetInterface) {
       throw new Error(`Wireless interface '${interfaceName}' not found. Available interfaces: ${interfaces.map(i => i.name).join(', ')}`);
     }
+
+    console.log(`[scanWifi] Target interface found:`, { name: targetInterface.name, id: targetInterface['.id'] });
 
     const result = await mtFetch('/rest/interface/wireless/scan', {
       method: 'POST',
@@ -301,7 +307,10 @@ export async function scanWifi(interfaceName) {
       })
     });
 
+    console.log(`[scanWifi] Raw scan result count: ${result.length}`);
+
     const filtered = result.filter(network => network.ssid && network.ssid !== '');
+    console.log(`[scanWifi] After filtering empty SSIDs: ${filtered.length}`);
 
     const grouped = filtered.reduce((acc, network) => {
       const addr = network.address;
@@ -321,6 +330,11 @@ export async function scanWifi(interfaceName) {
     }));
 
     mapped.sort((a, b) => b.signal - a.signal);
+
+    console.log(`[scanWifi] Final result count: ${mapped.length}`);
+    if (mapped.length > 0) {
+      console.log(`[scanWifi] Sample network:`, mapped[0]);
+    }
 
     return mapped;
   } catch (err) {
