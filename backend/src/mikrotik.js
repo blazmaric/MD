@@ -321,15 +321,19 @@ export async function checkLteConnectivity() {
   try {
     const lteInterface = config.mikrotik.interfaces.lte;
     const command = `/ping 8.8.8.8%${lteInterface} count=1`;
+    console.log('[checkLteConnectivity] Running:', command);
     const output = await executeSSHCommand(command);
+    console.log('[checkLteConnectivity] Output:', output);
 
     const lossMatch = output.match(/packet-loss=(\d+)%/);
     if (lossMatch) {
       const packetLoss = parseInt(lossMatch[1], 10);
       const isConnected = packetLoss < 100;
+      console.log('[checkLteConnectivity] Result:', isConnected, `(loss: ${packetLoss}%)`);
       return isConnected;
     }
 
+    console.log('[checkLteConnectivity] No packet-loss match found');
     return false;
   } catch (err) {
     console.error('[checkLteConnectivity] Failed:', err.message);
