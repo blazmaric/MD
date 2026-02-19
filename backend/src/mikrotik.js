@@ -355,12 +355,13 @@ export async function checkLteConnectivity() {
 
     console.log('[checkLteConnectivity] ✅ Step 2 PASSED: LTE has IP:', lteAddress.address);
 
-    // Step 3: Try to ping 8.8.8.8 to verify connectivity
-    const command = `/ping 8.8.8.8 count=1 interface=${lteInterface}`;
+    // Step 3: Try to ping 8.8.8.8 to verify connectivity (6 packets minimum)
+    const command = `/ping 8.8.8.8 count=6 interface=${lteInterface}`;
     console.log('[checkLteConnectivity] Step 3 - Running ping:', command);
     const output = await executeSSHCommand(command);
     console.log('[checkLteConnectivity] Ping output:', output);
 
+    // Parse packet loss
     const lossMatch = output.match(/packet-loss=(\d+)%/);
     if (!lossMatch) {
       console.log('[checkLteConnectivity] ❌ Step 3 FAILED: Could not parse ping result');
@@ -368,13 +369,24 @@ export async function checkLteConnectivity() {
     }
 
     const packetLoss = parseInt(lossMatch[1], 10);
-    const isConnected = packetLoss < 100;
+
+    // Parse sent and received packets
+    const sentMatch = output.match(/sent=(\d+)/);
+    const receivedMatch = output.match(/received=(\d+)/);
+
+    const sent = sentMatch ? parseInt(sentMatch[1], 10) : 0;
+    const received = receivedMatch ? parseInt(receivedMatch[1], 10) : 0;
+
+    console.log(`[checkLteConnectivity] Ping stats: sent=${sent}, received=${received}, loss=${packetLoss}%`);
+
+    // Require at least 6 successful packets (0% loss from 6 packets)
+    const isConnected = sent >= 6 && received >= 6 && packetLoss === 0;
 
     if (isConnected) {
-      console.log(`[checkLteConnectivity] ✅ Step 3 PASSED: Ping successful (loss: ${packetLoss}%)`);
+      console.log(`[checkLteConnectivity] ✅ Step 3 PASSED: All ${received}/${sent} packets successful (${packetLoss}% loss)`);
       console.log('[checkLteConnectivity] 🎉 ALL CHECKS PASSED - LTE is fully connected');
     } else {
-      console.log(`[checkLteConnectivity] ❌ Step 3 FAILED: Ping failed (loss: ${packetLoss}%)`);
+      console.log(`[checkLteConnectivity] ❌ Step 3 FAILED: Only ${received}/${sent} packets successful (${packetLoss}% loss) - minimum 6/6 required`);
     }
 
     return isConnected;
