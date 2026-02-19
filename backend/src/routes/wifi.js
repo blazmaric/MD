@@ -12,20 +12,25 @@ export default async function wifiRoutes(fastify) {
     try {
       const cached = getLteCache();
       if (cached) {
+        console.log('[LTE Check] Returning cached result:', cached);
         return cached;
       }
 
       if (isLteCheckInProgress()) {
+        console.log('[LTE Check] Check already in progress');
         return { connected: null, checking: true };
       }
 
+      console.log('[LTE Check] Starting new check...');
       setLteCheckInProgress(true);
       try {
         const isConnected = await checkLteConnectivity();
+        console.log('[LTE Check] Result:', isConnected);
         setLteCache(isConnected);
         setLteCheckInProgress(false);
         return { connected: isConnected, cached: false };
       } catch (checkErr) {
+        console.log('[LTE Check] Error:', checkErr.message);
         setLteCheckInProgress(false);
         throw checkErr;
       }
