@@ -22,6 +22,20 @@ interface Wlan5ClientsProps {
   hideHeader?: boolean;
 }
 
+function formatSpeed(speed: string): string {
+  const match = speed.match(/^([\d.]+)([MG]?bps)$/);
+  if (!match) return speed;
+
+  const value = parseFloat(match[1]);
+  const unit = match[2];
+
+  if (unit === 'Mbps' && value < 1) {
+    return `${(value * 1000).toFixed(0)} kbps`;
+  }
+
+  return speed;
+}
+
 export default function Wlan5Clients({ hideHeader = false }: Wlan5ClientsProps) {
   const { t } = useLanguage();
   const [clients, setClients] = useState<WirelessClient[]>([]);
@@ -128,7 +142,7 @@ export default function Wlan5Clients({ hideHeader = false }: Wlan5ClientsProps) 
                     {client['signal-to-noise'] && ` (${client['signal-to-noise']})`}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                    {client['tx-rate']} / {client['rx-rate']}
+                    {formatSpeed(client['tx-rate'])} / {formatSpeed(client['rx-rate'])}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
                     {client.uptime || '-'}
