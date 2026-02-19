@@ -41,6 +41,7 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
   const [scanResults, setScanResults] = useState<ScanResult[]>([]);
   const [showScanPopup, setShowScanPopup] = useState(false);
   const [wlan24Status, setWlan24Status] = useState<Wlan24Status | null>(null);
+  const [scanError, setScanError] = useState<string>('');
 
   useEffect(() => {
     fetchWlan24Status();
@@ -57,13 +58,55 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
     }
   }
 
+  async function pollScanJob(jobId: string) {
+    const maxAttempts = 60;
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      try {
+        const job = await api.wifi.getScanJob(jobId);
+
+        if (job.status === 'completed') {
+          setScanResults(job.result || []);
+          setScanError('');
+          return true;
+        }
+
+        if (job.status === 'failed') {
+          setScanError(job.error || 'Skeniranje ni uspelo');
+          setScanResults([]);
+          return false;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        attempts++;
+      } catch (err) {
+        console.error('Failed to poll job:', err);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        attempts++;
+      }
+    }
+
+    setScanError('Skeniranje časovno poteklo - prosim poskusite znova');
+    return false;
+  }
+
   async function handleScan() {
     setScanning(true);
     setShowScanPopup(true);
+    setScanError('');
+    setScanResults([]);
+
     try {
-      const data = await api.wifi.scan();
-      setScanResults(data.networks || []);
+      const data = await api.wifi.scan(false); // Normal scan - requires LTE
+      if (data.jobId) {
+        await pollScanJob(data.jobId);
+      } else {
+        setScanError('Neveljaven odgovor strežnika');
+      }
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Napaka pri skeniranju WiFi';
+      setScanError(errorMsg);
       console.error('Failed to scan WiFi:', err);
     } finally {
       setScanning(false);
@@ -169,6 +212,11 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
             <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
               {scanning ? (
                 <p className="text-center py-8 text-slate-600 dark:text-slate-400">{t('scanning')}</p>
+              ) : scanError ? (
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
+                  <p className="text-red-700 dark:text-red-400 font-semibold mb-2">Napaka pri skeniranju</p>
+                  <p className="text-red-600 dark:text-red-500 text-sm">{scanError}</p>
+                </div>
               ) : scanResults.length === 0 ? (
                 <p className="text-center py-8 text-slate-600 dark:text-slate-400">{t('noNetworksFound')}</p>
               ) : (
