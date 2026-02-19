@@ -320,21 +320,56 @@ function executeSSHCommand(command) {
 export async function checkLteConnectivity() {
   try {
     const lteInterface = config.mikrotik.interfaces.lte;
-    const command = `/ping 8.8.8.8%${lteInterface} count=1`;
-    console.log('[checkLteConnectivity] Running:', command);
+    console.log('[checkLteConnectivity] Checking LTE interface:', lteInterface);
+
+    // Check interface status via REST API
+    const interfaces = await mtFetch('/rest/interface');
+    const lteIface = interfaces.find(iface => iface.name === lteInterface);
+
+    if (!lteIface) {
+      console.log('[checkLteConnectivity] LTE interface not found');
+      return false;
+    }
+
+    console.log('[checkLteConnectivity] Interface status:', {
+      running: lteIface.running,
+      disabled: lteIface.disabled
+    });
+
+    // Check if interface is running and not disabled
+    const isUp = lteIface.running === 'true' && lteIface.disabled !== 'true';
+    if (!isUp) {
+      console.log('[checkLteConnectivity] LTE interface is not up');
+      return false;
+    }
+
+    // Check if interface has IP address
+    const addresses = await mtFetch('/rest/ip/address');
+    const lteAddress = addresses.find(addr => addr.interface === lteInterface && addr.disabled !== 'true');
+
+    if (!lteAddress) {
+      console.log('[checkLteConnectivity] LTE interface has no IP address');
+      return false;
+    }
+
+    console.log('[checkLteConnectivity] LTE has IP:', lteAddress.address);
+
+    // Try to ping 8.8.8.8 to verify connectivity
+    const command = `/ping 8.8.8.8 count=1 interface=${lteInterface}`;
+    console.log('[checkLteConnectivity] Running ping:', command);
     const output = await executeSSHCommand(command);
-    console.log('[checkLteConnectivity] Output:', output);
+    console.log('[checkLteConnectivity] Ping output:', output);
 
     const lossMatch = output.match(/packet-loss=(\d+)%/);
     if (lossMatch) {
       const packetLoss = parseInt(lossMatch[1], 10);
       const isConnected = packetLoss < 100;
-      console.log('[checkLteConnectivity] Result:', isConnected, `(loss: ${packetLoss}%)`);
+      console.log('[checkLteConnectivity] Ping result:', isConnected, `(loss: ${packetLoss}%)`);
       return isConnected;
     }
 
-    console.log('[checkLteConnectivity] No packet-loss match found');
-    return false;
+    console.log('[checkLteConnectivity] No packet-loss match, assuming connected based on interface status');
+    return true;
   } catch (err) {
     console.error('[checkLteConnectivity] Failed:', err.message);
     return false;
@@ -430,12 +465,16 @@ export async function getWlan5Status() {
     const monitorResult = await mtFetch('/rest/interface/wireless/monitor', {
       method: 'POST',
       body: JSON.stringify({
-        numbers: '*7',
+        numbers: 'wlan5',
         once: 'true'
       })
     });
 
     const monitor = monitorResult[0] || {};
+
+    // Get interface details for running/disabled status
+    const interfaces = await mtFetch('/rest/interface/wireless');
+    const wlan5Interface = interfaces.find(iface => iface.name === 'wlan5');
 
     return {
       status: monitor.status || 'N/A',
@@ -445,7 +484,9 @@ export async function getWlan5Status() {
       noiseFloor: monitor['noise-floor'] || 'N/A',
       wmmEnabled: monitor['wmm-enabled'] === 'true',
       txRate: monitor['tx-rate'] || 'N/A',
-      rxRate: monitor['rx-rate'] || 'N/A'
+      rxRate: monitor['rx-rate'] || 'N/A',
+      running: wlan5Interface?.running || 'false',
+      disabled: wlan5Interface?.disabled || 'true'
     };
   } catch (err) {
     console.error('Failed to get WLAN 5 status:', err.message);
