@@ -11,8 +11,8 @@ interface Wlan5Status {
   noiseFloor: string;
   status: string;
   wmmEnabled: boolean;
-  rxMbps: string;
-  txMbps: string;
+  rxRate: string;
+  txRate: string;
   disabled?: string;
   running?: string;
 }
@@ -110,13 +110,13 @@ export default function Wlan5Status() {
             <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
               <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">RX Speed</p>
               <p className="text-xs font-semibold text-green-600 dark:text-green-400">
-                {wlan5Info.rxMbps} Mbps
+                {wlan5Info.rxRate}
               </p>
             </div>
             <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
               <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">TX Speed</p>
               <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">
-                {wlan5Info.txMbps} Mbps
+                {wlan5Info.txRate}
               </p>
             </div>
           </div>

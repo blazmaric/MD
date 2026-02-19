@@ -427,47 +427,25 @@ export async function scanWifi(interfaceName, db, force = false) {
 
 export async function getWlan5Status() {
   try {
-    const interfaces = await mtFetch('/rest/interface/wireless');
-    const wlan5Interface = interfaces.find(iface => iface.name === 'wlan5');
-
-    if (!wlan5Interface) {
-      return null;
-    }
-
     const monitorResult = await mtFetch('/rest/interface/wireless/monitor', {
       method: 'POST',
       body: JSON.stringify({
-        '.id': wlan5Interface['.id'],
+        numbers: '*7',
         once: 'true'
       })
     });
 
     const monitor = monitorResult[0] || {};
 
-    const rxByte1 = parseInt(wlan5Interface['rx-byte'] || '0');
-    const txByte1 = parseInt(wlan5Interface['tx-byte'] || '0');
-
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const interfacesAfter = await mtFetch('/rest/interface/wireless');
-    const wlan5After = interfacesAfter.find(iface => iface.name === 'wlan5');
-
-    const rxByte2 = parseInt(wlan5After?.['rx-byte'] || '0');
-    const txByte2 = parseInt(wlan5After?.['tx-byte'] || '0');
-
-    const rxMbps = ((rxByte2 - rxByte1) * 8) / 1000000;
-    const txMbps = ((txByte2 - txByte1) * 8) / 1000000;
-
     return {
-      ...wlan5Interface,
-      ssid: wlan5Interface.ssid || 'N/A',
+      status: monitor.status || 'N/A',
+      ssid: monitor.ssid || 'N/A',
       authenticatedClients: parseInt(monitor['authenticated-clients'] || '0'),
       registeredClients: parseInt(monitor['registered-clients'] || '0'),
       noiseFloor: monitor['noise-floor'] || 'N/A',
-      status: monitor.status || 'N/A',
       wmmEnabled: monitor['wmm-enabled'] === 'true',
-      rxMbps: rxMbps.toFixed(2),
-      txMbps: txMbps.toFixed(2)
+      txRate: monitor['tx-rate'] || 'N/A',
+      rxRate: monitor['rx-rate'] || 'N/A'
     };
   } catch (err) {
     console.error('Failed to get WLAN 5 status:', err.message);
