@@ -18,6 +18,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
   const [lteConnected, setLteConnected] = useState<boolean | null>(null);
   const [checkingLte, setCheckingLte] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'warning' | 'success' } | null>(null);
+  const [forceMode, setForceMode] = useState(false);
 
   useEffect(() => {
     loadScanResults();
@@ -101,11 +102,13 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
     return false;
   }
 
-  async function handleScan(forceMode = false) {
+  async function handleScan(forceModeParam?: boolean) {
     setError('');
     setSuccess('');
 
-    if (!forceMode) {
+    const shouldForce = forceModeParam !== undefined ? forceModeParam : forceMode;
+
+    if (!shouldForce) {
       setCheckingLte(true);
       const isLteConnected = await checkLte();
       setCheckingLte(false);
@@ -120,12 +123,14 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
       if (!confirm('Skeniranje bo začasno prekinilo WiFi povezavo. LTE bo ohranil povezljivost.\n\nNadaljujem?')) {
         return;
       }
+    } else if (!confirm('OPOZORILO: Force scan bo prekinil aktivno povezavo!\n\nSamo nadaljujte, če imate fizični dostop do naprave ali alternativno povezavo.\n\nNadaljujem?')) {
+      return;
     }
 
     setScanning(true);
     setError('');
     try {
-      const data = await api.wifi.scan(forceMode);
+      const data = await api.wifi.scan(shouldForce);
       if (data.jobId) {
         await pollScanJob(data.jobId);
       } else {
@@ -171,31 +176,53 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
           <Wifi className="w-5 h-5" />
           WiFi Scanner (2.4 GHz)
         </h3>
-        <button
-          onClick={() => handleScan()}
-          disabled={scanning || checkingLte || lteConnected === false}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-        >
-          {lteConnected === false ? (
-            <>
-              <WifiOff className="w-4 h-4" />
-              LTE ni povezan
-            </>
-          ) : (
-            <>
-              <Search className="w-4 h-4" />
-              {scanning ? 'Skeniram...' : checkingLte ? 'Preverjam LTE...' : 'Skeniraj omrežja'}
-            </>
-          )}
-        </button>
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={forceMode}
+              onChange={(e) => setForceMode(e.target.checked)}
+              disabled={scanning || checkingLte}
+              className="w-4 h-4 text-blue-600 rounded border-slate-300 dark:border-slate-600 focus:ring-blue-500 disabled:opacity-50"
+            />
+            <span className="select-none">Force scan</span>
+          </label>
+          <button
+            onClick={() => handleScan()}
+            disabled={scanning || checkingLte || (!forceMode && lteConnected === false)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          >
+            {!forceMode && lteConnected === false ? (
+              <>
+                <WifiOff className="w-4 h-4" />
+                LTE ni povezan
+              </>
+            ) : (
+              <>
+                <Search className="w-4 h-4" />
+                {scanning ? 'Skeniram...' : checkingLte ? 'Preverjam LTE...' : 'Skeniraj omrežja'}
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      {lteConnected === false && (
+      {!forceMode && lteConnected === false && (
         <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg text-red-800 dark:text-red-300 text-sm flex items-start gap-2">
           <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div>
             <div className="font-semibold mb-1">LTE ni povezan</div>
-            <div>WiFi skeniranje zahteva aktivno LTE povezavo. Skeniranje začasno prekine WiFi, zato mora biti LTE na voljo za vzdrževanje povezljivosti.</div>
+            <div>WiFi skeniranje zahteva aktivno LTE povezavo. Skeniranje začasno prekine WiFi, zato mora biti LTE na voljo za vzdrževanje povezljivosti. Če imate fizični dostop, lahko omogočite "Force scan".</div>
+          </div>
+        </div>
+      )}
+
+      {forceMode && (
+        <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg text-orange-800 dark:text-orange-300 text-sm flex items-start gap-2">
+          <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <div>
+            <div className="font-semibold mb-1">OPOZORILO: Force scan način</div>
+            <div>Skeniranje bo prekinilo aktivno povezavo! Nadaljujte samo, če imate fizični dostop do naprave ali alternativno povezavo.</div>
           </div>
         </div>
       )}
