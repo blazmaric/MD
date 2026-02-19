@@ -484,6 +484,23 @@ export async function getWlan5Status() {
     const interfaces = await mtFetch('/rest/interface/wireless');
     const wlan5Interface = interfaces.find(iface => iface.name === 'wlan5');
 
+    // Get real-time traffic (like we do for vxlan in poller.js)
+    let txRate = 'N/A';
+    let rxRate = 'N/A';
+
+    try {
+      const traffic = await monitorTraffic('wlan5');
+      if (traffic) {
+        // Convert bits to Mbps for display
+        const rxBps = traffic['rx-bits-per-second'] || 0;
+        const txBps = traffic['tx-bits-per-second'] || 0;
+        rxRate = rxBps > 0 ? `${(rxBps / 1000000).toFixed(2)} Mbps` : '0 Mbps';
+        txRate = txBps > 0 ? `${(txBps / 1000000).toFixed(2)} Mbps` : '0 Mbps';
+      }
+    } catch (trafficErr) {
+      console.error('[getWlan5Status] Failed to get traffic:', trafficErr.message);
+    }
+
     return {
       status: monitor.status || 'N/A',
       ssid: monitor.ssid || 'N/A',
@@ -491,8 +508,8 @@ export async function getWlan5Status() {
       registeredClients: parseInt(monitor['registered-clients'] || '0'),
       noiseFloor: monitor['noise-floor'] || 'N/A',
       wmmEnabled: monitor['wmm-enabled'] === 'true',
-      txRate: monitor['tx-rate'] || 'N/A',
-      rxRate: monitor['rx-rate'] || 'N/A',
+      txRate,
+      rxRate,
       running: wlan5Interface?.running || 'false',
       disabled: wlan5Interface?.disabled || 'true'
     };

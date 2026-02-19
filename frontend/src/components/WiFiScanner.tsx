@@ -50,11 +50,12 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
     setCheckingLte(true);
     try {
       const data = await api.wifi.checkLte();
-      console.log('LTE Check Response:', data);
+      console.log('[WiFiScanner] LTE Check Response:', data);
+      console.log('[WiFiScanner] Setting lteConnected to:', data.connected);
       setLteConnected(data.connected);
       return data.connected;
     } catch (err) {
-      console.error('Failed to check LTE:', err);
+      console.error('[WiFiScanner] Failed to check LTE:', err);
       setLteConnected(false);
       return false;
     } finally {
@@ -165,6 +166,9 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
     }
   }
 
+  console.log('[WiFiScanner] Render - lteConnected:', lteConnected, 'scanning:', scanning, 'checkingLte:', checkingLte);
+  console.log('[WiFiScanner] Button should be disabled?', scanning || checkingLte || lteConnected === false);
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
       <div className="flex items-center justify-between mb-4">
@@ -174,7 +178,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
         </h3>
         <button
           onClick={() => {
-            console.log('Button clicked - LTE Status:', lteConnected, 'Scanning:', scanning, 'Checking:', checkingLte);
+            console.log('[WiFiScanner] Button clicked - LTE Status:', lteConnected, 'Scanning:', scanning, 'Checking:', checkingLte);
             handleScan();
           }}
           disabled={scanning || checkingLte || lteConnected === false}
