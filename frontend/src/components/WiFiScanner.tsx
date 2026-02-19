@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wifi, Search, Lock, AlertTriangle, WifiOff } from 'lucide-react';
+import { Wifi, Search, Lock, AlertTriangle, WifiOff, RefreshCw } from 'lucide-react';
 import { api } from '../api';
 import type { WiFiNetwork, Snapshot } from '../types';
 
@@ -175,8 +175,34 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
         <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
           <Wifi className="w-5 h-5" />
           WiFi Scanner (2.4 GHz)
+          {checkingLte && (
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
+              (preverjam LTE...)
+            </span>
+          )}
+          {!checkingLte && lteConnected === true && (
+            <span className="text-xs text-green-600 dark:text-green-400 font-normal">
+              (LTE ✓)
+            </span>
+          )}
+          {!checkingLte && lteConnected === false && (
+            <span className="text-xs text-red-600 dark:text-red-400 font-normal">
+              (LTE ✗)
+            </span>
+          )}
         </h3>
         <div className="flex items-center gap-3">
+          {!forceMode && lteConnected === false && (
+            <button
+              onClick={() => checkLte()}
+              disabled={checkingLte}
+              className="px-3 py-2 text-sm bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-300 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              title="Ponovno preveri LTE povezavo"
+            >
+              <RefreshCw className={`w-4 h-4 ${checkingLte ? 'animate-spin' : ''}`} />
+              {checkingLte ? 'Preverjam...' : 'Preveri LTE'}
+            </button>
+          )}
           <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
             <input
               type="checkbox"
@@ -190,16 +216,21 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
           <button
             onClick={() => handleScan()}
             disabled={scanning || checkingLte || (!forceMode && lteConnected === false)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            className={`px-4 py-2 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors flex items-center gap-2 ${
+              !forceMode && lteConnected === false
+                ? 'bg-slate-400 dark:bg-slate-600 text-white cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed'
+            }`}
+            title={!forceMode && lteConnected === false ? 'LTE povezava ni stabilna - gumb je onemogočen' : ''}
           >
             {!forceMode && lteConnected === false ? (
               <>
                 <WifiOff className="w-4 h-4" />
-                LTE ni povezan
+                LTE ni stabilen
               </>
             ) : (
               <>
-                <Search className="w-4 h-4" />
+                <Search className={`w-4 h-4 ${scanning ? 'animate-spin' : ''}`} />
                 {scanning ? 'Skeniram...' : checkingLte ? 'Preverjam LTE...' : 'Skeniraj omrežja'}
               </>
             )}
@@ -211,8 +242,15 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
         <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg text-red-800 dark:text-red-300 text-sm flex items-start gap-2">
           <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div>
-            <div className="font-semibold mb-1">LTE ni povezan</div>
-            <div>WiFi skeniranje zahteva aktivno LTE povezavo. Skeniranje začasno prekine WiFi, zato mora biti LTE na voljo za vzdrževanje povezljivosti. Če imate fizični dostop, lahko omogočite "Force scan".</div>
+            <div className="font-semibold mb-1">Skeniranje onemogočeno - LTE ni stabilen</div>
+            <div className="mb-2">
+              WiFi skeniranje zahteva stabilno LTE povezavo (6/6 paketov brez timeoutov).
+              Skeniranje začasno prekine WiFi, zato mora biti LTE na voljo za vzdrževanje povezljivosti.
+            </div>
+            <div className="text-xs opacity-90">
+              Sistem samodejno preverja LTE povezavo vsakih 30 sekund. Ko bo LTE stabilen, se bo gumb za skeniranje omogočil.
+              {' '}Če imate fizični dostop do naprave, lahko omogočite "Force scan".
+            </div>
           </div>
         </div>
       )}
