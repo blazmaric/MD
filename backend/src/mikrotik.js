@@ -319,19 +319,14 @@ function executeSSHCommand(command) {
 
 export async function checkLteConnectivity() {
   try {
-    console.log('[checkLteConnectivity] Starting ping test via LTE interface');
-
     const lteInterface = config.mikrotik.interfaces.lte;
     const command = `/ping 8.8.8.8%${lteInterface} count=1`;
     const output = await executeSSHCommand(command);
-
-    console.log('[checkLteConnectivity] Ping output:', output);
 
     const lossMatch = output.match(/packet-loss=(\d+)%/);
     if (lossMatch) {
       const packetLoss = parseInt(lossMatch[1], 10);
       const isConnected = packetLoss < 100;
-      console.log(`[checkLteConnectivity] Packet loss: ${packetLoss}%, Connected: ${isConnected}`);
       return isConnected;
     }
 
@@ -345,23 +340,14 @@ export async function checkLteConnectivity() {
 export async function scanWifi(interfaceName, db, force = false) {
   try {
     if (!force) {
-      console.log(`[scanWifi] Checking LTE connectivity before scanning ${interfaceName}`);
-
       const lteConnected = await checkLteConnectivity();
       if (!lteConnected) {
         throw new Error('LTE interface is not connected. Cannot scan WiFi as it would disconnect the active connection.');
       }
-
-      console.log(`[scanWifi] LTE is connected, starting SSH scan for interface: ${interfaceName}`);
-    } else {
-      console.log(`[scanWifi] Force mode enabled, skipping LTE check for ${interfaceName}`);
     }
 
     const command = `/interface wireless scan ${interfaceName} duration=5`;
     const output = await executeSSHCommand(command);
-
-    console.log(`[scanWifi] SSH output length: ${output.length}`);
-    console.log(`[scanWifi] First 500 chars:`, output.substring(0, 500));
 
     const lines = output.split('\n').filter(line => line.trim());
     const networks = [];
@@ -419,8 +405,6 @@ export async function scanWifi(interfaceName, db, force = false) {
     const result = Object.values(grouped);
     result.sort((a, b) => b.signal - a.signal);
 
-    console.log(`[scanWifi] Found ${result.length} unique networks, saving to database`);
-
     const scannedAt = new Date().toISOString();
     for (const network of result) {
       await db.query(
@@ -430,7 +414,6 @@ export async function scanWifi(interfaceName, db, force = false) {
       );
     }
 
-    console.log(`[scanWifi] Saved ${result.length} networks to database`);
     return result;
   } catch (err) {
     console.error('Failed to scan WiFi:', err.message, err.stack);

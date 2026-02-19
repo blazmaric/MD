@@ -20,12 +20,16 @@ export default async function wifiRoutes(fastify) {
       }
 
       setLteCheckInProgress(true);
-      const isConnected = await checkLteConnectivity();
-      setLteCache(isConnected);
-
-      return { connected: isConnected, cached: false };
+      try {
+        const isConnected = await checkLteConnectivity();
+        setLteCache(isConnected);
+        setLteCheckInProgress(false);
+        return { connected: isConnected, cached: false };
+      } catch (checkErr) {
+        setLteCheckInProgress(false);
+        throw checkErr;
+      }
     } catch (err) {
-      setLteCheckInProgress(false);
       return reply.code(500).send({ error: err.message });
     }
   });
