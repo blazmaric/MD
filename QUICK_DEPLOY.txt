@@ -1,0 +1,88 @@
+═══════════════════════════════════════════════════════════════
+  HITRI DEPLOY - WiFi Scanner Fix
+═══════════════════════════════════════════════════════════════
+
+PROBLEM: Gumb še vedno gre kliknit, nato prikaže error.
+REŠITEV: Gumb je greyed out in disabled, dokler LTE ni stabilen.
+
+───────────────────────────────────────────────────────────────
+  KORAKI (na strežniku kjer je Docker)
+───────────────────────────────────────────────────────────────
+
+1. Navigiraj v projekt:
+   $ cd /root/MD
+
+2. Poženi deploy script:
+   $ ./deploy-frontend.sh
+
+   ALI ročno:
+
+   $ cd frontend
+   $ npm install
+   $ npm run build
+   $ cd ..
+   $ docker compose build frontend
+   $ docker compose up -d frontend
+
+3. V browserju:
+   - Odpri: https://md.m-host.si
+   - Pritisni: Ctrl+Shift+R (hard refresh)
+
+───────────────────────────────────────────────────────────────
+  KAJ BOSTE VIDELI
+───────────────────────────────────────────────────────────────
+
+PRED (staro - še vedno na strežniku):
+  ┌─────────────────────────────────────┐
+  │ WiFi Scanner (2.4 GHz)              │
+  │ [Force scan☐] [🔍 Skeniraj omrežja]│ ← KLIKABILEN!
+  └─────────────────────────────────────┘
+  Klik → "Skeniram..." → ERROR: LTE not connected
+
+PO deploy-u (novo):
+  ┌─────────────────────────────────────┐
+  │ WiFi Scanner (2.4 GHz) (LTE ✗)      │
+  │ [Preveri LTE] [Force☐] [LTE ni]    │ ← SIV, NE GRE KLIKNIT
+  └─────────────────────────────────────┘
+
+  ⚠️ Skeniranje onemogočeno - LTE ni stabilen
+
+  WiFi skeniranje zahteva stabilno LTE povezavo
+  (6/6 paketov brez timeoutov).
+
+  Sistem avtomatsko preverja LTE vsakih 30 sekund.
+
+───────────────────────────────────────────────────────────────
+  PREVERJANJE DA DELUJE
+───────────────────────────────────────────────────────────────
+
+✓ Gumb je SIV (ne moder)
+✓ Tekst na gumbu: "LTE ni stabilen" (ne "Skeniraj omrežja")
+✓ Gumb NE reagira na klik
+✓ Prikazano rdeče opozorilo z razlago
+✓ V naslovu piše: "(LTE ✗)" (ne "✓")
+✓ Prikazan gumb "Preveri LTE" za ročno preverjanje
+
+───────────────────────────────────────────────────────────────
+  ČE ŠE VEDNO NE DELUJE
+───────────────────────────────────────────────────────────────
+
+1. Preveri, da je container posodobljen:
+   $ docker ps | grep frontend
+   $ docker logs md-frontend | tail
+
+2. Browser cache:
+   - Chrome: Ctrl+Shift+Del → Počisti cache
+   - Firefox: Ctrl+Shift+Del → Počisti cache
+   - ALI: F12 → Network tab → Disable cache → Refresh
+
+3. Preveri build datum v browser Console:
+   F12 → Console → Vnesite:
+   document.querySelector('script').src
+
+   Mora biti: index-CwEVPv4I.js (396 KB, build 08:26)
+
+───────────────────────────────────────────────────────────────
+
+Datum: 19. Februar 2026
+Build: frontend/dist/assets/index-CwEVPv4I.js
