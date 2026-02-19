@@ -322,16 +322,16 @@ export async function checkLteConnectivity() {
     const lteInterface = config.mikrotik.interfaces.lte;
     console.log('[checkLteConnectivity] Checking LTE interface:', lteInterface);
 
-    // Check interface status via REST API
+    // Step 1: Check interface status via REST API
     const interfaces = await mtFetch('/rest/interface');
     const lteIface = interfaces.find(iface => iface.name === lteInterface);
 
     if (!lteIface) {
-      console.log('[checkLteConnectivity] LTE interface not found');
+      console.log('[checkLteConnectivity] ❌ Step 1 FAILED: LTE interface not found');
       return false;
     }
 
-    console.log('[checkLteConnectivity] Interface status:', {
+    console.log('[checkLteConnectivity] Step 1 - Interface status:', {
       running: lteIface.running,
       disabled: lteIface.disabled
     });
@@ -339,39 +339,47 @@ export async function checkLteConnectivity() {
     // Check if interface is running and not disabled
     const isUp = lteIface.running === 'true' && lteIface.disabled !== 'true';
     if (!isUp) {
-      console.log('[checkLteConnectivity] LTE interface is not up');
+      console.log('[checkLteConnectivity] ❌ Step 1 FAILED: LTE interface is not running or is disabled');
       return false;
     }
+    console.log('[checkLteConnectivity] ✅ Step 1 PASSED: Interface is UP');
 
-    // Check if interface has IP address
+    // Step 2: Check if interface has IP address
     const addresses = await mtFetch('/rest/ip/address');
     const lteAddress = addresses.find(addr => addr.interface === lteInterface && addr.disabled !== 'true');
 
     if (!lteAddress) {
-      console.log('[checkLteConnectivity] LTE interface has no IP address');
+      console.log('[checkLteConnectivity] ❌ Step 2 FAILED: LTE interface has no IP address');
       return false;
     }
 
-    console.log('[checkLteConnectivity] LTE has IP:', lteAddress.address);
+    console.log('[checkLteConnectivity] ✅ Step 2 PASSED: LTE has IP:', lteAddress.address);
 
-    // Try to ping 8.8.8.8 to verify connectivity
+    // Step 3: Try to ping 8.8.8.8 to verify connectivity
     const command = `/ping 8.8.8.8 count=1 interface=${lteInterface}`;
-    console.log('[checkLteConnectivity] Running ping:', command);
+    console.log('[checkLteConnectivity] Step 3 - Running ping:', command);
     const output = await executeSSHCommand(command);
     console.log('[checkLteConnectivity] Ping output:', output);
 
     const lossMatch = output.match(/packet-loss=(\d+)%/);
-    if (lossMatch) {
-      const packetLoss = parseInt(lossMatch[1], 10);
-      const isConnected = packetLoss < 100;
-      console.log('[checkLteConnectivity] Ping result:', isConnected, `(loss: ${packetLoss}%)`);
-      return isConnected;
+    if (!lossMatch) {
+      console.log('[checkLteConnectivity] ❌ Step 3 FAILED: Could not parse ping result');
+      return false;
     }
 
-    console.log('[checkLteConnectivity] No packet-loss match, assuming connected based on interface status');
-    return true;
+    const packetLoss = parseInt(lossMatch[1], 10);
+    const isConnected = packetLoss < 100;
+
+    if (isConnected) {
+      console.log(`[checkLteConnectivity] ✅ Step 3 PASSED: Ping successful (loss: ${packetLoss}%)`);
+      console.log('[checkLteConnectivity] 🎉 ALL CHECKS PASSED - LTE is fully connected');
+    } else {
+      console.log(`[checkLteConnectivity] ❌ Step 3 FAILED: Ping failed (loss: ${packetLoss}%)`);
+    }
+
+    return isConnected;
   } catch (err) {
-    console.error('[checkLteConnectivity] Failed:', err.message);
+    console.error('[checkLteConnectivity] ❌ EXCEPTION:', err.message);
     return false;
   }
 }
