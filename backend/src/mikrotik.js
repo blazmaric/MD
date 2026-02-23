@@ -896,9 +896,30 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
           console.log(`[connectWifi] Expected original SSID: "${ssid}"`);
           console.log(`[connectWifi] Expected normalized SSID: "${normalizedSsid}"`);
 
-          // If SSID is empty, interface hasn't connected yet - continue waiting
-          if (!currentSsid || currentSsid.trim() === '') {
-            console.log(`[connectWifi] Interface SSID is empty, waiting...`);
+          // If interface is running, it's connected (even if SSID field is empty in config)
+          if (isRunning) {
+            // Verify via registration-table if SSID is empty
+            if (!currentSsid || currentSsid.trim() === '') {
+              console.log(`[connectWifi] Interface running but SSID empty - checking registration-table...`);
+              try {
+                const regTable = await mtFetch(`/rest/interface/wireless/registration-table?interface=${interfaceName}`);
+                if (regTable && regTable.length > 0) {
+                  connected = true;
+                  console.log(`[connectWifi] ✅ Successfully connected (verified via registration-table) after ${i + 1} seconds`);
+                  break;
+                }
+                console.log(`[connectWifi] Registration table empty, waiting...`);
+                continue;
+              } catch (regErr) {
+                console.warn(`[connectWifi] Failed to check registration table:`, regErr.message);
+                continue;
+              }
+            }
+
+            // SSID is present, verify it matches
+            console.log(`[connectWifi] Interface running with SSID, verifying match...`);
+          } else if (!currentSsid || currentSsid.trim() === '') {
+            console.log(`[connectWifi] Interface not running and SSID empty, waiting...`);
             continue;
           }
 
