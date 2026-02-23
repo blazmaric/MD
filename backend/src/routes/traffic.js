@@ -66,7 +66,7 @@ export default async function trafficRoutes(fastify) {
   });
 
   fastify.delete('/traffic/history', {
-    preHandler: [authenticateMiddleware, requireAdmin()]
+    preHandler: [authenticateMiddleware, requireAdmin]
   }, async (request, reply) => {
     try {
       await query('DELETE FROM traffic_history');
