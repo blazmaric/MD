@@ -1044,6 +1044,7 @@ async function getSavedNetworks(interfaceName = 'wlan1') {
   try {
     // Get all connect-list entries for this interface
     const connectList = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
+    console.log(`[getSavedNetworks] Raw response:`, JSON.stringify(connectList));
     console.log(`[getSavedNetworks] Found ${connectList.length} entries`);
 
     // Get all security profiles to retrieve passwords
