@@ -167,6 +167,27 @@ BEGIN
 END $$;
 `;
 
+const MIGRATION_010 = `
+-- Create WiFi scan results table for storing discovered networks
+CREATE TABLE IF NOT EXISTS wifi_scan_results (
+  id SERIAL PRIMARY KEY,
+  interface_name TEXT NOT NULL DEFAULT '',
+  ssid TEXT NOT NULL DEFAULT '',
+  address TEXT NOT NULL DEFAULT '',
+  signal INTEGER NOT NULL DEFAULT -100,
+  channel TEXT NOT NULL DEFAULT '',
+  frequency INTEGER NOT NULL DEFAULT 0,
+  security TEXT NOT NULL DEFAULT '',
+  scanned_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_wifi_scan_scanned_at ON wifi_scan_results(scanned_at DESC);
+CREATE INDEX IF NOT EXISTS idx_wifi_scan_ssid ON wifi_scan_results(ssid);
+CREATE INDEX IF NOT EXISTS idx_wifi_scan_address ON wifi_scan_results(address);
+CREATE INDEX IF NOT EXISTS idx_wifi_scan_interface_name ON wifi_scan_results(interface_name);
+`;
+
 export async function runMigrations() {
   try {
     console.log('Running database migrations...');
@@ -188,7 +209,8 @@ export async function runMigrations() {
       { name: '006_gps_extended', sql: MIGRATION_006 },
       { name: '007_wifi_signal_rate', sql: MIGRATION_007 },
       { name: '008_wlan_traffic_speed', sql: MIGRATION_008 },
-      { name: '009_simplify_rbac', sql: MIGRATION_009 }
+      { name: '009_simplify_rbac', sql: MIGRATION_009 },
+      { name: '010_wifi_scan_results', sql: MIGRATION_010 }
     ];
 
     for (const migration of migrations) {
