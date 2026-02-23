@@ -1042,45 +1042,52 @@ async function getSavedNetworks(interfaceName = 'wlan24') {
   console.log(`[getSavedNetworks] Fetching saved networks for ${interfaceName}`);
 
   try {
-    // Get all security profiles - these contain SSID and password combinations
+    // Convert frontend interface name to MikroTik format
+    const mtInterfaceName = interfaceName.replace('wlan24', 'wlan2.4');
+    console.log(`[getSavedNetworks] Converted interface name: ${interfaceName} -> ${mtInterfaceName}`);
+
+    // Get all security profiles to retrieve passwords
     const securityProfiles = await mtFetchWithRetry('/rest/interface/wireless/security-profiles');
     console.log(`[getSavedNetworks] Found ${securityProfiles.length} security profiles`);
 
-    // Get current interface configuration to check which profile is active
+    // Build a map of security profile name -> password
+    const profileMap = {};
+    securityProfiles.forEach(profile => {
+      profileMap[profile.name] = {
+        id: profile['.id'],
+        password: profile['wpa2-pre-shared-key'] || profile['wpa-pre-shared-key'] || ''
+      };
+    });
+
+    // Get current interface configuration
     const interfaces = await mtFetchWithRetry('/rest/interface/wireless');
-    const wlanInterface = interfaces.find(i => i.name === interfaceName);
+    const wlanInterface = interfaces.find(i => i.name === mtInterfaceName);
     const activeProfile = wlanInterface?.['security-profile'] || null;
-    const currentSSID = wlanInterface?.ssid || null;
 
-    console.log(`[getSavedNetworks] Interface ${interfaceName}: profile=${activeProfile}, ssid=${currentSSID}`);
+    console.log(`[getSavedNetworks] Interface ${mtInterfaceName}: active profile=${activeProfile}`);
 
-    // Filter out default/system profiles and process user-created profiles
-    const networks = securityProfiles
-      .filter(profile => {
-        const name = profile.name || '';
-        // Include profiles that have WPA keys (indicates user-configured network)
-        const hasPassword = !!(profile['wpa2-pre-shared-key'] || profile['wpa-pre-shared-key']);
-        // Skip the 'default' profile
-        return hasPassword && name !== 'default';
-      })
-      .map(profile => {
-        const profileName = profile.name || '';
-        const password = profile['wpa2-pre-shared-key'] || profile['wpa-pre-shared-key'] || '';
+    // Get all connect-list entries for this interface - this has the SSID
+    const connectList = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${mtInterfaceName}`);
+    console.log(`[getSavedNetworks] Found ${connectList.length} connect-list entries`);
 
-        // Check if this is the currently active profile
-        const isActive = profileName === activeProfile;
+    // Combine SSID from connect-list with password from security profile
+    const networks = connectList
+      .filter(entry => entry.ssid) // Only entries with SSID
+      .map(entry => {
+        const profileName = entry['security-profile'] || 'default';
+        const profile = profileMap[profileName];
 
         return {
-          id: profile['.id'],
-          ssid: profileName, // Security profile name typically matches SSID
-          macAddress: '', // Not stored in security profiles
-          connected: isActive,
-          password: password,
+          id: profile?.id || entry['.id'], // Use security profile ID for switching
+          ssid: entry.ssid || '',
+          macAddress: entry['mac-address'] || '',
+          connected: entry.connect === 'yes',
+          password: profile?.password || '',
           securityProfile: profileName
         };
       });
 
-    console.log(`[getSavedNetworks] Processed ${networks.length} networks from security profiles`);
+    console.log(`[getSavedNetworks] Processed ${networks.length} networks`);
     return networks;
   } catch (err) {
     console.error('[getSavedNetworks] Failed:', err.message);
@@ -1092,6 +1099,11 @@ async function switchToNetwork(networkId, interfaceName = 'wlan24') {
   console.log(`[switchToNetwork] Switching to network ${networkId} on ${interfaceName}`);
 
   try {
+    // Convert frontend interface name to MikroTik format
+    // wlan24 -> wlan2.4, wlan5 -> wlan5
+    const mtInterfaceName = interfaceName.replace('wlan24', 'wlan2.4');
+    console.log(`[switchToNetwork] Converted interface name: ${interfaceName} -> ${mtInterfaceName}`);
+
     // Get the target security profile
     const securityProfiles = await mtFetchWithRetry('/rest/interface/wireless/security-profiles');
     const targetProfile = securityProfiles.find(p => p['.id'] === networkId);
@@ -1105,14 +1117,15 @@ async function switchToNetwork(networkId, interfaceName = 'wlan24') {
 
     // Get current interface config
     const interfaces = await mtFetchWithRetry('/rest/interface/wireless');
-    const wlanInterface = interfaces.find(i => i.name === interfaceName);
+    const wlanInterface = interfaces.find(i => i.name === mtInterfaceName);
 
     if (!wlanInterface) {
-      throw new Error(`Interface ${interfaceName} not found`);
+      console.error(`[switchToNetwork] Available interfaces:`, interfaces.map(i => i.name));
+      throw new Error(`Interface ${mtInterfaceName} not found`);
     }
 
     // Disable interface first
-    console.log(`[switchToNetwork] Disabling interface ${interfaceName}`);
+    console.log(`[switchToNetwork] Disabling interface ${mtInterfaceName}`);
     await mtFetch(`/rest/interface/wireless/${wlanInterface['.id']}`, {
       method: 'PATCH',
       body: JSON.stringify({ 'disabled': 'yes' })
