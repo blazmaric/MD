@@ -24,7 +24,7 @@ export default function LteStatus({ snapshot, lteConnected }: LteStatusProps) {
 
   const isLteActive = lteConnected === true;
   const isPrimaryGateway = snapshot.gateway_type === 'LTE';
-  const shouldShowPrimaryBadge = isPrimaryGateway && isLteActive;
+  const shouldShowPrimaryBadge = isPrimaryGateway;
 
   function getSignalQuality(rsrp?: number | string | null): { label: string; color: string } {
     const rsrpNum = typeof rsrp === 'number' ? rsrp : (typeof rsrp === 'string' && rsrp !== '' ? parseFloat(rsrp) : null);
