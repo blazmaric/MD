@@ -100,7 +100,7 @@ export default function Dashboard({ user }: DashboardProps) {
       />
 
       <div className="w-full">
-        <InterfaceList />
+        <SmsManager />
       </div>
 
       <div className="w-full">
@@ -108,7 +108,7 @@ export default function Dashboard({ user }: DashboardProps) {
       </div>
 
       <div className="w-full">
-        <SmsManager />
+        <InterfaceList />
       </div>
 
       <LogViewer />
