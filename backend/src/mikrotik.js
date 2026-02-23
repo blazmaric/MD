@@ -1042,47 +1042,45 @@ async function getSavedNetworks(interfaceName = 'wlan24') {
   console.log(`[getSavedNetworks] Fetching saved networks for ${interfaceName}`);
 
   try {
-    // First check interface configuration
+    // Get all security profiles - these contain SSID and password combinations
+    const securityProfiles = await mtFetchWithRetry('/rest/interface/wireless/security-profiles');
+    console.log(`[getSavedNetworks] Found ${securityProfiles.length} security profiles`);
+
+    // Get current interface configuration to check which profile is active
     const interfaces = await mtFetchWithRetry('/rest/interface/wireless');
     const wlanInterface = interfaces.find(i => i.name === interfaceName);
-    if (wlanInterface) {
-      console.log(`[getSavedNetworks] Interface config:`, {
-        ssid: wlanInterface.ssid,
-        mode: wlanInterface.mode,
-        disabled: wlanInterface.disabled
+    const activeProfile = wlanInterface?.['security-profile'] || null;
+    const currentSSID = wlanInterface?.ssid || null;
+
+    console.log(`[getSavedNetworks] Interface ${interfaceName}: profile=${activeProfile}, ssid=${currentSSID}`);
+
+    // Filter out default/system profiles and process user-created profiles
+    const networks = securityProfiles
+      .filter(profile => {
+        const name = profile.name || '';
+        // Include profiles that have WPA keys (indicates user-configured network)
+        const hasPassword = !!(profile['wpa2-pre-shared-key'] || profile['wpa-pre-shared-key']);
+        // Skip the 'default' profile
+        return hasPassword && name !== 'default';
+      })
+      .map(profile => {
+        const profileName = profile.name || '';
+        const password = profile['wpa2-pre-shared-key'] || profile['wpa-pre-shared-key'] || '';
+
+        // Check if this is the currently active profile
+        const isActive = profileName === activeProfile;
+
+        return {
+          id: profile['.id'],
+          ssid: profileName, // Security profile name typically matches SSID
+          macAddress: '', // Not stored in security profiles
+          connected: isActive,
+          password: password,
+          securityProfile: profileName
+        };
       });
-    }
 
-    // Get all connect-list entries for this interface
-    const connectList = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
-    console.log(`[getSavedNetworks] Raw response:`, JSON.stringify(connectList));
-    console.log(`[getSavedNetworks] Found ${connectList.length} entries`);
-
-    // Get all security profiles to retrieve passwords
-    const securityProfiles = await mtFetchWithRetry('/rest/interface/wireless/security-profiles');
-    const profileMap = {};
-    securityProfiles.forEach(profile => {
-      profileMap[profile.name] = {
-        password: profile['wpa2-pre-shared-key'] || profile['wpa-pre-shared-key'] || ''
-      };
-    });
-
-    // Process each entry
-    const networks = connectList.map(entry => {
-      const profileName = entry['security-profile'] || 'default';
-      const profile = profileMap[profileName];
-
-      return {
-        id: entry['.id'],
-        ssid: entry.ssid || '',
-        macAddress: entry['mac-address'] || '',
-        connected: entry.connect === 'yes',
-        password: profile?.password || '',
-        securityProfile: profileName
-      };
-    });
-
-    console.log(`[getSavedNetworks] Processed ${networks.length} networks`);
+    console.log(`[getSavedNetworks] Processed ${networks.length} networks from security profiles`);
     return networks;
   } catch (err) {
     console.error('[getSavedNetworks] Failed:', err.message);
@@ -1094,38 +1092,46 @@ async function switchToNetwork(networkId, interfaceName = 'wlan24') {
   console.log(`[switchToNetwork] Switching to network ${networkId} on ${interfaceName}`);
 
   try {
-    // Get all connect-list entries
-    const connectList = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
+    // Get the target security profile
+    const securityProfiles = await mtFetchWithRetry('/rest/interface/wireless/security-profiles');
+    const targetProfile = securityProfiles.find(p => p['.id'] === networkId);
 
-    // Disable all entries except the target
-    for (const entry of connectList) {
-      const shouldConnect = entry['.id'] === networkId ? 'yes' : 'no';
-      await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${entry['.id']}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ 'connect': shouldConnect })
-      });
-      console.log(`[switchToNetwork] Set ${entry.ssid} connect=${shouldConnect}`);
+    if (!targetProfile) {
+      throw new Error(`Security profile with ID ${networkId} not found`);
     }
 
-    // Reset interface to force reconnection
-    console.log(`[switchToNetwork] Resetting interface ${interfaceName}`);
-    await mtFetch(`/rest/interface/wireless/${interfaceName}`, {
+    const profileName = targetProfile.name;
+    console.log(`[switchToNetwork] Switching to profile: ${profileName}`);
+
+    // Get current interface config
+    const interfaces = await mtFetchWithRetry('/rest/interface/wireless');
+    const wlanInterface = interfaces.find(i => i.name === interfaceName);
+
+    if (!wlanInterface) {
+      throw new Error(`Interface ${interfaceName} not found`);
+    }
+
+    // Disable interface first
+    console.log(`[switchToNetwork] Disabling interface ${interfaceName}`);
+    await mtFetch(`/rest/interface/wireless/${wlanInterface['.id']}`, {
       method: 'PATCH',
       body: JSON.stringify({ 'disabled': 'yes' })
     });
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    await mtFetch(`/rest/interface/wireless/${interfaceName}`, {
+    // Update interface with new security profile and enable
+    console.log(`[switchToNetwork] Applying security profile ${profileName} and re-enabling`);
+    await mtFetch(`/rest/interface/wireless/${wlanInterface['.id']}`, {
       method: 'PATCH',
       body: JSON.stringify({
+        'security-profile': profileName,
         'mode': 'station',
-        'ssid': '',
         'disabled': 'no'
       })
     });
 
-    console.log(`[switchToNetwork] Interface reset complete`);
+    console.log(`[switchToNetwork] Successfully switched to ${profileName}`);
     return { success: true };
   } catch (err) {
     console.error('[switchToNetwork] Failed:', err.message);
