@@ -51,10 +51,12 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
     setCheckingLte(true);
     try {
       const data = await api.wifi.checkLte();
+      console.log('[WiFiScanner] LTE check response:', data);
+      console.log('[WiFiScanner] Setting lteConnected to:', data.connected);
       setLteConnected(data.connected);
       return data.connected;
     } catch (err) {
-      console.error('Failed to check LTE:', err);
+      console.error('[WiFiScanner] Failed to check LTE:', err);
       setLteConnected(false);
       return false;
     } finally {
@@ -168,6 +170,15 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
       setConnecting(false);
     }
   }
+
+  // Debug logging
+  console.log('[WiFiScanner] Render state:', {
+    lteConnected,
+    checkingLte,
+    forceMode,
+    scanning,
+    buttonDisabled: scanning || checkingLte || (!forceMode && lteConnected === false)
+  });
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">

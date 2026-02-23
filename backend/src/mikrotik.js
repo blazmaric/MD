@@ -263,10 +263,29 @@ export async function getWirelessRegistrationTable(interfaceName) {
     const targetInterface = interfaces.find(iface => iface.name === interfaceName);
     const ssid = targetInterface?.ssid || 'N/A';
 
-    return clients.map(client => ({
-      ...client,
-      ssid: ssid
-    }));
+    // Fetch DHCP leases to get IP and hostname
+    let dhcpLeases = [];
+    try {
+      dhcpLeases = await mtFetch('/rest/ip/dhcp-server/lease');
+    } catch (err) {
+      console.warn('Failed to fetch DHCP leases:', err.message);
+    }
+
+    return clients.map(client => {
+      const macAddress = client['mac-address'];
+
+      // Find matching DHCP lease by MAC address
+      const lease = dhcpLeases.find(l =>
+        l['mac-address'] && l['mac-address'].toLowerCase() === macAddress.toLowerCase()
+      );
+
+      return {
+        ...client,
+        ssid: ssid,
+        address: lease?.address || client.address || undefined,
+        comment: lease?.['host-name'] || client.comment || undefined
+      };
+    });
   } catch (err) {
     console.error('Failed to get registration table:', err.message);
     return [];
@@ -492,9 +511,16 @@ export async function getWlan5Status() {
 
     const monitor = monitorResult[0] || {};
 
-    // Get interface details for running/disabled status
+    // Get interface details for running/disabled status and SSID
     const interfaces = await mtFetch('/rest/interface/wireless');
     const wlan5Interface = interfaces.find(iface => iface.name === 'wlan5');
+
+    // Get SSID from interface if monitor doesn't have it
+    const ssid = (monitor.ssid && monitor.ssid.trim() !== '')
+      ? monitor.ssid
+      : (wlan5Interface?.ssid && wlan5Interface.ssid.trim() !== '')
+        ? wlan5Interface.ssid
+        : 'N/A';
 
     // Get real-time traffic
     let txRate = 'N/A';
@@ -521,7 +547,7 @@ export async function getWlan5Status() {
 
     return {
       status: monitor.status || 'N/A',
-      ssid: monitor.ssid && monitor.ssid.trim() !== '' ? monitor.ssid : 'N/A',
+      ssid: ssid,
       authenticatedClients: parseInt(monitor['authenticated-clients'] || '0'),
       registeredClients: parseInt(monitor['registered-clients'] || '0'),
       noiseFloor: monitor['noise-floor'] || 'N/A',
