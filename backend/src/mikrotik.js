@@ -796,19 +796,8 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       const existingProfiles = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
       console.log(`[connectWifi] Found ${existingProfiles.length} existing connect-list entries`);
 
-      // First, disable ALL other connect-list entries to force reconnection
-      console.log(`[connectWifi] Disabling all existing connect-list entries to force reconnection`);
-      for (const profile of existingProfiles) {
-        try {
-          await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${profile['.id']}`, {
-            method: 'PATCH',
-            body: JSON.stringify({ 'connect': 'no' })
-          });
-          console.log(`[connectWifi] Disabled connect-list entry: ${profile.ssid || 'unknown'}`);
-        } catch (err) {
-          console.warn(`[connectWifi] Failed to disable entry ${profile['.id']}:`, err.message);
-        }
-      }
+      // Keep all networks enabled for automatic roaming
+      console.log(`[connectWifi] Keeping all connect-list entries enabled for automatic switching`);
 
       // Check if this SSID+MAC already exists in the connect-list
       const normalizedExpectedBytes = Buffer.from(normalizedSsid, 'utf8').toString('hex');
@@ -1059,12 +1048,12 @@ async function getSavedNetworks(interfaceName = 'wlan24') {
       };
     });
 
-    // Get current interface configuration
+    // Get current interface configuration to find ACTUAL connected SSID
     const interfaces = await mtFetchWithRetry('/rest/interface/wireless');
     const wlanInterface = interfaces.find(i => i.name === mtInterfaceName);
-    const activeProfile = wlanInterface?.['security-profile'] || null;
+    const currentSsid = wlanInterface?.['ssid'] || null; // This is the ACTUAL connected SSID
 
-    console.log(`[getSavedNetworks] Interface ${mtInterfaceName}: active profile=${activeProfile}`);
+    console.log(`[getSavedNetworks] Interface ${mtInterfaceName}: currently connected to SSID="${currentSsid}"`);
 
     // Get all connect-list entries for this interface - this has the SSID
     const connectList = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${mtInterfaceName}`);
@@ -1077,20 +1066,20 @@ async function getSavedNetworks(interfaceName = 'wlan24') {
         const profileName = entry['security-profile'] || 'default';
         const profile = profileMap[profileName];
 
-        // Check if this is the currently active network
-        const isActive = profileName === activeProfile;
+        // Check if THIS is the currently connected network by comparing SSIDs
+        const isConnected = currentSsid && entry.ssid === currentSsid;
 
         return {
           id: profile?.id || entry['.id'], // Use security profile ID for switching
           ssid: entry.ssid || '',
           macAddress: entry['mac-address'] || '',
-          connected: isActive, // Only mark as connected if it's the ACTIVE profile
+          connected: isConnected, // Mark as connected only if SSID matches current connection
           password: profile?.password || '',
           securityProfile: profileName
         };
       });
 
-    console.log(`[getSavedNetworks] Processed ${networks.length} networks (active: ${activeProfile})`);
+    console.log(`[getSavedNetworks] Processed ${networks.length} networks (connected: ${currentSsid})`);
     return networks;
   } catch (err) {
     console.error('[getSavedNetworks] Failed:', err.message);
