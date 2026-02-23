@@ -909,26 +909,30 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
                 console.log(`[connectWifi] Registration table entries:`, JSON.stringify(regTable));
 
                 if (regTable && regTable.length > 0) {
-                  // Check if any entry matches our expected SSID
-                  const expectedBytes = Buffer.from(normalizedSsid, 'utf8').toString('hex');
-                  const originalExpectedBytes = Buffer.from(ssid, 'utf8').toString('hex');
+                  // Check if any entry matches our expected MAC address (from scan results)
+                  // The registration-table doesn't populate the SSID field, so we verify by MAC instead
+                  console.log(`[connectWifi] Checking registration-table entries against expected MAC: ${bestMacAddress || 'none'}`);
 
                   for (const entry of regTable) {
-                    const regSsid = entry.ssid || '';
-                    const regBytes = Buffer.from(regSsid, 'utf8').toString('hex');
+                    const entryMac = entry['mac-address'] || '';
+                    console.log(`[connectWifi] Reg entry MAC: "${entryMac}", interface: ${entry.interface}`);
 
-                    console.log(`[connectWifi] Checking reg entry: "${regSsid}" (bytes: ${regBytes})`);
-
-                    if (regBytes === expectedBytes || regBytes === originalExpectedBytes || regSsid === normalizedSsid || regSsid === ssid) {
+                    // If we have a bestMacAddress from scan, verify it matches
+                    if (bestMacAddress && entryMac.toLowerCase() === bestMacAddress.toLowerCase()) {
                       connected = true;
-                      console.log(`[connectWifi] ✅ Successfully connected to "${regSsid}" (verified via registration-table) after ${i + 1} seconds`);
+                      console.log(`[connectWifi] ✅ Successfully connected to MAC ${entryMac} (verified via registration-table) after ${i + 1} seconds`);
+                      break;
+                    } else if (!bestMacAddress) {
+                      // No MAC from scan, but we have a registration entry - assume it's correct
+                      connected = true;
+                      console.log(`[connectWifi] ✅ Successfully connected (registration-table has entry) after ${i + 1} seconds`);
                       break;
                     }
                   }
 
                   if (connected) break;
 
-                  console.log(`[connectWifi] Registration table has entries but none match "${normalizedSsid}", waiting...`);
+                  console.log(`[connectWifi] Registration table has entries but MAC doesn't match expected: ${bestMacAddress}, waiting...`);
                   continue;
                 }
                 console.log(`[connectWifi] Registration table empty, waiting...`);
