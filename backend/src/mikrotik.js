@@ -796,6 +796,20 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       const existingProfiles = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
       console.log(`[connectWifi] Found ${existingProfiles.length} existing connect-list entries`);
 
+      // First, disable ALL other connect-list entries to force reconnection
+      console.log(`[connectWifi] Disabling all existing connect-list entries to force reconnection`);
+      for (const profile of existingProfiles) {
+        try {
+          await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${profile['.id']}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ 'connect': 'no' })
+          });
+          console.log(`[connectWifi] Disabled connect-list entry: ${profile.ssid || 'unknown'}`);
+        } catch (err) {
+          console.warn(`[connectWifi] Failed to disable entry ${profile['.id']}:`, err.message);
+        }
+      }
+
       // Check if this SSID+MAC already exists in the connect-list
       const normalizedExpectedBytes = Buffer.from(normalizedSsid, 'utf8').toString('hex');
       let existingEntry = null;
@@ -860,9 +874,19 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       throw new Error('Failed to manage connect-list: ' + err.message);
     }
 
-    // Step 3: Set interface to station mode with blank SSID
-    console.log(`[connectWifi] Setting interface ${interfaceName} to station mode with blank SSID`);
+    // Step 3: Reset interface to force disconnection from old network
+    console.log(`[connectWifi] Resetting interface ${interfaceName} to force disconnection`);
     try {
+      // First disable
+      await mtFetch(`/rest/interface/wireless/${interfaceName}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          'disabled': 'yes'
+        })
+      });
+      // Wait a moment
+      await new Promise(resolve => setTimeout(resolve, 500));
+      // Then re-enable in station mode with blank SSID
       await mtFetch(`/rest/interface/wireless/${interfaceName}`, {
         method: 'PATCH',
         body: JSON.stringify({
@@ -871,8 +895,9 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
           'disabled': 'no'
         })
       });
+      console.log(`[connectWifi] Interface reset complete`);
     } catch (err) {
-      console.warn('[connectWifi] Failed to configure interface mode:', err.message);
+      console.warn('[connectWifi] Failed to reset interface:', err.message);
       // Don't throw - connect-list should still work
     }
 
