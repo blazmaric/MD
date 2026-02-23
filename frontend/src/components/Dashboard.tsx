@@ -23,10 +23,15 @@ export default function Dashboard({ user }: DashboardProps) {
   const [error, setError] = useState('');
   const [showRebootDialog, setShowRebootDialog] = useState(false);
   const [rebooting, setRebooting] = useState(false);
+  const [lteConnected, setLteConnected] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 3000);
+    checkLte();
+    const interval = setInterval(() => {
+      fetchDashboardData();
+      checkLte();
+    }, 3000);
     return () => clearInterval(interval);
   }, [user]);
 
@@ -37,6 +42,16 @@ export default function Dashboard({ user }: DashboardProps) {
       setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
+    }
+  }
+
+  async function checkLte() {
+    try {
+      const data = await api.wifi.checkLte();
+      setLteConnected(data.connected);
+    } catch (err) {
+      console.error('Failed to check LTE status:', err);
+      setLteConnected(null);
     }
   }
 
@@ -70,7 +85,7 @@ export default function Dashboard({ user }: DashboardProps) {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <LteStatus snapshot={snapshot} />
+        <LteStatus snapshot={snapshot} lteConnected={lteConnected} />
         <WlanStatus snapshot={snapshot} />
         <Wlan5Status />
       </div>
