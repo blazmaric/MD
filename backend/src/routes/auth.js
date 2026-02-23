@@ -11,7 +11,7 @@ export default async function authRoutes(fastify) {
     }
 
     const result = await query(
-      'SELECT id, username, password_hash, permissions, is_active FROM users WHERE username = $1',
+      'SELECT id, username, password_hash, is_admin, is_active FROM users WHERE username = $1',
       [username]
     );
 
@@ -45,7 +45,7 @@ export default async function authRoutes(fastify) {
       user: {
         id: user.id,
         username: user.username,
-        permissions: user.permissions
+        is_admin: user.is_admin
       }
     };
   });
@@ -64,7 +64,7 @@ export default async function authRoutes(fastify) {
     return {
       id: request.user.id,
       username: request.user.username,
-      permissions: request.user.permissions
+      is_admin: request.user.is_admin
     };
   });
 }
