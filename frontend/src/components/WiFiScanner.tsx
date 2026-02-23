@@ -255,8 +255,17 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
           <div>
             <div className="font-semibold mb-1">Skeniranje onemogočeno - LTE ni stabilen</div>
             <div className="mb-2">
-              WiFi skeniranje zahteva stabilno LTE povezavo (6/6 paketov brez timeoutov).
+              WiFi skeniranje zahteva stabilno LTE povezavo (vsaj 3/6 uspešnih pingov).
               Skeniranje začasno prekine WiFi, zato mora biti LTE na voljo za vzdrževanje povezljivosti.
+            </div>
+            <div className="text-xs opacity-90 mb-2">
+              <strong>Možni vzroki za nestabilen LTE:</strong>
+              <ul className="list-disc ml-4 mt-1">
+                <li>Ni dobroimetja na SIM kartici</li>
+                <li>Slab signal / pokritost</li>
+                <li>Nepravilne APN nastavitve</li>
+                <li>Težave z mobilnim operaterjem</li>
+              </ul>
             </div>
             <div className="text-xs opacity-90">
               Sistem samodejno preverja LTE povezavo vsakih 30 sekund. Ko bo LTE stabilen, se bo gumb za skeniranje omogočil.

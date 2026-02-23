@@ -398,21 +398,16 @@ export async function checkLteConnectivity() {
 
     console.log(`[checkLteConnectivity] Ping stats: sent=${sent}, received=${received}, loss=${packetLoss}%`);
 
-    // If interface is UP and has IP, consider it connected (even if ping fails)
-    // Ping can fail due to routing issues, but interface itself is working
-    if (received === 0) {
-      console.log('[checkLteConnectivity] ⚠️ Step 3 WARNING: Ping failed (routing issue?), but interface is UP with IP - allowing scan');
-      console.log('[checkLteConnectivity] 🎉 ALL CHECKS PASSED - LTE interface is UP');
-      return true; // Interface is UP, that's enough
-    }
-
-    const isConnected = received > 0;
+    // STRICT CHECK: Require at least 50% successful pings (3/6 packets)
+    // This ensures not just interface UP, but actual working internet connection
+    const isConnected = sent >= 6 && received >= 3 && packetLoss <= 50;
 
     if (isConnected) {
       console.log(`[checkLteConnectivity] ✅ Step 3 PASSED: ${received}/${sent} packets successful (${packetLoss}% loss)`);
       console.log('[checkLteConnectivity] 🎉 ALL CHECKS PASSED - LTE is fully connected');
     } else {
-      console.log(`[checkLteConnectivity] ❌ Step 3 FAILED: No packets received`);
+      console.log(`[checkLteConnectivity] ❌ Step 3 FAILED: Only ${received}/${sent} packets successful (${packetLoss}% loss)`);
+      console.log('[checkLteConnectivity] ❌ Internet connection not working - možno je, da na kartici ni dobroimetja!');
     }
 
     return isConnected;
@@ -427,7 +422,7 @@ export async function scanWifi(interfaceName, db, force = false) {
     if (!force) {
       const lteConnected = await checkLteConnectivity();
       if (!lteConnected) {
-        throw new Error('LTE interface is not connected. Cannot scan WiFi as it would disconnect the active connection.');
+        throw new Error('LTE povezava ni stabilna (ping ne dela). Možni vzroki: ni dobroimetja na SIM kartici, slab signal, ali težave z operaterjem. Uporabite "Force scan" če imate fizični dostop do naprave.');
       }
     }
 
