@@ -19,6 +19,7 @@ import wifiRoutes from './routes/wifi.js';
 import interfacesRoutes from './routes/interfaces.js';
 import layoutRoutes from './routes/layout.js';
 import gpsRoutes from './routes/gps.js';
+import dashboardRoutes from './routes/dashboard.js';
 
 const fastify = Fastify({
   logger: {
@@ -38,6 +39,7 @@ fastify.get('/api/health', async () => {
 });
 
 fastify.register(authRoutes, { prefix: '/api' });
+fastify.register(dashboardRoutes, { prefix: '/api' });
 fastify.register(summaryRoutes, { prefix: '/api' });
 fastify.register(logsRoutes, { prefix: '/api' });
 fastify.register(trafficRoutes, { prefix: '/api' });

@@ -38,6 +38,11 @@ export const api = {
       apiFetch('/summary'),
   },
 
+  dashboard: {
+    getData: () =>
+      apiFetch('/dashboard-data'),
+  },
+
   logs: {
     get: (params?: { category?: string; severity?: string; search?: string; limit?: number; offset?: number }) => {
       const query = new URLSearchParams();

@@ -25,18 +25,18 @@ export default function Dashboard({ user }: DashboardProps) {
   const [rebooting, setRebooting] = useState(false);
 
   useEffect(() => {
-    fetchSummary();
-    const interval = setInterval(fetchSummary, 3000);
+    fetchDashboardData();
+    const interval = setInterval(fetchDashboardData, 3000);
     return () => clearInterval(interval);
   }, [user]);
 
-  async function fetchSummary() {
+  async function fetchDashboardData() {
     try {
-      const data = await api.summary.get();
-      setSnapshot(data);
+      const data = await api.dashboard.getData();
+      setSnapshot(data.summary);
       setError('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch summary');
+      setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
     }
   }
 
