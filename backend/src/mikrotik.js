@@ -87,9 +87,7 @@ async function mtFetchWithRetry(path, options = {}, maxRetries = 3, baseDelay = 
 export async function getDefaultRoute() {
   try {
     const routes = await mtFetch('/rest/ip/route?dst-address=0.0.0.0/0&active=true');
-    const route = routes[0] || null;
-    console.log('getDefaultRoute result:', route);
-    return route;
+    return routes[0] || null;
   } catch (err) {
     console.error('Failed to get default route:', err.message);
     return null;
