@@ -430,16 +430,22 @@ export async function scanWifi(interfaceName, db, force = false) {
     }
 
     const command = `/interface wireless scan ${interfaceName} duration=5`;
+    console.log('[WiFi Scan] Executing command:', command);
     const output = await executeSSHCommand(command);
+    console.log('[WiFi Scan] Raw output:', output);
+    console.log('[WiFi Scan] Output length:', output.length);
 
     const lines = output.split('\n').filter(line => line.trim());
+    console.log('[WiFi Scan] Parsed lines count:', lines.length);
     const networks = [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
+      console.log('[WiFi Scan] Processing line', i, ':', line);
 
       if (line.match(/^\d+/)) {
         const parts = line.split(/\s+/);
+        console.log('[WiFi Scan] Line matched pattern, parts:', parts);
 
         let ssidIndex = -1;
         for (let j = 0; j < parts.length; j++) {
@@ -463,6 +469,8 @@ export async function scanWifi(interfaceName, db, force = false) {
 
           const signal = parseInt(signalStr) || -100;
 
+          console.log('[WiFi Scan] Found network:', { ssid, address, signal });
+
           if (ssid && ssid !== '' && address) {
             networks.push({
               ssid: ssid,
@@ -476,6 +484,8 @@ export async function scanWifi(interfaceName, db, force = false) {
         }
       }
     }
+
+    console.log('[WiFi Scan] Total networks found:', networks.length);
 
     const grouped = networks.reduce((acc, network) => {
       const addr = network.address;
