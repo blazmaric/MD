@@ -21,6 +21,8 @@ interface Wlan24Status {
   signalStrength: string;
   txRate: string;
   rxRate: string;
+  running: string;
+  disabled: string;
 }
 
 function formatSpeed(bytesPerSec: number | string | null | undefined): string {
@@ -167,6 +169,7 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
   }
 
   const isWlanActive = snapshot.gateway_type === 'WiFi';
+  const isWlan24Disabled = wlan24Status?.disabled === 'true';
 
   return (
     <>
@@ -227,16 +230,31 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
 
             <button
               onClick={handleScan}
-              disabled={scanning || checkingLte || lteConnected === false}
+              disabled={scanning || checkingLte || lteConnected === false || isWlan24Disabled}
               className={`w-full px-4 py-2.5 rounded-lg font-medium transition-all shadow-lg flex items-center justify-center gap-2 ${
-                lteConnected === false
+                lteConnected === false || isWlan24Disabled
                   ? 'bg-slate-400 dark:bg-slate-600 text-white cursor-not-allowed'
                   : 'bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white hover:shadow-xl disabled:opacity-50'
               }`}
-              title={lteConnected === false ? 'LTE povezava ni stabilna - gumb je onemogočen' : ''}
+              title={
+                isWlan24Disabled
+                  ? 'WLAN 2.4 interface je onemogočen'
+                  : lteConnected === false
+                    ? 'LTE povezava ni stabilna - gumb je onemogočen'
+                    : ''
+              }
             >
               <Search className="w-4 h-4" />
-              {checkingLte ? 'Preverjam LTE...' : scanning ? t('scanning') : lteConnected === false ? 'LTE ni stabilen' : t('scanWlan')}
+              {checkingLte
+                ? 'Preverjam LTE...'
+                : scanning
+                  ? t('scanning')
+                  : isWlan24Disabled
+                    ? 'WLAN 2.4 onemogočen'
+                    : lteConnected === false
+                      ? 'LTE ni stabilen'
+                      : t('scanWlan')
+              }
             </button>
           </div>
         </div>

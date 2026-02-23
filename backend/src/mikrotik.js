@@ -590,6 +590,10 @@ export async function getWlan24Status() {
 
     const monitor = monitorResult[0] || {};
 
+    // Get interface details for running/disabled status
+    const wlan24Interfaces = await mtFetch('/rest/interface/wireless?name=wlan2.4');
+    const wlan24Interface = wlan24Interfaces?.[0];
+
     // Format rate helper (e.g., "300kbps" → "300 Kbps", "48.5Mbps" → "48.5 Mbps")
     const formatRate = (rate) => {
       if (!rate || rate === 'N/A') return 'N/A';
@@ -605,7 +609,9 @@ export async function getWlan24Status() {
       ssid: monitor.ssid && monitor.ssid.trim() !== '' ? monitor.ssid : 'N/A',
       signalStrength: monitor['signal-strength'] || 'N/A',
       txRate: formatRate(monitor['tx-rate']),
-      rxRate: formatRate(monitor['rx-rate'])
+      rxRate: formatRate(monitor['rx-rate']),
+      running: wlan24Interface?.running || 'false',
+      disabled: wlan24Interface?.disabled || 'true'
     };
   } catch (err) {
     console.error('Failed to get WLAN 2.4 status:', err.message);
