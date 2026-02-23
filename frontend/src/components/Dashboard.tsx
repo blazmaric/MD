@@ -37,6 +37,11 @@ export default function Dashboard({ user }: DashboardProps) {
   async function fetchDashboardData() {
     try {
       const data = await api.dashboard.getData();
+      console.log('Dashboard API Response:', {
+        summary: data.summary,
+        gateway_type: data.summary?.gateway_type,
+        active_uplink: data.summary?.active_uplink
+      });
       setSnapshot(data.summary);
       setError('');
     } catch (err) {
