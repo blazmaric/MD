@@ -728,11 +728,17 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
 
     // Step 2: Clean up and add to connect-list
     console.log(`[connectWifi] Managing connect-list for ${ssid}`);
+    console.log(`[connectWifi] SSID bytes:`, Buffer.from(ssid, 'utf8').toString('hex'));
 
     try {
       // First, get all existing profiles for this interface
       const existingProfiles = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
       console.log(`[connectWifi] Found ${existingProfiles.length} existing connect-list entries`);
+
+      // Log existing SSIDs to see what MikroTik actually has
+      for (const profile of existingProfiles) {
+        console.log(`[connectWifi] Existing SSID: "${profile.ssid}", bytes:`, Buffer.from(profile.ssid || '', 'utf8').toString('hex'));
+      }
 
       // Delete ALL existing entries for this interface to avoid duplicates
       console.log(`[connectWifi] Removing all existing connect-list entries for ${interfaceName}`);
