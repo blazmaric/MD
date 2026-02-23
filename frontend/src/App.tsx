@@ -63,7 +63,7 @@ export default function App() {
     return <Login onLogin={handleLogin} />;
   }
 
-  const canManageUsers = user.permissions.includes('manage_users') || user.permissions.includes('admin_all');
+  const canManageUsers = user.is_admin;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">

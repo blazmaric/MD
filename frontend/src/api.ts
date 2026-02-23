@@ -146,13 +146,13 @@ export const api = {
     list: (): Promise<{ users: User[] }> =>
       apiFetch('/users'),
 
-    create: (data: { username: string; password: string; permissions?: string[]; is_active?: boolean }) =>
+    create: (data: { username: string; password: string; is_admin?: boolean; is_active?: boolean }) =>
       apiFetch('/users', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
 
-    update: (id: string, data: { password?: string; permissions?: string[]; is_active?: boolean }) =>
+    update: (id: string, data: { password?: string; is_admin?: boolean; is_active?: boolean }) =>
       apiFetch(`/users/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(data),

@@ -1,7 +1,7 @@
 export interface User {
   id: string;
   username: string;
-  permissions: string[];
+  is_admin: boolean;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;

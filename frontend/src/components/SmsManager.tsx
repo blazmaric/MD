@@ -2,13 +2,9 @@ import { useState, useEffect } from 'react';
 import { MessageSquare, RefreshCw, Trash2 } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
-import type { SmsMessage, User } from '../types';
+import type { SmsMessage } from '../types';
 
-interface SmsManagerProps {
-  user: User;
-}
-
-export default function SmsManager({ user }: SmsManagerProps) {
+export default function SmsManager() {
   const { t } = useLanguage();
   const [messages, setMessages] = useState<SmsMessage[]>([]);
   const [phone, setPhone] = useState('');
@@ -65,12 +61,8 @@ export default function SmsManager({ user }: SmsManagerProps) {
     }
   }
 
-  function hasPermission(permission: string): boolean {
-    return user.permissions.includes(permission) || user.permissions.includes('admin_all');
-  }
-
-  const canViewInbox = hasPermission('view_sms');
-  const canSendSms = hasPermission('send_sms');
+  const canViewInbox = true;
+  const canSendSms = true;
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow">

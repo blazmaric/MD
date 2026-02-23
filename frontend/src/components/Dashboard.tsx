@@ -53,10 +53,6 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   }
 
-  function hasPermission(permission: string): boolean {
-    return user.permissions.includes(permission) || user.permissions.includes('admin_all');
-  }
-
   return (
     <div className="space-y-6 pb-8">
       {error && (
@@ -74,44 +70,34 @@ export default function Dashboard({ user }: DashboardProps) {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {hasPermission('view_lte_status') && <LteStatus snapshot={snapshot} />}
-        {hasPermission('view_wlan_status') && <WlanStatus snapshot={snapshot} />}
-        {hasPermission('view_wlan5_status') && <Wlan5Status />}
+        <LteStatus snapshot={snapshot} />
+        <WlanStatus snapshot={snapshot} />
+        <Wlan5Status />
       </div>
 
-      {hasPermission('view_summary_cards') && (
-        <SummaryCards
-          snapshot={snapshot}
-          onReboot={hasPermission('system_reboot') ? () => setShowRebootDialog(true) : undefined}
-        />
-      )}
+      <SummaryCards
+        snapshot={snapshot}
+        onReboot={user.is_admin ? () => setShowRebootDialog(true) : undefined}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {hasPermission('view_interface_list') && (
-          <div className="w-full">
-            <InterfaceList />
-          </div>
-        )}
-        {hasPermission('use_ping') && (
-          <div className="w-full">
-            <PingTester />
-          </div>
-        )}
+        <div className="w-full">
+          <InterfaceList />
+        </div>
+        <div className="w-full">
+          <PingTester />
+        </div>
       </div>
 
-      {hasPermission('view_gps') && (
-        <div className="w-full">
-          <GpsMap snapshot={snapshot} />
-        </div>
-      )}
+      <div className="w-full">
+        <GpsMap snapshot={snapshot} />
+      </div>
 
-      {hasPermission('view_sms') && (
-        <div className="w-full">
-          <SmsManager user={user} />
-        </div>
-      )}
+      <div className="w-full">
+        <SmsManager />
+      </div>
 
-      {hasPermission('view_logs') && <LogViewer />}
+      <LogViewer />
 
       {showRebootDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50">
