@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wifi, Search, X, Star } from 'lucide-react';
+import { Wifi, Search, X, Star, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
@@ -23,6 +23,15 @@ interface Wlan24Status {
   rxRate: string;
   running: string;
   disabled: string;
+}
+
+interface SavedNetwork {
+  id: string;
+  ssid: string;
+  macAddress: string;
+  connected: boolean;
+  password: string;
+  securityProfile: string;
 }
 
 function formatSpeed(bytesPerSec: number | string | null | undefined): string {
@@ -52,6 +61,11 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState<string>('');
   const [connectSuccess, setConnectSuccess] = useState<string>('');
+  const [showSavedNetworksPopup, setShowSavedNetworksPopup] = useState(false);
+  const [savedNetworks, setSavedNetworks] = useState<SavedNetwork[]>([]);
+  const [loadingSavedNetworks, setLoadingSavedNetworks] = useState(false);
+  const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
+  const [switchingNetwork, setSwitchingNetwork] = useState<string | null>(null);
 
   useEffect(() => {
     fetchWlan24Status();
@@ -73,6 +87,57 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
     } catch (err) {
       console.error('Failed to fetch WLAN 2.4 status:', err);
     }
+  }
+
+  async function fetchSavedNetworks() {
+    setLoadingSavedNetworks(true);
+    try {
+      const data = await api.wifi.getSavedNetworks('wlan1');
+      setSavedNetworks(data.networks || []);
+    } catch (err) {
+      console.error('Failed to fetch saved networks:', err);
+    } finally {
+      setLoadingSavedNetworks(false);
+    }
+  }
+
+  function togglePasswordVisibility(networkId: string) {
+    setVisiblePasswords(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(networkId)) {
+        newSet.delete(networkId);
+      } else {
+        newSet.add(networkId);
+      }
+      return newSet;
+    });
+  }
+
+  async function handleSwitchNetwork(networkId: string) {
+    if (!confirm('Preklapljam na izbrano omrežje. Nadaljujem?')) {
+      return;
+    }
+
+    setSwitchingNetwork(networkId);
+    try {
+      await api.wifi.switchNetwork(networkId, 'wlan1');
+      setConnectSuccess('Preklapljanje uspešno! Povezava se vzpostavlja...');
+      setTimeout(() => {
+        setConnectSuccess('');
+        setShowSavedNetworksPopup(false);
+        fetchWlan24Status();
+      }, 3000);
+    } catch (err: any) {
+      setConnectError(err.message || 'Preklapljanje ni uspelo');
+      setTimeout(() => setConnectError(''), 5000);
+    } finally {
+      setSwitchingNetwork(null);
+    }
+  }
+
+  function handleShowSavedNetworks() {
+    setShowSavedNetworksPopup(true);
+    fetchSavedNetworks();
   }
 
   async function checkLte() {
@@ -234,7 +299,11 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
           <div className="space-y-4">
             {wlan24Status && (
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
+                <div
+                  className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3 cursor-pointer hover:bg-white/80 dark:hover:bg-slate-700/60 transition-colors"
+                  onClick={handleShowSavedNetworks}
+                  title="Klikni za ogled shranjenih omrežij"
+                >
                   <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">SSID</p>
                   <p className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
                     {wlan24Status.ssid}
@@ -404,6 +473,113 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSavedNetworksPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Shranjena WiFi omrežja</h2>
+              <button
+                onClick={() => setShowSavedNetworksPopup(false)}
+                className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto max-h-[calc(80vh-120px)] p-6">
+              {connectSuccess && (
+                <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-400">
+                  {connectSuccess}
+                </div>
+              )}
+
+              {connectError && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
+                  {connectError}
+                </div>
+              )}
+
+              {loadingSavedNetworks ? (
+                <div className="text-center py-8">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
+                  <p className="mt-2 text-slate-600 dark:text-slate-400">Nalagam shranjena omrežja...</p>
+                </div>
+              ) : savedNetworks.length === 0 ? (
+                <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                  <Wifi className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Ni shranjenih omrežij</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {savedNetworks.map(network => (
+                    <div
+                      key={network.id}
+                      className={`border rounded-lg p-4 transition-all ${
+                        network.connected
+                          ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Wifi className={`w-5 h-5 ${network.connected ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}`} />
+                          <h3 className="font-semibold text-slate-900 dark:text-slate-100">{network.ssid}</h3>
+                          {network.connected && (
+                            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                          )}
+                        </div>
+                        {!network.connected && (
+                          <button
+                            onClick={() => handleSwitchNetwork(network.id)}
+                            disabled={switchingNetwork !== null}
+                            className="px-3 py-1 bg-cyan-600 text-white text-sm rounded-lg hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {switchingNetwork === network.id ? 'Preklapljam...' : 'Poveži'}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        {network.macAddress && network.macAddress !== '00:00:00:00:00:00' && (
+                          <div className="text-sm">
+                            <span className="text-slate-600 dark:text-slate-400">MAC: </span>
+                            <span className="text-slate-900 dark:text-slate-100 font-mono">{network.macAddress}</span>
+                          </div>
+                        )}
+
+                        {network.password && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">Geslo: </span>
+                            <code className="flex-1 text-sm bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded font-mono text-slate-900 dark:text-slate-100">
+                              {visiblePasswords.has(network.id) ? network.password : '••••••••'}
+                            </code>
+                            <button
+                              onClick={() => togglePasswordVisibility(network.id)}
+                              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                              title={visiblePasswords.has(network.id) ? 'Skrij geslo' : 'Prikaži geslo'}
+                            >
+                              {visiblePasswords.has(network.id) ? (
+                                <EyeOff className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                              ) : (
+                                <Eye className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                              )}
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          Security: {network.securityProfile}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

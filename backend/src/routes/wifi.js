@@ -1,5 +1,5 @@
 import { authenticateMiddleware, requireAdmin } from '../auth.js';
-import { scanWifi, connectWifi, getWirelessRegistrationTable, disconnectWirelessClient, getWlan5Status, getWlan24Status, checkLteConnectivity } from '../mikrotik.js';
+import { scanWifi, connectWifi, getWirelessRegistrationTable, disconnectWirelessClient, getWlan5Status, getWlan24Status, checkLteConnectivity, getSavedNetworks, switchToNetwork } from '../mikrotik.js';
 import { config } from '../config.js';
 import * as db from '../db.js';
 import { createJob, updateJob, getJob } from '../jobManager.js';
@@ -180,6 +180,36 @@ export default async function wifiRoutes(fastify) {
     try {
       const status = await getWlan24Status();
       return { status };
+    } catch (err) {
+      return reply.code(500).send({ error: err.message });
+    }
+  });
+
+  fastify.get('/wifi/saved-networks', {
+    preHandler: [authenticateMiddleware]
+  }, async (request, reply) => {
+    try {
+      const interfaceName = request.query.interface || 'wlan1';
+      const networks = await getSavedNetworks(interfaceName);
+      return { networks };
+    } catch (err) {
+      return reply.code(500).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/wifi/switch-network', {
+    preHandler: [authenticateMiddleware]
+  }, async (request, reply) => {
+    try {
+      const { networkId } = request.body;
+      const interfaceName = request.body.interface || 'wlan1';
+
+      if (!networkId) {
+        return reply.code(400).send({ error: 'Network ID required' });
+      }
+
+      const result = await switchToNetwork(networkId, interfaceName);
+      return result;
     } catch (err) {
       return reply.code(500).send({ error: err.message });
     }

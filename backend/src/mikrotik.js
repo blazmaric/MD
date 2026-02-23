@@ -1038,6 +1038,89 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
   }
 }
 
+async function getSavedNetworks(interfaceName = 'wlan1') {
+  console.log(`[getSavedNetworks] Fetching saved networks for ${interfaceName}`);
+
+  try {
+    // Get all connect-list entries for this interface
+    const connectList = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
+    console.log(`[getSavedNetworks] Found ${connectList.length} entries`);
+
+    // Get all security profiles to retrieve passwords
+    const securityProfiles = await mtFetchWithRetry('/rest/interface/wireless/security-profiles');
+    const profileMap = {};
+    securityProfiles.forEach(profile => {
+      profileMap[profile.name] = {
+        password: profile['wpa2-pre-shared-key'] || profile['wpa-pre-shared-key'] || ''
+      };
+    });
+
+    // Process each entry
+    const networks = connectList.map(entry => {
+      const profileName = entry['security-profile'] || 'default';
+      const profile = profileMap[profileName];
+
+      return {
+        id: entry['.id'],
+        ssid: entry.ssid || '',
+        macAddress: entry['mac-address'] || '',
+        connected: entry.connect === 'yes',
+        password: profile?.password || '',
+        securityProfile: profileName
+      };
+    });
+
+    console.log(`[getSavedNetworks] Processed ${networks.length} networks`);
+    return networks;
+  } catch (err) {
+    console.error('[getSavedNetworks] Failed:', err.message);
+    throw err;
+  }
+}
+
+async function switchToNetwork(networkId, interfaceName = 'wlan1') {
+  console.log(`[switchToNetwork] Switching to network ${networkId} on ${interfaceName}`);
+
+  try {
+    // Get all connect-list entries
+    const connectList = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
+
+    // Disable all entries except the target
+    for (const entry of connectList) {
+      const shouldConnect = entry['.id'] === networkId ? 'yes' : 'no';
+      await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${entry['.id']}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ 'connect': shouldConnect })
+      });
+      console.log(`[switchToNetwork] Set ${entry.ssid} connect=${shouldConnect}`);
+    }
+
+    // Reset interface to force reconnection
+    console.log(`[switchToNetwork] Resetting interface ${interfaceName}`);
+    await mtFetch(`/rest/interface/wireless/${interfaceName}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ 'disabled': 'yes' })
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    await mtFetch(`/rest/interface/wireless/${interfaceName}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        'mode': 'station',
+        'ssid': '',
+        'disabled': 'no'
+      })
+    });
+
+    console.log(`[switchToNetwork] Interface reset complete`);
+    return { success: true };
+  } catch (err) {
+    console.error('[switchToNetwork] Failed:', err.message);
+    throw err;
+  }
+}
+
 function categorizeLog(topics, message) {
   const topicsLower = topics.toLowerCase();
   const messageLower = message.toLowerCase();
@@ -1063,4 +1146,4 @@ function getSeverity(topics) {
   return 'info';
 }
 
-export { categorizeLog, getSeverity };
+export { categorizeLog, getSeverity, getSavedNetworks, switchToNetwork };
