@@ -906,10 +906,30 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
               console.log(`[connectWifi] Interface running but SSID empty - checking registration-table...`);
               try {
                 const regTable = await mtFetch(`/rest/interface/wireless/registration-table?interface=${interfaceName}`);
+                console.log(`[connectWifi] Registration table entries:`, JSON.stringify(regTable));
+
                 if (regTable && regTable.length > 0) {
-                  connected = true;
-                  console.log(`[connectWifi] ✅ Successfully connected (verified via registration-table) after ${i + 1} seconds`);
-                  break;
+                  // Check if any entry matches our expected SSID
+                  const expectedBytes = Buffer.from(normalizedSsid, 'utf8').toString('hex');
+                  const originalExpectedBytes = Buffer.from(ssid, 'utf8').toString('hex');
+
+                  for (const entry of regTable) {
+                    const regSsid = entry.ssid || '';
+                    const regBytes = Buffer.from(regSsid, 'utf8').toString('hex');
+
+                    console.log(`[connectWifi] Checking reg entry: "${regSsid}" (bytes: ${regBytes})`);
+
+                    if (regBytes === expectedBytes || regBytes === originalExpectedBytes || regSsid === normalizedSsid || regSsid === ssid) {
+                      connected = true;
+                      console.log(`[connectWifi] ✅ Successfully connected to "${regSsid}" (verified via registration-table) after ${i + 1} seconds`);
+                      break;
+                    }
+                  }
+
+                  if (connected) break;
+
+                  console.log(`[connectWifi] Registration table has entries but none match "${normalizedSsid}", waiting...`);
+                  continue;
                 }
                 console.log(`[connectWifi] Registration table empty, waiting...`);
                 continue;
