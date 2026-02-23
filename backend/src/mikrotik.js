@@ -780,39 +780,64 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       const existingProfiles = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
       console.log(`[connectWifi] Found ${existingProfiles.length} existing connect-list entries for interface ${interfaceName}`);
 
-      // Remove all existing connect-list entries for this interface to avoid duplicates
+      // Check if this SSID already exists in the connect-list
+      const expectedBytes = Buffer.from(ssid, 'utf8').toString('hex');
+      let existingEntry = null;
+
       for (const profile of existingProfiles) {
-        try {
-          console.log(`[connectWifi] Removing existing connect-list entry: ${profile['.id']} (SSID: ${profile.ssid || 'N/A'})`);
-          await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${profile['.id']}`, {
-            method: 'DELETE'
-          });
-        } catch (deleteErr) {
-          console.error(`[connectWifi] Failed to delete connect-list entry ${profile['.id']}:`, deleteErr.message);
+        const profileSsid = profile.ssid || '';
+        const profileBytes = Buffer.from(profileSsid, 'utf8').toString('hex');
+
+        // Match by SSID bytes (exact match)
+        if (profileBytes === expectedBytes) {
+          existingEntry = profile;
+          console.log(`[connectWifi] Found existing entry for "${ssid}"`);
+          break;
         }
       }
 
-      // Create new entry for the SSID
-      const connectListData = {
-        'interface': interfaceName,
-        'security-profile': securityProfileName,
-        'connect': 'yes',
-        'ssid': ssid
-      };
+      if (existingEntry) {
+        // Update existing entry with new security profile and MAC if available
+        console.log(`[connectWifi] Updating existing connect-list entry for "${ssid}"`);
+        const updateData = {
+          'security-profile': securityProfileName,
+          'connect': 'yes'
+        };
 
-      // Add MAC address filter if we found the best AP
-      if (bestMacAddress) {
-        connectListData['mac-address'] = bestMacAddress;
-        console.log(`[connectWifi] Adding MAC address filter: ${bestMacAddress}`);
+        // Add MAC address if we found one
+        if (bestMacAddress) {
+          updateData['mac-address'] = bestMacAddress;
+        }
+
+        await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${existingEntry['.id']}`, {
+          method: 'PATCH',
+          body: JSON.stringify(updateData)
+        });
+      } else {
+        // Create new entry for the SSID (add to the database)
+        const connectListData = {
+          'interface': interfaceName,
+          'security-profile': securityProfileName,
+          'connect': 'yes',
+          'ssid': ssid
+        };
+
+        // Add MAC address filter if we found the best AP
+        if (bestMacAddress) {
+          connectListData['mac-address'] = bestMacAddress;
+          console.log(`[connectWifi] Adding MAC address filter: ${bestMacAddress}`);
+        }
+
+        console.log(`[connectWifi] Creating new connect-list entry for SSID: "${ssid}" (building connect-list database)`);
+        console.log(`[connectWifi] SSID bytes:`, Buffer.from(ssid, 'utf8').toString('hex'));
+        console.log(`[connectWifi] Create data:`, JSON.stringify(connectListData));
+        await mtFetchWithRetry('/rest/interface/wireless/connect-list/add', {
+          method: 'POST',
+          body: JSON.stringify(connectListData)
+        });
       }
 
-      console.log(`[connectWifi] Creating new connect-list entry for SSID: "${ssid}"`);
-      console.log(`[connectWifi] SSID bytes:`, Buffer.from(ssid, 'utf8').toString('hex'));
-      console.log(`[connectWifi] Create data:`, JSON.stringify(connectListData));
-      await mtFetchWithRetry('/rest/interface/wireless/connect-list/add', {
-        method: 'POST',
-        body: JSON.stringify(connectListData)
-      });
+      console.log(`[connectWifi] Connect-list now contains ${existingProfiles.length + (existingEntry ? 0 : 1)} networks for automatic roaming`);
     } catch (err) {
       console.error('[connectWifi] Failed to manage connect-list:', err.message);
       throw new Error('Failed to manage connect-list: ' + err.message);
