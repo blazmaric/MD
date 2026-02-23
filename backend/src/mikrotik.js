@@ -444,6 +444,8 @@ export async function scanWifi(interfaceName, db, force = false) {
       console.log('[WiFi Scan] Processing line', i, ':', line);
 
       // Check for AP (Active) or APP (Active + Privacy/Secured)
+      // Note: MikroTik scan output shows 'P' flag in header but actual lines start with 'AP' regardless of security
+      // We'll default to 'secured' as most networks have passwords, and connection will fail gracefully if wrong
       if (line.startsWith('AP')) {
         const isSecured = line.startsWith('APP ');
         const parts = line.split(/\s+/);
@@ -472,7 +474,9 @@ export async function scanWifi(interfaceName, db, force = false) {
             }
 
             const signal = parseInt(signalStr) || -100;
-            const security = isSecured ? 'secured' : 'open';
+            // MikroTik scan doesn't reliably show security in output, default to secured
+            // User will get error if password is wrong or not needed
+            const security = 'secured';
 
             console.log('[WiFi Scan] Found network:', { ssid, address, signal, channel, security });
 

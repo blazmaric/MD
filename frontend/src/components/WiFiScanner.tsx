@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wifi, Search, Lock, AlertTriangle, WifiOff, RefreshCw } from 'lucide-react';
+import { Wifi, Search, AlertTriangle, WifiOff, RefreshCw } from 'lucide-react';
 import { api } from '../api';
 import type { WiFiNetwork, Snapshot } from '../types';
 
@@ -308,106 +308,81 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
       )}
 
       {networks.length > 0 && (
-        <div className="space-y-2">
-          {!selectedSsid && (
-            <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg text-blue-800 dark:text-blue-300 text-sm">
-              Klikni na omrežje za povezavo
-            </div>
-          )}
+        <div className="space-y-3">
           {networks.map((network, idx) => {
             const isSecured = network.security === 'secured';
             const isSelected = selectedSsid === network.ssid;
 
             return (
-              <div
-                key={idx}
-                className={`p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors ${
-                  isSelected
-                    ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-slate-200 dark:border-slate-700'
-                }`}
-                onClick={() => setSelectedSsid(network.ssid)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-900 dark:text-slate-100">{network.ssid}</span>
-                      {isSecured ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 text-xs rounded-md">
-                          <Lock className="w-3 h-3" />
-                          Zaščiteno
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 text-xs rounded-md">
-                          <Wifi className="w-3 h-3" />
-                          Odprto
-                        </span>
-                      )}
+              <div key={idx} className="space-y-2">
+                <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">{network.ssid}</span>
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        Signal: {network.signal} dBm | Ch: {network.channel} | MAC: {network.address}
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      {network.address} | Ch: {network.channel} | Signal: {network.signal} dBm
-                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedSsid(network.ssid);
+                        setPassword('');
+                        setError('');
+                      }}
+                      disabled={connecting}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                    >
+                      Poveži
+                    </button>
                   </div>
-                  {isSelected && (
-                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400">✓ Izbrano</span>
-                  )}
                 </div>
+
+                {isSelected && (
+                  <form onSubmit={handleConnect} className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg space-y-3">
+                    <h4 className="font-semibold text-slate-900 dark:text-slate-100">Poveži se z {selectedSsid}</h4>
+                    <div>
+                      <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Geslo {!isSecured && <span className="text-slate-500">(opcijsko za odprta omrežja)</span>}
+                      </label>
+                      <input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                        placeholder={isSecured ? "Vnesite geslo WiFi omrežja" : "Pustite prazno za odprta omrežja"}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400 p-2 bg-slate-50 dark:bg-slate-800/50 rounded border border-slate-200 dark:border-slate-700">
+                      <strong>Napomba:</strong> Povezava bo shranjena v MikroTik connect-list za samodejno povezovanje, ko bo omrežje v dosegu. Če ne veste ali je omrežje zaščiteno, poskusite brez gesla.
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        disabled={connecting}
+                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {connecting ? 'Povezujem...' : 'Poveži'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedSsid('');
+                          setPassword('');
+                        }}
+                        className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                      >
+                        Prekliči
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
             );
           })}
-
-          {selectedSsid && (() => {
-            const network = networks.find(n => n.ssid === selectedSsid);
-            const isSecured = network?.security === 'secured';
-
-            return (
-              <form onSubmit={handleConnect} className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg space-y-3">
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100">Poveži se z {selectedSsid}</h4>
-                {isSecured ? (
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Geslo
-                    </label>
-                    <input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                      required
-                      placeholder="Vnesite geslo WiFi omrežja"
-                    />
-                  </div>
-                ) : (
-                  <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg text-green-800 dark:text-green-300 text-sm">
-                    To je odprto omrežje. Geslo ni potrebno.
-                  </div>
-                )}
-                <div className="text-xs text-slate-600 dark:text-slate-400 p-2 bg-slate-50 dark:bg-slate-800/50 rounded border border-slate-200 dark:border-slate-700">
-                  <strong>Napomba:</strong> Povezava bo shranjena v MikroTik connect-list za samodejno povezovanje, ko bo omrežje v dosegu.
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    disabled={connecting}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {connecting ? 'Povezujem...' : 'Poveži'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedSsid('');
-                      setPassword('');
-                    }}
-                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-300 dark:hover:bg-slate-600"
-                  >
-                    Prekliči
-                  </button>
-                </div>
-              </form>
-            );
-          })()}
         </div>
       )}
 
