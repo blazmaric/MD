@@ -101,8 +101,9 @@ export default async function wifiRoutes(fastify) {
     try {
       const { interface: interfaceName = config.mikrotik.interfaces.wlan } = request.query;
 
+      // Get latest scan results, grouped by SSID and showing the best signal
       const result = await db.query(
-        `SELECT DISTINCT ON (address)
+        `SELECT DISTINCT ON (ssid)
            id, interface_name, ssid, address, signal, channel, frequency, security, scanned_at, created_at
          FROM wifi_scan_results
          WHERE interface_name = $1
@@ -111,7 +112,7 @@ export default async function wifiRoutes(fastify) {
              FROM wifi_scan_results
              WHERE interface_name = $1
            )
-         ORDER BY address, signal DESC`,
+         ORDER BY ssid, signal DESC`,
         [interfaceName]
       );
 
@@ -122,16 +123,16 @@ export default async function wifiRoutes(fastify) {
   });
 
   fastify.post('/wifi/connect', {
-    preHandler: [authenticateMiddleware]
+    preHandler: [authenticateMiddleware, requireAdmin]
   }, async (request, reply) => {
-    const { ssid, password } = request.body;
+    const { ssid, password, saveProfile = true } = request.body;
 
-    if (!ssid || !password) {
-      return reply.code(400).send({ error: 'SSID and password are required' });
+    if (!ssid) {
+      return reply.code(400).send({ error: 'SSID is required' });
     }
 
     try {
-      const result = await connectWifi(config.mikrotik.interfaces.wlan, ssid, password);
+      const result = await connectWifi(config.mikrotik.interfaces.wlan, ssid, password || null, saveProfile);
       return result;
     } catch (err) {
       return reply.code(500).send({ error: err.message });

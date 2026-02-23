@@ -443,9 +443,11 @@ export async function scanWifi(interfaceName, db, force = false) {
       const line = lines[i].trim();
       console.log('[WiFi Scan] Processing line', i, ':', line);
 
-      if (line.startsWith('AP ')) {
+      // Check for AP (Active) or APP (Active + Privacy/Secured)
+      if (line.startsWith('AP')) {
+        const isSecured = line.startsWith('APP ');
         const parts = line.split(/\s+/);
-        console.log('[WiFi Scan] Line matched AP pattern, parts:', parts);
+        console.log('[WiFi Scan] Line matched AP pattern, secured:', isSecured, 'parts:', parts);
 
         if (parts.length >= 4) {
           const address = parts[1];
@@ -470,8 +472,9 @@ export async function scanWifi(interfaceName, db, force = false) {
             }
 
             const signal = parseInt(signalStr) || -100;
+            const security = isSecured ? 'secured' : 'open';
 
-            console.log('[WiFi Scan] Found network:', { ssid, address, signal, channel });
+            console.log('[WiFi Scan] Found network:', { ssid, address, signal, channel, security });
 
             if (ssid && ssid !== '' && address) {
               networks.push({
@@ -480,7 +483,7 @@ export async function scanWifi(interfaceName, db, force = false) {
                 signal: signal,
                 channel: channel,
                 frequency: 0,
-                security: ''
+                security: security
               });
             }
           }
@@ -635,32 +638,124 @@ export async function getGpsStatus() {
   }
 }
 
-export async function connectWifi(interfaceName, ssid, password) {
+export async function connectWifi(interfaceName, ssid, password, saveProfile = true) {
   try {
-    await mtFetch(`/rest/interface/wireless/${interfaceName}`, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        'mode': 'station',
-        'ssid': ssid,
-        'security-profile': 'default'
-      })
-    });
+    console.log(`[connectWifi] Connecting to SSID: ${ssid}, password: ${password ? 'yes' : 'no'}, saveProfile: ${saveProfile}`);
 
-    const profiles = await mtFetch('/rest/interface/wireless/security-profiles?name=default');
-    if (profiles && profiles[0]) {
-      await mtFetch(`/rest/interface/wireless/security-profiles/${profiles[0]['.id']}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          'mode': 'dynamic-keys',
-          'authentication-types': 'wpa2-psk',
-          'wpa2-pre-shared-key': password
-        })
-      });
+    // If saveProfile is true, add to connect-list (for automatic reconnection)
+    if (saveProfile) {
+      try {
+        console.log(`[connectWifi] Adding ${ssid} to connect-list for automatic reconnection`);
+
+        // Check if SSID already exists in connect-list
+        const existingProfiles = await mtFetch(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
+        const existingProfile = existingProfiles.find(p => p.ssid === ssid);
+
+        if (existingProfile) {
+          console.log(`[connectWifi] Profile for ${ssid} already exists, updating...`);
+          // Update existing profile
+          const updateData = {
+            'ssid': ssid,
+            'interface': interfaceName
+          };
+
+          if (password) {
+            updateData['security-profile'] = 'profile-' + ssid.replace(/[^a-zA-Z0-9]/g, '-');
+          } else {
+            updateData['security-profile'] = 'default';
+          }
+
+          await mtFetch(`/rest/interface/wireless/connect-list/${existingProfile['.id']}`, {
+            method: 'PATCH',
+            body: JSON.stringify(updateData)
+          });
+        } else {
+          console.log(`[connectWifi] Creating new profile for ${ssid}`);
+          // Create new profile in connect-list
+          const profileData = {
+            'ssid': ssid,
+            'interface': interfaceName
+          };
+
+          if (password) {
+            profileData['security-profile'] = 'profile-' + ssid.replace(/[^a-zA-Z0-9]/g, '-');
+          } else {
+            profileData['security-profile'] = 'default';
+          }
+
+          await mtFetch('/rest/interface/wireless/connect-list', {
+            method: 'PUT',
+            body: JSON.stringify(profileData)
+          });
+        }
+      } catch (err) {
+        console.warn('[connectWifi] Failed to save to connect-list:', err.message);
+        // Continue with connection even if save failed
+      }
     }
 
-    return { success: true };
+    // Create or update security profile if password is provided
+    if (password) {
+      const profileName = 'profile-' + ssid.replace(/[^a-zA-Z0-9]/g, '-');
+      console.log(`[connectWifi] Setting up security profile: ${profileName}`);
+
+      try {
+        // Check if profile exists
+        const profiles = await mtFetch(`/rest/interface/wireless/security-profiles?name=${profileName}`);
+
+        if (profiles && profiles[0]) {
+          // Update existing profile
+          await mtFetch(`/rest/interface/wireless/security-profiles/${profiles[0]['.id']}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              'mode': 'dynamic-keys',
+              'authentication-types': 'wpa2-psk,wpa-psk',
+              'wpa2-pre-shared-key': password,
+              'wpa-pre-shared-key': password
+            })
+          });
+        } else {
+          // Create new profile
+          await mtFetch('/rest/interface/wireless/security-profiles', {
+            method: 'PUT',
+            body: JSON.stringify({
+              'name': profileName,
+              'mode': 'dynamic-keys',
+              'authentication-types': 'wpa2-psk,wpa-psk',
+              'wpa2-pre-shared-key': password,
+              'wpa-pre-shared-key': password
+            })
+          });
+        }
+      } catch (err) {
+        console.error('[connectWifi] Failed to setup security profile:', err.message);
+        throw new Error('Failed to setup security profile: ' + err.message);
+      }
+    }
+
+    // Connect the interface
+    console.log(`[connectWifi] Configuring interface ${interfaceName} to connect to ${ssid}`);
+    const interfaceConfig = {
+      'mode': 'station',
+      'ssid': ssid,
+      'disabled': 'no'
+    };
+
+    if (password) {
+      interfaceConfig['security-profile'] = 'profile-' + ssid.replace(/[^a-zA-Z0-9]/g, '-');
+    } else {
+      interfaceConfig['security-profile'] = 'default';
+    }
+
+    await mtFetch(`/rest/interface/wireless/${interfaceName}`, {
+      method: 'PATCH',
+      body: JSON.stringify(interfaceConfig)
+    });
+
+    console.log(`[connectWifi] Successfully configured connection to ${ssid}`);
+    return { success: true, message: `Connected to ${ssid}` };
   } catch (err) {
-    console.error('Failed to connect WiFi:', err.message);
+    console.error('[connectWifi] Failed to connect WiFi:', err.message);
     throw err;
   }
 }
