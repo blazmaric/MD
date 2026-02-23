@@ -10,11 +10,11 @@ const authHeader = 'Basic ' + Buffer.from(
 
 const httpsAgent = new https.Agent({
   keepAlive: true,
-  keepAliveMsecs: 60000,
-  maxSockets: 15,
-  maxFreeSockets: 10,
-  timeout: 60000,
-  scheduling: 'lifo',
+  keepAliveMsecs: 30000,
+  maxSockets: 5,
+  maxFreeSockets: 2,
+  timeout: 10000,
+  scheduling: 'fifo',
   checkServerIdentity: (hostname, cert) => {
     return undefined;
   }
@@ -145,14 +145,17 @@ export async function getLogs() {
 
 export async function ping(address, count = 4, sourceInterface = null) {
   const controller = new AbortController();
-  const pingTimeout = 8000;
+  const pingTimeout = 15000;
   const timeout = setTimeout(() => controller.abort(), pingTimeout);
 
   try {
     const body = { address, count: count.toString() };
     if (sourceInterface) {
       body.interface = sourceInterface;
+      console.log(`[PING] Using source interface: ${sourceInterface}`);
     }
+
+    console.log(`[PING] Request: ${JSON.stringify(body)}`);
 
     const url = `${config.mikrotik.baseUrl}/rest/ping`;
     const dedicatedAgent = new https.Agent({
