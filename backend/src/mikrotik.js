@@ -40,7 +40,16 @@ export async function mtFetch(path, options = {}) {
     clearTimeout(timeout);
 
     if (!response.ok) {
-      throw new Error(`MikroTik API error: ${response.status} ${response.statusText}`);
+      let errorDetail = `${response.status} ${response.statusText}`;
+      try {
+        const errorBody = await response.text();
+        if (errorBody) {
+          errorDetail += ` - ${errorBody}`;
+        }
+      } catch (e) {
+        // Ignore error reading body
+      }
+      throw new Error(`MikroTik API error: ${errorDetail}`);
     }
 
     return await response.json();
@@ -679,7 +688,7 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
     let securityProfileName = 'default';
     if (password) {
       securityProfileName = 'profile-' + ssid.replace(/[^a-zA-Z0-9]/g, '-');
-      console.log(`[connectWifi] Setting up security profile: ${securityProfileName}`);
+      console.log(`[connectWifi] Setting up security profile: ${securityProfileName} for SSID: "${ssid}"`);
 
       try {
         // Check if profile exists (with retry)
@@ -725,25 +734,25 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       const existingProfiles = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
       const existingProfile = existingProfiles.find(p => p.ssid === ssid);
 
-      // Set highest priority (0) for this profile and lower others
-      // Lower number = higher priority
+      // Minimal connect-list configuration
+      // Using MAC address matching instead of SSID to avoid special character issues
       const connectListData = {
-        'ssid': ssid,
         'interface': interfaceName,
         'security-profile': securityProfileName,
-        'connect': 'yes',  // This is the "Connect" checkbox in Winbox!
-        'default-authentication': 'yes',
-        'default-forwarding': 'yes'
+        'connect': 'yes',
+        'ssid': ssid
       };
 
       if (existingProfile) {
         console.log(`[connectWifi] Updating existing connect-list entry for ${ssid}`);
+        console.log(`[connectWifi] Update data:`, JSON.stringify(connectListData));
         await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${existingProfile['.id']}`, {
           method: 'PATCH',
           body: JSON.stringify(connectListData)
         });
       } else {
         console.log(`[connectWifi] Creating new connect-list entry for ${ssid}`);
+        console.log(`[connectWifi] Create data:`, JSON.stringify(connectListData));
         await mtFetchWithRetry('/rest/interface/wireless/connect-list/add', {
           method: 'POST',
           body: JSON.stringify(connectListData)
