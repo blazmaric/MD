@@ -1,6 +1,6 @@
 # MikroTik Dashboard
 
-Production-ready monitoring and management dashboard for MikroTik routers with permission-based access control.
+Production-ready monitoring and management dashboard for MikroTik routers with admin/user access control.
 
 ## Architecture
 
@@ -13,12 +13,14 @@ Production-ready monitoring and management dashboard for MikroTik routers with p
 ## Features
 
 ### Core Functionality
-- Real-time system monitoring (LTE, WiFi, CPU, RAM, traffic)
+- Real-time system monitoring (LTE, WiFi, CPU, RAM, traffic, GPS)
+- WiFi network scanner with signal strength and security info
+- SMS message management (read, send, delete)
+- Interface monitoring with real-time statistics
 - Historical log collection and filtering
 - Traffic usage tracking with persistence
 - Ping testing tool
-- Permission-based RBAC (no role-based, purely permission-based)
-- Multi-user support with granular permissions
+- Multi-user support with admin/user roles
 
 ### Security
 - JWT authentication with HttpOnly cookies
@@ -26,28 +28,25 @@ Production-ready monitoring and management dashboard for MikroTik routers with p
 - All MikroTik API calls proxied through backend
 - Row-level security ready (PostgreSQL)
 - CA certificate validation for MikroTik HTTPS
+- SSH support for GPS and SMS operations
 
-### Permissions System
-Users can have any combination of these permissions:
-- `view_summary` - View system status dashboard
-- `view_logs` - Access log viewer
-- `view_traffic` - View traffic statistics
-- `use_ping` - Use ping tester
-- `manage_users` - Create/edit users and permissions
-- `admin_all` - Superuser (all permissions)
+### User Roles
+- **Admin**: Full access to all features including user management and system reboot
+- **User**: Read-only access to dashboard, logs, and monitoring features
 
 ## Prerequisites
 
 ### Server Requirements
 - Docker and Docker Compose installed
 - Ports 80 and 443 open and available
-- DNS A record: `md.m-host.si` → your server IP
+- DNS A record pointing to your server IP
 
 ### Network Setup
-- Docker host: `172.20.20.3`
-- MikroTik router: `172.20.50.6`
+- Docker host accessible from network
+- MikroTik router accessible via HTTPS and SSH
 - MikroTik REST API enabled with HTTPS
-- MikroTik user with API access credentials
+- MikroTik SSH access enabled
+- MikroTik user with API and SSH access credentials
 
 ### Files You Need
 1. MikroTik CA certificate exported from your router
@@ -82,6 +81,7 @@ LE_EMAIL=your-email@example.com
 MT_BASE_URL=https://172.20.50.6
 MT_USER=api
 MT_PASS=your_mikrotik_password
+MT_SSH_PORT=22
 
 # Admin Bootstrap (first-time login)
 ADMIN_USER=admin
@@ -145,7 +145,7 @@ docker compose logs -f
 
 Access the dashboard:
 ```
-https://md.m-host.si
+https://your-domain.com
 ```
 
 ## Upgrading
@@ -168,12 +168,12 @@ docker compose up -d --build
 
 ## First Login
 
-1. Navigate to `https://md.m-host.si`
+1. Navigate to your configured domain
 2. Login with your admin credentials from `.env`:
    - Username: value of `ADMIN_USER`
    - Password: value of `ADMIN_PASS`
 3. Go to **Users** page and create additional users
-4. Assign permissions based on user needs
+4. Assign admin role if needed
 
 ## User Management
 
@@ -183,23 +183,25 @@ docker compose up -d --build
 2. Navigate to **Users** page
 3. Click **Create User**
 4. Set username, password (min 8 chars)
-5. Select permissions
+5. Check "Admin" if user should have full access
 6. Save
 
-### Permission Examples
+### User Roles
 
-**NOC Operator:**
-- `view_summary`
-- `view_logs`
-- `view_traffic`
-- `use_ping`
+**Admin:**
+- Full dashboard access
+- User management
+- System reboot
+- SMS management
+- WiFi scanning
+- All monitoring features
 
-**Read-Only Viewer:**
-- `view_summary`
-- `view_traffic`
-
-**Administrator:**
-- `admin_all`
+**Regular User:**
+- Read-only dashboard access
+- View logs and monitoring data
+- Use ping tester
+- No user management
+- No system reboot
 
 ## API Endpoints
 
@@ -209,16 +211,34 @@ docker compose up -d --build
 - `GET /api/auth/me` - Get current user
 
 ### Data Endpoints
-- `GET /api/summary` - System status (requires `view_summary`)
-- `GET /api/logs` - Logs with filtering (requires `view_logs`)
-- `GET /api/traffic` - Traffic data (requires `view_traffic`)
-- `POST /api/ping` - Ping test (requires `use_ping`)
+- `GET /api/dashboard` - System status
+- `GET /api/logs` - Logs with filtering
+- `GET /api/traffic` - Traffic data
+- `POST /api/ping` - Ping test
+- `GET /api/interfaces` - Interface list
+- `GET /api/gps` - GPS data
+
+### SMS Endpoints (Admin only)
+- `GET /api/sms` - List messages
+- `POST /api/sms/send` - Send message
+- `DELETE /api/sms/:id` - Delete message
+
+### WiFi Endpoints
+- `GET /api/wifi/scan` - Start WiFi scan
+- `GET /api/wifi/scan/results` - Get scan results
+- `GET /api/wifi/lte-check` - Check LTE status
+- `GET /api/wifi/clients/wlan5` - Get 5GHz WiFi clients
 
 ### Admin Endpoints
-- `GET /api/users` - List users (requires `manage_users`)
-- `POST /api/users` - Create user (requires `manage_users`)
-- `PATCH /api/users/:id` - Update user (requires `manage_users`)
-- `DELETE /api/users/:id` - Disable user (requires `manage_users`)
+- `GET /api/users` - List users
+- `POST /api/users` - Create user
+- `PATCH /api/users/:id` - Update user
+- `DELETE /api/users/:id` - Disable user
+- `POST /api/system/reboot` - Reboot MikroTik
+
+### Layout Endpoints
+- `GET /api/layout` - Get user's dashboard layout
+- `POST /api/layout` - Save dashboard layout
 
 ## Configuration
 
@@ -242,6 +262,12 @@ WLAN_IFACE=wlan2.4           # WiFi interface name
 VXLAN_IFACE=Vxlan            # VXLAN interface for traffic tracking
 ```
 
+### SSH Configuration
+
+```bash
+MT_SSH_PORT=22               # MikroTik SSH port (default: 22)
+```
+
 ## Maintenance
 
 ### View Logs
@@ -263,6 +289,7 @@ docker compose restart
 
 ```bash
 git pull
+./setup.sh
 docker compose down
 docker compose up -d --build
 ```
@@ -375,12 +402,12 @@ docker compose logs traefik | grep -i cert
 ls -la traefik/acme.json
 
 # Check if ports are accessible from public internet
-curl -I http://md.m-host.si
+curl -I http://your-domain.com
 ```
 
 3. Check DNS resolution:
 ```bash
-dig md.m-host.si
+dig your-domain.com
 ```
 
 **Common Issues:**
@@ -403,13 +430,15 @@ docker compose up -d
 
 Check:
 - MikroTik REST API is enabled
+- MikroTik SSH is enabled
 - MikroTik is accessible from Docker host
 - CA certificate is correct
 - Credentials are correct
+- SSH port is correct (default: 22)
 
 Test connectivity:
 ```bash
-docker compose exec backend ping 172.20.50.6
+docker compose exec backend ping <mikrotik-ip>
 ```
 
 ### Database Connection Issues
@@ -443,9 +472,10 @@ docker compose up -d --build frontend
 3. **Keep JWT_SECRET secure** and never commit to git
 4. **Regularly update Docker images**
 5. **Monitor logs for suspicious activity**
-6. **Use principle of least privilege** for permissions
+6. **Use principle of least privilege** - only make users admin if necessary
 7. **Keep MikroTik firmware updated**
 8. **Regularly backup database**
+9. **Change default SSH port on MikroTik if exposed to internet**
 
 ## Development
 
@@ -473,6 +503,7 @@ npm run dev
 .
 ├── docker-compose.yml           # Docker orchestration
 ├── .env.example                 # Environment template
+├── setup.sh                     # Setup script
 ├── traefik/                     # Traefik config
 │   └── acme.json               # SSL certificates
 ├── backend/                     # Node.js API
@@ -480,12 +511,13 @@ npm run dev
 │   │   ├── index.js            # Entry point
 │   │   ├── config.js           # Configuration
 │   │   ├── db.js               # Database client
-│   │   ├── auth.js             # Auth & permissions
+│   │   ├── auth.js             # Authentication
 │   │   ├── mikrotik.js         # MikroTik API client
 │   │   ├── poller.js           # Data collection
+│   │   ├── jobManager.js       # Background jobs
+│   │   ├── lteCache.js         # LTE status caching
+│   │   ├── migrate.js          # Database migrations
 │   │   └── routes/             # API endpoints
-│   ├── migrations/             # Database schema
-│   │   └── 001_init.sql
 │   ├── certs/                  # CA certificates
 │   ├── package.json
 │   └── Dockerfile
@@ -495,6 +527,9 @@ npm run dev
     │   ├── App.tsx             # Main app
     │   ├── api.ts              # API client
     │   ├── types.ts            # TypeScript types
+    │   ├── i18n.ts             # Internationalization
+    │   ├── ThemeContext.tsx    # Dark mode support
+    │   ├── LanguageContext.tsx # Language switching
     │   └── components/         # React components
     ├── package.json
     ├── vite.config.ts
