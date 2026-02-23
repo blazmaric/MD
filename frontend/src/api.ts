@@ -139,10 +139,10 @@ export const api = {
     wlan24Status: () =>
       apiFetch('/wifi/wlan24/status'),
 
-    getSavedNetworks: (interfaceName = 'wlan1') =>
+    getSavedNetworks: (interfaceName = 'wlan24') =>
       apiFetch(`/wifi/saved-networks?interface=${interfaceName}`),
 
-    switchNetwork: (networkId: string, interfaceName = 'wlan1') =>
+    switchNetwork: (networkId: string, interfaceName = 'wlan24') =>
       apiFetch('/wifi/switch-network', {
         method: 'POST',
         body: JSON.stringify({ networkId, interface: interfaceName }),

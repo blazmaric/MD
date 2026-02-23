@@ -92,7 +92,7 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
   async function fetchSavedNetworks() {
     setLoadingSavedNetworks(true);
     try {
-      const data = await api.wifi.getSavedNetworks('wlan1');
+      const data = await api.wifi.getSavedNetworks('wlan24');
       setSavedNetworks(data.networks || []);
     } catch (err) {
       console.error('Failed to fetch saved networks:', err);
@@ -120,7 +120,7 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
 
     setSwitchingNetwork(networkId);
     try {
-      await api.wifi.switchNetwork(networkId, 'wlan1');
+      await api.wifi.switchNetwork(networkId, 'wlan24');
       setConnectSuccess('Preklapljanje uspešno! Povezava se vzpostavlja...');
       setTimeout(() => {
         setConnectSuccess('');

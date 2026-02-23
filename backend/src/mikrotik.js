@@ -1038,7 +1038,7 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
   }
 }
 
-async function getSavedNetworks(interfaceName = 'wlan1') {
+async function getSavedNetworks(interfaceName = 'wlan24') {
   console.log(`[getSavedNetworks] Fetching saved networks for ${interfaceName}`);
 
   try {
@@ -1090,7 +1090,7 @@ async function getSavedNetworks(interfaceName = 'wlan1') {
   }
 }
 
-async function switchToNetwork(networkId, interfaceName = 'wlan1') {
+async function switchToNetwork(networkId, interfaceName = 'wlan24') {
   console.log(`[switchToNetwork] Switching to network ${networkId} on ${interfaceName}`);
 
   try {
