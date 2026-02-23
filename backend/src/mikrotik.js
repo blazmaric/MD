@@ -824,16 +824,40 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
           const isRunning = status[0].running === 'true';
 
           console.log(`[connectWifi] Attempt ${i + 1}/${maxAttempts}: SSID="${currentSsid}", running=${isRunning}`);
+          console.log(`[connectWifi] Expected original SSID: "${ssid}"`);
           console.log(`[connectWifi] Expected normalized SSID: "${normalizedSsid}"`);
+
+          // Normalize the current SSID as well, in case it comes back with hex sequences
+          let normalizedCurrentSsid = currentSsid;
+          if (currentSsid) {
+            normalizedCurrentSsid = currentSsid.replace(hexPattern, (match) => {
+              try {
+                const hexBuffer = Buffer.from(match, 'hex');
+                const char = hexBuffer.toString('utf8');
+                if (char.length > 0 && char.charCodeAt(0) > 31) {
+                  return char;
+                }
+                return match;
+              } catch (e) {
+                return match;
+              }
+            });
+          }
+
+          console.log(`[connectWifi] Normalized current SSID: "${normalizedCurrentSsid}"`);
           console.log(`[connectWifi] Expected SSID bytes:`, Buffer.from(normalizedSsid, 'utf8').toString('hex'));
-          console.log(`[connectWifi] Current SSID bytes:`, Buffer.from(currentSsid || '', 'utf8').toString('hex'));
+          console.log(`[connectWifi] Current SSID bytes:`, Buffer.from(normalizedCurrentSsid || '', 'utf8').toString('hex'));
 
           // Compare SSIDs byte-by-byte to handle UTF-8 encoding differences
-          // Use the normalized SSID (with actual Unicode characters) for comparison
+          // Compare both original and normalized SSIDs to handle both cases
           const expectedBytes = Buffer.from(normalizedSsid, 'utf8').toString('hex');
-          const currentBytes = Buffer.from(currentSsid || '', 'utf8').toString('hex');
+          const currentBytes = Buffer.from(normalizedCurrentSsid || '', 'utf8').toString('hex');
+          const originalExpectedBytes = Buffer.from(ssid, 'utf8').toString('hex');
+          const originalCurrentBytes = Buffer.from(currentSsid || '', 'utf8').toString('hex');
 
-          if (expectedBytes === currentBytes && isRunning) {
+          const ssidMatches = (expectedBytes === currentBytes) || (originalExpectedBytes === originalCurrentBytes);
+
+          if (ssidMatches && isRunning) {
             connected = true;
             console.log(`[connectWifi] Successfully connected to ${normalizedSsid} after ${i + 1} seconds`);
             break;
