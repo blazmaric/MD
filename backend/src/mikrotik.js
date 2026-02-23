@@ -746,42 +746,91 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       }
     }
 
-    // Step 2: Add to connect-list (keep existing entries)
+    // Step 2: Find best AP and add to connect-list
     console.log(`[connectWifi] Managing connect-list for ${ssid}`);
     console.log(`[connectWifi] SSID bytes:`, Buffer.from(ssid, 'utf8').toString('hex'));
 
+    let bestMacAddress = null;
     try {
-      // First, get all existing profiles for this interface
+      // Scan to find the best AP for this SSID
+      console.log(`[connectWifi] Scanning for best AP with SSID "${normalizedSsid}"...`);
+      const scanResult = await mtFetch('/rest/interface/wireless/scan', {
+        method: 'POST',
+        body: JSON.stringify({
+          interface: interfaceName,
+          duration: 3
+        })
+      });
+
+      // Parse scan results to find all APs with matching SSID
+      const matchingAPs = [];
+      for (const ap of scanResult) {
+        const apSsid = ap.ssid || '';
+        if (apSsid === normalizedSsid || apSsid === ssid) {
+          const signal = parseInt(ap.signal || '-999');
+          matchingAPs.push({
+            mac: ap.address,
+            signal: signal,
+            ssid: apSsid
+          });
+          console.log(`[connectWifi] Found AP: ${ap.address} with signal ${signal} dBm`);
+        }
+      }
+
+      // Sort by signal strength (strongest first)
+      matchingAPs.sort((a, b) => b.signal - a.signal);
+
+      if (matchingAPs.length > 0) {
+        bestMacAddress = matchingAPs[0].mac;
+        console.log(`[connectWifi] Best AP for "${normalizedSsid}": ${bestMacAddress} (${matchingAPs[0].signal} dBm)`);
+      } else {
+        console.warn(`[connectWifi] No APs found for "${normalizedSsid}", will create entry without MAC filter`);
+      }
+    } catch (scanErr) {
+      console.warn(`[connectWifi] Failed to scan for best AP:`, scanErr.message);
+      // Continue without MAC address
+    }
+
+    try {
+      // Get all existing profiles for this interface
       const existingProfiles = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
       console.log(`[connectWifi] Found ${existingProfiles.length} existing connect-list entries`);
 
-      // Check if this SSID already exists in the connect-list
+      // Check if this SSID+MAC already exists in the connect-list
       const normalizedExpectedBytes = Buffer.from(normalizedSsid, 'utf8').toString('hex');
       let existingEntry = null;
 
       for (const profile of existingProfiles) {
-        console.log(`[connectWifi] Existing SSID: "${profile.ssid}", bytes:`, Buffer.from(profile.ssid || '', 'utf8').toString('hex'));
-
-        // Compare normalized SSIDs
         const normalizedProfileSsid = profile.ssid || '';
         const profileBytes = Buffer.from(normalizedProfileSsid, 'utf8').toString('hex');
+        const profileMac = profile['mac-address'] || '';
 
+        // Match by SSID and MAC (if MAC is set)
         if (profileBytes === normalizedExpectedBytes) {
-          existingEntry = profile;
-          console.log(`[connectWifi] Found existing entry for "${normalizedSsid}"`);
-          break;
+          if (!bestMacAddress || !profileMac || profileMac === bestMacAddress || profileMac === '00:00:00:00:00:00') {
+            existingEntry = profile;
+            console.log(`[connectWifi] Found existing entry for "${normalizedSsid}" with MAC: ${profileMac}`);
+            break;
+          }
         }
       }
 
       if (existingEntry) {
-        // Update existing entry with new password if needed
+        // Update existing entry
         console.log(`[connectWifi] Updating existing connect-list entry for "${normalizedSsid}"`);
+        const updateData = {
+          'security-profile': securityProfileName,
+          'connect': 'yes'
+        };
+
+        // Add MAC address if we found one
+        if (bestMacAddress) {
+          updateData['mac-address'] = bestMacAddress;
+        }
+
         await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${existingEntry['.id']}`, {
           method: 'PATCH',
-          body: JSON.stringify({
-            'security-profile': securityProfileName,
-            'connect': 'yes'
-          })
+          body: JSON.stringify(updateData)
         });
       } else {
         // Create new entry for the SSID
@@ -791,6 +840,12 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
           'connect': 'yes',
           'ssid': normalizedSsid
         };
+
+        // Add MAC address filter if we found the best AP
+        if (bestMacAddress) {
+          connectListData['mac-address'] = bestMacAddress;
+          console.log(`[connectWifi] Adding MAC address filter: ${bestMacAddress}`);
+        }
 
         console.log(`[connectWifi] Creating new connect-list entry for normalized SSID: "${normalizedSsid}"`);
         console.log(`[connectWifi] Normalized SSID bytes:`, Buffer.from(normalizedSsid, 'utf8').toString('hex'));
