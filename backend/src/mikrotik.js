@@ -888,9 +888,12 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
         const status = await mtFetch(`/rest/interface/wireless/${interfaceName}`);
         console.log(`[connectWifi] Status check ${i + 1}/${maxAttempts} - Raw response:`, JSON.stringify(status));
 
-        if (status && status[0]) {
-          const currentSsid = status[0].ssid;
-          const isRunning = status[0].running === 'true';
+        // Handle both array and object responses
+        const statusData = Array.isArray(status) ? status[0] : status;
+
+        if (statusData) {
+          const currentSsid = statusData.ssid;
+          const isRunning = statusData.running === 'true';
 
           console.log(`[connectWifi] Attempt ${i + 1}/${maxAttempts}: SSID="${currentSsid}", running=${isRunning}`);
           console.log(`[connectWifi] Expected original SSID: "${ssid}"`);
