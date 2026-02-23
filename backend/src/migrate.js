@@ -142,6 +142,31 @@ ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS wlan_speed_rx BIGINT;
 ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS wlan_speed_tx BIGINT;
 `;
 
+const MIGRATION_009 = `
+-- Simplify RBAC: Replace permissions array with is_admin boolean
+-- This migration converts the existing permission-based system to a simple admin/user model
+
+DO $$
+BEGIN
+  -- Add is_admin column if it doesn't exist
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'users' AND column_name = 'is_admin'
+  ) THEN
+    ALTER TABLE users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT false;
+
+    -- Convert existing users: anyone with 'admin_all' permission becomes admin
+    UPDATE users SET is_admin = true WHERE 'admin_all' = ANY(permissions);
+
+    -- Drop the permissions column
+    ALTER TABLE users DROP COLUMN IF EXISTS permissions;
+
+    -- Add index for is_admin
+    CREATE INDEX IF NOT EXISTS idx_users_is_admin ON users(is_admin);
+  END IF;
+END $$;
+`;
+
 export async function runMigrations() {
   try {
     console.log('Running database migrations...');
@@ -162,7 +187,8 @@ export async function runMigrations() {
       { name: '005_dashboard_layouts', sql: MIGRATION_005 },
       { name: '006_gps_extended', sql: MIGRATION_006 },
       { name: '007_wifi_signal_rate', sql: MIGRATION_007 },
-      { name: '008_wlan_traffic_speed', sql: MIGRATION_008 }
+      { name: '008_wlan_traffic_speed', sql: MIGRATION_008 },
+      { name: '009_simplify_rbac', sql: MIGRATION_009 }
     ];
 
     for (const migration of migrations) {

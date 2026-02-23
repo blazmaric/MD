@@ -1,9 +1,9 @@
-import { authenticateMiddleware, requirePermission } from '../auth.js';
+import { authenticateMiddleware, requireAdmin } from '../auth.js';
 import { rebootSystem } from '../mikrotik.js';
 
 export default async function systemRoutes(fastify) {
   fastify.post('/system/reboot', {
-    preHandler: [authenticateMiddleware, requirePermission('system_reboot', 'admin_all')],
+    preHandler: [authenticateMiddleware, requireAdmin()],
     schema: {
       body: {
         type: 'object',

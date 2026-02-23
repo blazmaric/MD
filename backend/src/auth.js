@@ -33,9 +33,9 @@ export async function bootstrapAdmin() {
     if (result.rows.length === 0) {
       const passwordHash = await hashPassword(config.admin.pass);
       await query(
-        `INSERT INTO users (username, password_hash, permissions, is_active)
-         VALUES ($1, $2, $3, true)`,
-        [config.admin.user, passwordHash, ['admin_all']]
+        `INSERT INTO users (username, password_hash, is_admin, is_active)
+         VALUES ($1, $2, true, true)`,
+        [config.admin.user, passwordHash]
       );
       console.log(`Admin user '${config.admin.user}' created successfully`);
     } else {
@@ -60,7 +60,7 @@ export async function authenticateMiddleware(request, reply) {
   }
 
   const result = await query(
-    'SELECT id, username, permissions, is_active FROM users WHERE id = $1',
+    'SELECT id, username, is_admin, is_active FROM users WHERE id = $1',
     [decoded.userId]
   );
 
@@ -71,20 +71,11 @@ export async function authenticateMiddleware(request, reply) {
   request.user = result.rows[0];
 }
 
-export function requirePermission(...requiredPermissions) {
+export function requireAdmin() {
   return async (request, reply) => {
-    const userPerms = request.user.permissions || [];
-
-    if (userPerms.includes('admin_all')) {
-      return;
-    }
-
-    const hasPermission = requiredPermissions.some(perm => userPerms.includes(perm));
-
-    if (!hasPermission) {
+    if (!request.user.is_admin) {
       return reply.code(403).send({
-        error: 'Insufficient permissions',
-        required: requiredPermissions
+        error: 'Admin privileges required'
       });
     }
   };

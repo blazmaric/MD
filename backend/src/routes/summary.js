@@ -1,9 +1,9 @@
-import { authenticateMiddleware, requirePermission } from '../auth.js';
+import { authenticateMiddleware } from '../auth.js';
 import { getLastSnapshot } from '../poller.js';
 
 export default async function summaryRoutes(fastify) {
   fastify.get('/summary', {
-    preHandler: [authenticateMiddleware, requirePermission('view_summary')]
+    preHandler: [authenticateMiddleware]
   }, async () => {
     const snapshot = getLastSnapshot();
 

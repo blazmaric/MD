@@ -1,9 +1,9 @@
-import { authenticateMiddleware, requirePermission } from '../auth.js';
+import { authenticateMiddleware } from '../auth.js';
 import { getGpsStatus } from '../mikrotik.js';
 
 export default async function gpsRoutes(fastify) {
   fastify.get('/gps', {
-    preHandler: [authenticateMiddleware, requirePermission('view_gps')]
+    preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     try {
       const gps = await getGpsStatus();

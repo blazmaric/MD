@@ -1,9 +1,9 @@
-import { authenticateMiddleware, requirePermission } from '../auth.js';
+import { authenticateMiddleware } from '../auth.js';
 import { query } from '../db.js';
 
 export default async function logsRoutes(fastify) {
   fastify.get('/logs', {
-    preHandler: [authenticateMiddleware, requirePermission('view_logs')]
+    preHandler: [authenticateMiddleware]
   }, async (request) => {
     const {
       category,

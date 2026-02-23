@@ -1,9 +1,9 @@
-import { authenticateMiddleware, requirePermission } from '../auth.js';
+import { authenticateMiddleware } from '../auth.js';
 import { ping } from '../mikrotik.js';
 
 export default async function pingRoutes(fastify) {
   fastify.post('/ping', {
-    preHandler: [authenticateMiddleware, requirePermission('use_ping')]
+    preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     const { address, count = 4, interface: sourceInterface } = request.body;
 

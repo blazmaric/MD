@@ -1,4 +1,4 @@
-import { authenticateMiddleware, requirePermission } from '../auth.js';
+import { authenticateMiddleware, requireAdmin } from '../auth.js';
 import { scanWifi, connectWifi, getWirelessRegistrationTable, disconnectWirelessClient, getWlan5Status, getWlan24Status, checkLteConnectivity } from '../mikrotik.js';
 import { config } from '../config.js';
 import * as db from '../db.js';
@@ -40,10 +40,15 @@ export default async function wifiRoutes(fastify) {
   });
 
   fastify.post('/wifi/scan', {
-    preHandler: [authenticateMiddleware, requirePermission('manage_wifi')]
+    preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     try {
       const { force = false } = request.body;
+
+      // Force scan requires admin privileges
+      if (force && !request.user.is_admin) {
+        return reply.code(403).send({ error: 'Admin privileges required for force scan' });
+      }
 
       const job = createJob('wifi-scan', {
         interface: config.mikrotik.interfaces.wlan,
@@ -117,7 +122,7 @@ export default async function wifiRoutes(fastify) {
   });
 
   fastify.post('/wifi/connect', {
-    preHandler: [authenticateMiddleware, requirePermission('manage_wifi')]
+    preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     const { ssid, password } = request.body;
 
@@ -134,7 +139,7 @@ export default async function wifiRoutes(fastify) {
   });
 
   fastify.get('/wifi/registration-table', {
-    preHandler: [authenticateMiddleware, requirePermission('view_wlan5_clients')]
+    preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     const { interface: interfaceName = 'wlan5' } = request.query;
     try {
@@ -146,7 +151,7 @@ export default async function wifiRoutes(fastify) {
   });
 
   fastify.delete('/wifi/client/:id', {
-    preHandler: [authenticateMiddleware, requirePermission('manage_wifi')]
+    preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     const { id } = request.params;
     try {
@@ -158,7 +163,7 @@ export default async function wifiRoutes(fastify) {
   });
 
   fastify.get('/wifi/wlan5/status', {
-    preHandler: [authenticateMiddleware, requirePermission('view_wlan5')]
+    preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     try {
       const status = await getWlan5Status();
@@ -169,7 +174,7 @@ export default async function wifiRoutes(fastify) {
   });
 
   fastify.get('/wifi/wlan24/status', {
-    preHandler: [authenticateMiddleware, requirePermission('view_wlan24')]
+    preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     try {
       const status = await getWlan24Status();

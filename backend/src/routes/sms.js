@@ -1,9 +1,9 @@
-import { authenticateMiddleware, requirePermission } from '../auth.js';
+import { authenticateMiddleware } from '../auth.js';
 import { getSmsInbox, sendSms, deleteSms } from '../mikrotik.js';
 
 export default async function smsRoutes(fastify) {
   fastify.get('/sms/inbox', {
-    preHandler: [authenticateMiddleware, requirePermission('view_sms')]
+    preHandler: [authenticateMiddleware]
   }, async () => {
     const messages = await getSmsInbox();
     messages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -11,7 +11,7 @@ export default async function smsRoutes(fastify) {
   });
 
   fastify.post('/sms/send', {
-    preHandler: [authenticateMiddleware, requirePermission('send_sms')]
+    preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     const { phone, message, port = 'lte1' } = request.body;
 
@@ -28,7 +28,7 @@ export default async function smsRoutes(fastify) {
   });
 
   fastify.delete('/sms/:id', {
-    preHandler: [authenticateMiddleware, requirePermission('send_sms')]
+    preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     const { id } = request.params;
     try {

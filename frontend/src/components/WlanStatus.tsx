@@ -42,11 +42,20 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
   const [showScanPopup, setShowScanPopup] = useState(false);
   const [wlan24Status, setWlan24Status] = useState<Wlan24Status | null>(null);
   const [scanError, setScanError] = useState<string>('');
+  const [lteConnected, setLteConnected] = useState<boolean | null>(null);
+  const [checkingLte, setCheckingLte] = useState(false);
 
   useEffect(() => {
     fetchWlan24Status();
-    const interval = setInterval(fetchWlan24Status, 5000);
-    return () => clearInterval(interval);
+    checkLte();
+
+    const statusInterval = setInterval(fetchWlan24Status, 5000);
+    const lteInterval = setInterval(checkLte, 30000);
+
+    return () => {
+      clearInterval(statusInterval);
+      clearInterval(lteInterval);
+    };
   }, []);
 
   async function fetchWlan24Status() {
@@ -55,6 +64,21 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
       setWlan24Status(data.status);
     } catch (err) {
       console.error('Failed to fetch WLAN 2.4 status:', err);
+    }
+  }
+
+  async function checkLte() {
+    setCheckingLte(true);
+    try {
+      const data = await api.wifi.checkLte();
+      setLteConnected(data.connected);
+      return data.connected;
+    } catch (err) {
+      console.error('Failed to check LTE:', err);
+      setLteConnected(false);
+      return false;
+    } finally {
+      setCheckingLte(false);
     }
   }
 
@@ -92,10 +116,26 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
   }
 
   async function handleScan() {
-    setScanning(true);
-    setShowScanPopup(true);
     setScanError('');
     setScanResults([]);
+
+    // Check LTE before scanning
+    setCheckingLte(true);
+    const isLteConnected = await checkLte();
+    setCheckingLte(false);
+
+    if (!isLteConnected) {
+      setScanError('LTE povezava ni stabilna (ping ne dela). Možni vzroki: ni dobroimetja na SIM kartici, slab signal, ali težave z operaterjem.');
+      setShowScanPopup(true);
+      return;
+    }
+
+    if (!confirm('Skeniranje bo začasno prekinilo WiFi povezavo. LTE bo ohranil povezljivost.\n\nNadaljujem?')) {
+      return;
+    }
+
+    setScanning(true);
+    setShowScanPopup(true);
 
     try {
       const data = await api.wifi.scan(false); // Normal scan - requires LTE
@@ -186,11 +226,16 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
 
             <button
               onClick={handleScan}
-              disabled={scanning}
-              className="w-full px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white rounded-lg font-medium disabled:opacity-50 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+              disabled={scanning || checkingLte || lteConnected === false}
+              className={`w-full px-4 py-2.5 rounded-lg font-medium transition-all shadow-lg flex items-center justify-center gap-2 ${
+                lteConnected === false
+                  ? 'bg-slate-400 dark:bg-slate-600 text-white cursor-not-allowed'
+                  : 'bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white hover:shadow-xl disabled:opacity-50'
+              }`}
+              title={lteConnected === false ? 'LTE povezava ni stabilna - gumb je onemogočen' : ''}
             >
               <Search className="w-4 h-4" />
-              {scanning ? t('scanning') : t('scanWlan')}
+              {checkingLte ? 'Preverjam LTE...' : scanning ? t('scanning') : lteConnected === false ? 'LTE ni stabilen' : t('scanWlan')}
             </button>
           </div>
         </div>

@@ -1,9 +1,9 @@
-import { authenticateMiddleware, requirePermission } from '../auth.js';
+import { authenticateMiddleware, requireAdmin } from '../auth.js';
 import { query } from '../db.js';
 
 export default async function trafficRoutes(fastify) {
   fastify.get('/traffic', {
-    preHandler: [authenticateMiddleware, requirePermission('view_traffic')]
+    preHandler: [authenticateMiddleware]
   }, async (request) => {
     const { period = 'day', interface: iface } = request.query;
 
@@ -66,7 +66,7 @@ export default async function trafficRoutes(fastify) {
   });
 
   fastify.delete('/traffic/history', {
-    preHandler: [authenticateMiddleware, requirePermission('admin_all')]
+    preHandler: [authenticateMiddleware, requireAdmin()]
   }, async (request, reply) => {
     try {
       await query('DELETE FROM traffic_history');

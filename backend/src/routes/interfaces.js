@@ -1,10 +1,10 @@
-import { authenticateMiddleware, requirePermission } from '../auth.js';
+import { authenticateMiddleware } from '../auth.js';
 import { getInterfaces, monitorTraffic } from '../mikrotik.js';
 import { getLastSnapshot } from '../poller.js';
 
 export default async function interfacesRoutes(fastify) {
   fastify.get('/interfaces', {
-    preHandler: [authenticateMiddleware, requirePermission('view_interface_list')]
+    preHandler: [authenticateMiddleware]
   }, async () => {
     const interfaces = await getInterfaces();
     const snapshot = getLastSnapshot();
@@ -27,7 +27,7 @@ export default async function interfacesRoutes(fastify) {
   });
 
   fastify.get('/interfaces/all', {
-    preHandler: [authenticateMiddleware, requirePermission('view_summary')]
+    preHandler: [authenticateMiddleware]
   }, async () => {
     const interfaces = await getInterfaces();
     return { interfaces };

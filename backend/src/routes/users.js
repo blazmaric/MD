@@ -1,12 +1,12 @@
-import { authenticateMiddleware, requirePermission, hashPassword } from '../auth.js';
+import { authenticateMiddleware, requireAdmin, hashPassword } from '../auth.js';
 import { query } from '../db.js';
 
 export default async function usersRoutes(fastify) {
   fastify.get('/users', {
-    preHandler: [authenticateMiddleware, requirePermission('manage_users')]
+    preHandler: [authenticateMiddleware, requireAdmin()]
   }, async () => {
     const result = await query(`
-      SELECT id, username, permissions, is_active, created_at, updated_at
+      SELECT id, username, is_admin, is_active, created_at, updated_at
       FROM users
       ORDER BY created_at DESC
     `);
@@ -15,9 +15,9 @@ export default async function usersRoutes(fastify) {
   });
 
   fastify.post('/users', {
-    preHandler: [authenticateMiddleware, requirePermission('manage_users')]
+    preHandler: [authenticateMiddleware, requireAdmin()]
   }, async (request, reply) => {
-    const { username, password, permissions = [], is_active = true } = request.body;
+    const { username, password, is_admin = false, is_active = true } = request.body;
 
     if (!username || !password) {
       return reply.code(400).send({ error: 'Username and password required' });
@@ -35,19 +35,19 @@ export default async function usersRoutes(fastify) {
     const passwordHash = await hashPassword(password);
 
     const result = await query(`
-      INSERT INTO users (username, password_hash, permissions, is_active)
+      INSERT INTO users (username, password_hash, is_admin, is_active)
       VALUES ($1, $2, $3, $4)
-      RETURNING id, username, permissions, is_active, created_at
-    `, [username, passwordHash, permissions, is_active]);
+      RETURNING id, username, is_admin, is_active, created_at
+    `, [username, passwordHash, is_admin, is_active]);
 
     return { user: result.rows[0] };
   });
 
   fastify.patch('/users/:id', {
-    preHandler: [authenticateMiddleware, requirePermission('manage_users')]
+    preHandler: [authenticateMiddleware, requireAdmin()]
   }, async (request, reply) => {
     const { id } = request.params;
-    const { password, permissions, is_active } = request.body;
+    const { password, is_admin, is_active } = request.body;
 
     const updates = [];
     const params = [];
@@ -63,9 +63,9 @@ export default async function usersRoutes(fastify) {
       paramIndex++;
     }
 
-    if (permissions !== undefined) {
-      updates.push(`permissions = $${paramIndex}`);
-      params.push(permissions);
+    if (is_admin !== undefined) {
+      updates.push(`is_admin = $${paramIndex}`);
+      params.push(is_admin);
       paramIndex++;
     }
 
@@ -84,7 +84,7 @@ export default async function usersRoutes(fastify) {
       UPDATE users
       SET ${updates.join(', ')}
       WHERE id = $${paramIndex}
-      RETURNING id, username, permissions, is_active, updated_at
+      RETURNING id, username, is_admin, is_active, updated_at
     `, params);
 
     if (result.rows.length === 0) {
@@ -95,7 +95,7 @@ export default async function usersRoutes(fastify) {
   });
 
   fastify.delete('/users/:id', {
-    preHandler: [authenticateMiddleware, requirePermission('manage_users')]
+    preHandler: [authenticateMiddleware, requireAdmin()]
   }, async (request, reply) => {
     const { id } = request.params;
     const { permanent = false } = request.query;
