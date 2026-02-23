@@ -443,43 +443,46 @@ export async function scanWifi(interfaceName, db, force = false) {
       const line = lines[i].trim();
       console.log('[WiFi Scan] Processing line', i, ':', line);
 
-      if (line.match(/^\d+/)) {
+      if (line.startsWith('AP ')) {
         const parts = line.split(/\s+/);
-        console.log('[WiFi Scan] Line matched pattern, parts:', parts);
+        console.log('[WiFi Scan] Line matched AP pattern, parts:', parts);
 
-        let ssidIndex = -1;
-        for (let j = 0; j < parts.length; j++) {
-          if (parts[j].includes(':') && parts[j].match(/^[0-9A-F]{2}:/i)) {
-            ssidIndex = j + 1;
-            break;
-          }
-        }
+        if (parts.length >= 4) {
+          const address = parts[1];
 
-        if (ssidIndex > 0 && ssidIndex < parts.length) {
-          const address = parts[ssidIndex - 1];
-          const ssid = parts.slice(ssidIndex).join(' ');
-
-          let signalStr = '';
-          for (const part of parts) {
-            if (part.includes('dBm') || part.startsWith('-')) {
-              signalStr = part.replace('dBm', '');
+          let ssidEndIndex = -1;
+          let channelIndex = -1;
+          for (let j = 2; j < parts.length; j++) {
+            if (parts[j].includes('/') && parts[j].includes('dBm')) {
+              channelIndex = j;
+              ssidEndIndex = j - 1;
               break;
             }
           }
 
-          const signal = parseInt(signalStr) || -100;
+          if (channelIndex > 0 && ssidEndIndex >= 2) {
+            const ssid = parts.slice(2, ssidEndIndex + 1).join(' ');
+            const channel = parts[channelIndex];
 
-          console.log('[WiFi Scan] Found network:', { ssid, address, signal });
+            let signalStr = '';
+            if (channelIndex + 1 < parts.length) {
+              signalStr = parts[channelIndex + 1];
+            }
 
-          if (ssid && ssid !== '' && address) {
-            networks.push({
-              ssid: ssid,
-              address: address,
-              signal: signal,
-              channel: '',
-              frequency: 0,
-              security: ''
-            });
+            const signal = parseInt(signalStr) || -100;
+
+            console.log('[WiFi Scan] Found network:', { ssid, address, signal, channel });
+
+            if (ssid && ssid !== '' && address) {
+              networks.push({
+                ssid: ssid,
+                address: address,
+                signal: signal,
+                channel: channel,
+                frequency: 0,
+                security: ''
+              });
+            }
           }
         }
       }
