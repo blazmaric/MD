@@ -510,6 +510,7 @@ export async function scanWifi(interfaceName, db, force = false) {
             const security = 'secured';
 
             console.log('[WiFi Scan] Found network:', { ssid, address, signal, channel, security });
+            console.log('[WiFi Scan] SSID bytes:', Buffer.from(ssid, 'utf8').toString('hex'));
 
             if (ssid && ssid !== '' && address) {
               networks.push({
@@ -754,14 +755,18 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       }
 
       // Now create a fresh entry for the new SSID
+      // Ensure SSID is properly UTF-8 encoded
+      const normalizedSsid = Buffer.from(ssid, 'utf8').toString('utf8');
+
       const connectListData = {
         'interface': interfaceName,
         'security-profile': securityProfileName,
         'connect': 'yes',
-        'ssid': ssid
+        'ssid': normalizedSsid
       };
 
       console.log(`[connectWifi] Creating new connect-list entry for ${ssid}`);
+      console.log(`[connectWifi] Normalized SSID bytes:`, Buffer.from(normalizedSsid, 'utf8').toString('hex'));
       console.log(`[connectWifi] Create data:`, JSON.stringify(connectListData));
       await mtFetchWithRetry('/rest/interface/wireless/connect-list/add', {
         method: 'POST',
@@ -803,8 +808,15 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
           const isRunning = status[0].running === 'true';
 
           console.log(`[connectWifi] Attempt ${i + 1}/${maxAttempts}: SSID="${currentSsid}", running=${isRunning}`);
+          console.log(`[connectWifi] Expected SSID: "${ssid}"`);
+          console.log(`[connectWifi] Expected SSID bytes:`, Buffer.from(ssid, 'utf8').toString('hex'));
+          console.log(`[connectWifi] Current SSID bytes:`, Buffer.from(currentSsid || '', 'utf8').toString('hex'));
 
-          if (currentSsid === ssid && isRunning) {
+          // Compare SSIDs byte-by-byte to handle UTF-8 encoding differences
+          const expectedBytes = Buffer.from(ssid, 'utf8').toString('hex');
+          const currentBytes = Buffer.from(currentSsid || '', 'utf8').toString('hex');
+
+          if (expectedBytes === currentBytes && isRunning) {
             connected = true;
             console.log(`[connectWifi] Successfully connected to ${ssid} after ${i + 1} seconds`);
             break;
