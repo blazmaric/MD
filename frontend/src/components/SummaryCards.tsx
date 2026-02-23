@@ -47,8 +47,8 @@ export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) 
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     let i = 0;
     let value = numBytes;
-    while (value >= 1024 && i < units.length - 1) {
-      value /= 1024;
+    while (value >= 1000 && i < units.length - 1) {
+      value /= 1000;
       i++;
     }
     return `${value.toFixed(2)} ${units[i]}`;
