@@ -493,16 +493,19 @@ export async function scanWifi(interfaceName, db, force = false) {
 
     console.log('[WiFi Scan] Total networks found:', networks.length);
 
+    // Group by SSID (not MAC address), keeping the strongest signal for each SSID
     const grouped = networks.reduce((acc, network) => {
-      const addr = network.address;
-      if (!acc[addr] || network.signal > acc[addr].signal) {
-        acc[addr] = network;
+      const key = network.ssid;
+      if (!acc[key] || network.signal > acc[key].signal) {
+        acc[key] = network;
       }
       return acc;
     }, {});
 
     const result = Object.values(grouped);
     result.sort((a, b) => b.signal - a.signal);
+
+    console.log('[WiFi Scan] After deduplication:', result.length, 'unique networks');
 
     const scannedAt = new Date().toISOString();
     for (const network of result) {

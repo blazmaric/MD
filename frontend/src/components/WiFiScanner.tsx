@@ -309,6 +309,11 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
 
       {networks.length > 0 && (
         <div className="space-y-2">
+          {!selectedSsid && (
+            <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg text-blue-800 dark:text-blue-300 text-sm">
+              Klikni na omrežje za povezavo
+            </div>
+          )}
           {networks.map((network, idx) => {
             const isSecured = network.security === 'secured';
             const isSelected = selectedSsid === network.ssid;
@@ -316,7 +321,11 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
             return (
               <div
                 key={idx}
-                className="p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors"
+                className={`p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors ${
+                  isSelected
+                    ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-slate-200 dark:border-slate-700'
+                }`}
                 onClick={() => setSelectedSsid(network.ssid)}
               >
                 <div className="flex items-center justify-between">
@@ -340,7 +349,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
                     </div>
                   </div>
                   {isSelected && (
-                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Izbrano</span>
+                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400">✓ Izbrano</span>
                   )}
                 </div>
               </div>
