@@ -17,20 +17,6 @@ interface Wlan5Status {
   running?: string;
 }
 
-function formatSpeed(speed: string): string {
-  const match = speed.match(/^([\d.]+)([MG]?bps)$/);
-  if (!match) return speed;
-
-  const value = parseFloat(match[1]);
-  const unit = match[2];
-
-  if (unit === 'Mbps' && value < 1) {
-    return `${(value * 1000).toFixed(0)} kbps`;
-  }
-
-  return speed;
-}
-
 export default function Wlan5Status() {
   const { t } = useLanguage();
   const [wlan5Info, setWlan5Info] = useState<Wlan5Status | null>(null);
@@ -124,13 +110,13 @@ export default function Wlan5Status() {
             <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
               <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">RX Speed</p>
               <p className="text-xs font-semibold text-green-600 dark:text-green-400">
-                {formatSpeed(wlan5Info.rxRate)}
+                {wlan5Info.rxRate}
               </p>
             </div>
             <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
               <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 uppercase font-medium">TX Speed</p>
               <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">
-                {formatSpeed(wlan5Info.txRate)}
+                {wlan5Info.txRate}
               </p>
             </div>
           </div>

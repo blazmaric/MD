@@ -504,13 +504,24 @@ export async function getWlan5Status() {
     if (traffic) {
       const rxBps = traffic['rx-bits-per-second'] || 0;
       const txBps = traffic['tx-bits-per-second'] || 0;
-      rxRate = `${(rxBps / 1000000).toFixed(2)} Mbps`;
-      txRate = `${(txBps / 1000000).toFixed(2)} Mbps`;
+
+      // Format speeds: if < 1 Mbps, show in Kbps
+      if (rxBps < 1000000) {
+        rxRate = `${(rxBps / 1000).toFixed(0)} Kbps`;
+      } else {
+        rxRate = `${(rxBps / 1000000).toFixed(2)} Mbps`;
+      }
+
+      if (txBps < 1000000) {
+        txRate = `${(txBps / 1000).toFixed(0)} Kbps`;
+      } else {
+        txRate = `${(txBps / 1000000).toFixed(2)} Mbps`;
+      }
     }
 
     return {
       status: monitor.status || 'N/A',
-      ssid: monitor.ssid || 'N/A',
+      ssid: monitor.ssid && monitor.ssid.trim() !== '' ? monitor.ssid : 'N/A',
       authenticatedClients: parseInt(monitor['authenticated-clients'] || '0'),
       registeredClients: parseInt(monitor['registered-clients'] || '0'),
       noiseFloor: monitor['noise-floor'] || 'N/A',
@@ -538,12 +549,22 @@ export async function getWlan24Status() {
 
     const monitor = monitorResult[0] || {};
 
+    // Format rate helper (e.g., "300kbps" → "300 Kbps", "48.5Mbps" → "48.5 Mbps")
+    const formatRate = (rate) => {
+      if (!rate || rate === 'N/A') return 'N/A';
+      const match = rate.match(/^([\d.]+)(k|M)bps$/i);
+      if (!match) return rate;
+      const value = match[1];
+      const unit = match[2].toLowerCase() === 'k' ? 'Kbps' : 'Mbps';
+      return `${value} ${unit}`;
+    };
+
     return {
       status: monitor.status || 'N/A',
-      ssid: monitor.ssid || 'N/A',
+      ssid: monitor.ssid && monitor.ssid.trim() !== '' ? monitor.ssid : 'N/A',
       signalStrength: monitor['signal-strength'] || 'N/A',
-      txRate: monitor['tx-rate'] || 'N/A',
-      rxRate: monitor['rx-rate'] || 'N/A'
+      txRate: formatRate(monitor['tx-rate']),
+      rxRate: formatRate(monitor['rx-rate'])
     };
   } catch (err) {
     console.error('Failed to get WLAN 2.4 status:', err.message);
