@@ -649,66 +649,15 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
   try {
     console.log(`[connectWifi] Connecting to SSID: ${ssid}, password: ${password ? 'yes' : 'no'}, saveProfile: ${saveProfile}`);
 
-    // If saveProfile is true, add to connect-list (for automatic reconnection)
-    if (saveProfile) {
-      try {
-        console.log(`[connectWifi] Adding ${ssid} to connect-list for automatic reconnection`);
-
-        // Check if SSID already exists in connect-list
-        const existingProfiles = await mtFetch(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
-        const existingProfile = existingProfiles.find(p => p.ssid === ssid);
-
-        if (existingProfile) {
-          console.log(`[connectWifi] Profile for ${ssid} already exists, updating...`);
-          // Update existing profile
-          const updateData = {
-            'ssid': ssid,
-            'interface': interfaceName
-          };
-
-          if (password) {
-            updateData['security-profile'] = 'profile-' + ssid.replace(/[^a-zA-Z0-9]/g, '-');
-          } else {
-            updateData['security-profile'] = 'default';
-          }
-
-          await mtFetch(`/rest/interface/wireless/connect-list/${existingProfile['.id']}`, {
-            method: 'PATCH',
-            body: JSON.stringify(updateData)
-          });
-        } else {
-          console.log(`[connectWifi] Creating new profile for ${ssid}`);
-          // Create new profile in connect-list
-          const profileData = {
-            'ssid': ssid,
-            'interface': interfaceName
-          };
-
-          if (password) {
-            profileData['security-profile'] = 'profile-' + ssid.replace(/[^a-zA-Z0-9]/g, '-');
-          } else {
-            profileData['security-profile'] = 'default';
-          }
-
-          await mtFetch('/rest/interface/wireless/connect-list', {
-            method: 'PUT',
-            body: JSON.stringify(profileData)
-          });
-        }
-      } catch (err) {
-        console.warn('[connectWifi] Failed to save to connect-list:', err.message);
-        // Continue with connection even if save failed
-      }
-    }
-
-    // Create or update security profile if password is provided
+    // Step 1: Create or update security profile if password is provided
+    let securityProfileName = 'default';
     if (password) {
-      const profileName = 'profile-' + ssid.replace(/[^a-zA-Z0-9]/g, '-');
-      console.log(`[connectWifi] Setting up security profile: ${profileName}`);
+      securityProfileName = 'profile-' + ssid.replace(/[^a-zA-Z0-9]/g, '-');
+      console.log(`[connectWifi] Setting up security profile: ${securityProfileName}`);
 
       try {
         // Check if profile exists
-        const profiles = await mtFetch(`/rest/interface/wireless/security-profiles?name=${profileName}`);
+        const profiles = await mtFetch(`/rest/interface/wireless/security-profiles?name=${securityProfileName}`);
 
         if (profiles && profiles[0]) {
           // Update existing profile
@@ -721,18 +670,20 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
               'wpa-pre-shared-key': password
             })
           });
+          console.log(`[connectWifi] Updated existing security profile: ${securityProfileName}`);
         } else {
           // Create new profile
           await mtFetch('/rest/interface/wireless/security-profiles', {
             method: 'PUT',
             body: JSON.stringify({
-              'name': profileName,
+              'name': securityProfileName,
               'mode': 'dynamic-keys',
               'authentication-types': 'wpa2-psk,wpa-psk',
               'wpa2-pre-shared-key': password,
               'wpa-pre-shared-key': password
             })
           });
+          console.log(`[connectWifi] Created new security profile: ${securityProfileName}`);
         }
       } catch (err) {
         console.error('[connectWifi] Failed to setup security profile:', err.message);
@@ -740,27 +691,60 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       }
     }
 
-    // Connect the interface
-    console.log(`[connectWifi] Configuring interface ${interfaceName} to connect to ${ssid}`);
-    const interfaceConfig = {
-      'mode': 'station',
-      'ssid': ssid,
-      'disabled': 'no'
-    };
+    // Step 2: Add to connect-list (this is like checking "Connect" in Winbox)
+    console.log(`[connectWifi] Adding ${ssid} to connect-list with connect=yes`);
 
-    if (password) {
-      interfaceConfig['security-profile'] = 'profile-' + ssid.replace(/[^a-zA-Z0-9]/g, '-');
-    } else {
-      interfaceConfig['security-profile'] = 'default';
+    try {
+      // Check if SSID already exists in connect-list
+      const existingProfiles = await mtFetch(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
+      const existingProfile = existingProfiles.find(p => p.ssid === ssid);
+
+      const connectListData = {
+        'ssid': ssid,
+        'interface': interfaceName,
+        'security-profile': securityProfileName,
+        'connect': 'yes'  // This is the "Connect" checkbox in Winbox!
+      };
+
+      if (existingProfile) {
+        console.log(`[connectWifi] Updating existing connect-list entry for ${ssid}`);
+        await mtFetch(`/rest/interface/wireless/connect-list/${existingProfile['.id']}`, {
+          method: 'PATCH',
+          body: JSON.stringify(connectListData)
+        });
+      } else {
+        console.log(`[connectWifi] Creating new connect-list entry for ${ssid}`);
+        await mtFetch('/rest/interface/wireless/connect-list', {
+          method: 'PUT',
+          body: JSON.stringify(connectListData)
+        });
+      }
+    } catch (err) {
+      console.error('[connectWifi] Failed to add to connect-list:', err.message);
+      throw new Error('Failed to add to connect-list: ' + err.message);
     }
 
-    await mtFetch(`/rest/interface/wireless/${interfaceName}`, {
-      method: 'PATCH',
-      body: JSON.stringify(interfaceConfig)
-    });
+    // Step 3: Ensure interface is in station mode and enabled (but don't set specific SSID)
+    // The interface will automatically connect based on connect-list entries
+    console.log(`[connectWifi] Ensuring interface ${interfaceName} is in station mode`);
+    try {
+      await mtFetch(`/rest/interface/wireless/${interfaceName}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          'mode': 'station',
+          'disabled': 'no'
+        })
+      });
+    } catch (err) {
+      console.warn('[connectWifi] Failed to configure interface mode:', err.message);
+      // Don't throw - connect-list should still work
+    }
 
-    console.log(`[connectWifi] Successfully configured connection to ${ssid}`);
-    return { success: true, message: `Connected to ${ssid}` };
+    console.log(`[connectWifi] Successfully added ${ssid} to connect-list. Interface will auto-connect.`);
+    return {
+      success: true,
+      message: `Added ${ssid} to connect list. Interface will connect automatically.`
+    };
   } catch (err) {
     console.error('[connectWifi] Failed to connect WiFi:', err.message);
     throw err;
