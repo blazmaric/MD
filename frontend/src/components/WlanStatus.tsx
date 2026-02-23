@@ -23,10 +23,11 @@ interface Wlan24Status {
   rxRate: string;
 }
 
-function formatSpeed(bytesPerSec: number | null | undefined): string {
-  if (!bytesPerSec) return '0 Kbps';
+function formatSpeed(bytesPerSec: number | string | null | undefined): string {
+  const bytes = typeof bytesPerSec === 'number' ? bytesPerSec : (typeof bytesPerSec === 'string' && bytesPerSec !== '' ? parseFloat(bytesPerSec) : null);
+  if (!bytes || isNaN(bytes)) return '0 Kbps';
 
-  const kbps = (bytesPerSec * 8) / 1000;
+  const kbps = (bytes * 8) / 1000;
   const mbps = kbps / 1000;
 
   if (mbps >= 1) {

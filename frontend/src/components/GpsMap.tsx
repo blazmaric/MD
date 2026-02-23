@@ -27,7 +27,20 @@ function MapUpdater({ lat, lng }: { lat: number; lng: number }) {
 
 export default function GpsMap({ snapshot }: GpsMapProps) {
   const { t } = useLanguage();
-  const hasGps = snapshot?.gps_valid && snapshot?.gps_latitude && snapshot?.gps_longitude;
+
+  function toNumber(value?: number | string | null): number | null {
+    if (value == null || value === '') return null;
+    const num = typeof value === 'number' ? value : parseFloat(value);
+    return isNaN(num) ? null : num;
+  }
+
+  const lat = toNumber(snapshot?.gps_latitude);
+  const lng = toNumber(snapshot?.gps_longitude);
+  const alt = toNumber(snapshot?.gps_altitude);
+  const speed = toNumber(snapshot?.gps_speed);
+  const sats = toNumber(snapshot?.gps_satellites);
+
+  const hasGps = snapshot?.gps_valid && lat != null && lng != null;
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
@@ -53,10 +66,10 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
             <p className="text-slate-600 dark:text-slate-400 mb-2">{t('gpsNotAvailable')}</p>
             {snapshot && (
               <div className="text-xs text-slate-500 dark:text-slate-500 space-y-1">
-                {snapshot.gps_satellites !== null && snapshot.gps_satellites !== undefined && (
+                {sats != null && (
                   <p className="flex items-center justify-center gap-2">
                     <Satellite className="w-3 h-3" />
-                    {snapshot.gps_satellites} {t('satellitesCount')}
+                    {sats} {t('satellitesCount')}
                   </p>
                 )}
                 <p>Status: {snapshot.gps_valid ? 'Fixing...' : 'No fix'}</p>
@@ -67,7 +80,7 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
           <div className="space-y-4">
             <div className="h-64 rounded-lg overflow-hidden border-2 border-green-200 dark:border-green-800 shadow-lg relative z-0">
               <MapContainer
-                center={[snapshot.gps_latitude!, snapshot.gps_longitude!]}
+                center={[lat!, lng!]}
                 zoom={16}
                 className="h-full w-full z-0"
                 zoomControl={true}
@@ -76,15 +89,15 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <Marker position={[snapshot.gps_latitude!, snapshot.gps_longitude!]}>
+                <Marker position={[lat!, lng!]}>
                   <Popup>
                     <div className="text-sm">
                       <p className="font-semibold">Current Location</p>
-                      <p className="text-xs">{snapshot.gps_latitude?.toFixed(6)}°, {snapshot.gps_longitude?.toFixed(6)}°</p>
+                      <p className="text-xs">{lat?.toFixed(6)}°, {lng?.toFixed(6)}°</p>
                     </div>
                   </Popup>
                 </Marker>
-                <MapUpdater lat={snapshot.gps_latitude!} lng={snapshot.gps_longitude!} />
+                <MapUpdater lat={lat!} lng={lng!} />
               </MapContainer>
             </div>
 
@@ -95,7 +108,7 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                   <p className="text-xs font-medium text-blue-700 dark:text-blue-300">{t('latitude')}</p>
                 </div>
                 <p className="text-lg font-bold font-mono text-blue-900 dark:text-blue-100">
-                  {snapshot.gps_latitude?.toFixed(6)}°
+                  {lat?.toFixed(6)}°
                 </p>
               </div>
 
@@ -105,7 +118,7 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                   <p className="text-xs font-medium text-purple-700 dark:text-purple-300">{t('longitude')}</p>
                 </div>
                 <p className="text-lg font-bold font-mono text-purple-900 dark:text-purple-100">
-                  {snapshot.gps_longitude?.toFixed(6)}°
+                  {lng?.toFixed(6)}°
                 </p>
               </div>
             </div>
@@ -117,7 +130,7 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                   <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">{t('altitude')}</p>
                 </div>
                 <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100">
-                  {snapshot.gps_altitude != null ? `${snapshot.gps_altitude.toFixed(1)} m` : 'N/A'}
+                  {alt != null ? `${alt.toFixed(1)} m` : 'N/A'}
                 </p>
               </div>
 
@@ -127,7 +140,7 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                   <p className="text-xs font-medium text-amber-700 dark:text-amber-300">{t('speed')}</p>
                 </div>
                 <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
-                  {snapshot.gps_speed != null ? `${snapshot.gps_speed.toFixed(1)} km/h` : 'N/A'}
+                  {speed != null ? `${speed.toFixed(1)} km/h` : 'N/A'}
                 </p>
               </div>
 
@@ -137,7 +150,7 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                   <p className="text-xs font-medium text-cyan-700 dark:text-cyan-300">{t('satellitesLabel')}</p>
                 </div>
                 <p className="text-sm font-bold text-cyan-900 dark:text-cyan-100">
-                  {snapshot.gps_satellites ?? 'N/A'}
+                  {sats ?? 'N/A'}
                 </p>
               </div>
             </div>

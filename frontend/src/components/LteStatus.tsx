@@ -23,13 +23,19 @@ export default function LteStatus({ snapshot }: LteStatusProps) {
 
   const isLteActive = snapshot.gateway_type === 'LTE';
 
-  function getSignalQuality(rsrp?: number | null): { label: string; color: string } {
-    if (!rsrp) return { label: 'N/A', color: 'text-slate-500' };
-    if (rsrp >= -80) return { label: t('excellent'), color: 'text-green-500' };
-    if (rsrp >= -90) return { label: t('good'), color: 'text-green-400' };
-    if (rsrp >= -100) return { label: t('moderate'), color: 'text-yellow-500' };
-    if (rsrp >= -110) return { label: t('poor'), color: 'text-orange-500' };
+  function getSignalQuality(rsrp?: number | string | null): { label: string; color: string } {
+    const rsrpNum = typeof rsrp === 'number' ? rsrp : (typeof rsrp === 'string' && rsrp !== '' ? parseFloat(rsrp) : null);
+    if (!rsrpNum || isNaN(rsrpNum)) return { label: 'N/A', color: 'text-slate-500' };
+    if (rsrpNum >= -80) return { label: t('excellent'), color: 'text-green-500' };
+    if (rsrpNum >= -90) return { label: t('good'), color: 'text-green-400' };
+    if (rsrpNum >= -100) return { label: t('moderate'), color: 'text-yellow-500' };
+    if (rsrpNum >= -110) return { label: t('poor'), color: 'text-orange-500' };
     return { label: t('veryPoor'), color: 'text-red-500' };
+  }
+
+  function formatValue(value?: number | string | null): string {
+    if (value == null || value === '') return 'N/A';
+    return typeof value === 'number' ? value.toString() : value;
   }
 
   const signalQuality = getSignalQuality(snapshot.lte_rsrp);
@@ -80,25 +86,25 @@ export default function LteStatus({ snapshot }: LteStatusProps) {
           <div className="flex justify-between items-center">
             <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">RSRP</span>
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              {snapshot.lte_rsrp != null && snapshot.lte_rsrp !== '' ? `${snapshot.lte_rsrp} dBm` : 'N/A'}
+              {formatValue(snapshot.lte_rsrp) !== 'N/A' ? `${formatValue(snapshot.lte_rsrp)} dBm` : 'N/A'}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">RSRQ</span>
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              {snapshot.lte_rsrq != null && snapshot.lte_rsrq !== '' ? `${snapshot.lte_rsrq} dB` : 'N/A'}
+              {formatValue(snapshot.lte_rsrq) !== 'N/A' ? `${formatValue(snapshot.lte_rsrq)} dB` : 'N/A'}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">RSSI</span>
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              {snapshot.lte_rssi != null && snapshot.lte_rssi !== '' ? `${snapshot.lte_rssi} dBm` : 'N/A'}
+              {formatValue(snapshot.lte_rssi) !== 'N/A' ? `${formatValue(snapshot.lte_rssi)} dBm` : 'N/A'}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">SINR</span>
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              {snapshot.lte_sinr != null && snapshot.lte_sinr !== '' ? `${snapshot.lte_sinr} dB` : 'N/A'}
+              {formatValue(snapshot.lte_sinr) !== 'N/A' ? `${formatValue(snapshot.lte_sinr)} dB` : 'N/A'}
             </span>
           </div>
         </div>

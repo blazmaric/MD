@@ -18,11 +18,12 @@ export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) 
     );
   }
 
-  function formatUptime(seconds?: number): string {
-    if (!seconds) return 'N/A';
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+  function formatUptime(seconds?: number | string | null): string {
+    const sec = typeof seconds === 'number' ? seconds : (typeof seconds === 'string' && seconds !== '' ? parseFloat(seconds) : null);
+    if (!sec || isNaN(sec)) return 'N/A';
+    const days = Math.floor(sec / 86400);
+    const hours = Math.floor((sec % 86400) / 3600);
+    const minutes = Math.floor((sec % 3600) / 60);
     return `${days}d ${hours}h ${minutes}m`;
   }
 
