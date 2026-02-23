@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { Wifi, Search, AlertTriangle, WifiOff, RefreshCw } from 'lucide-react';
 import { api } from '../api';
 import type { WiFiNetwork, Snapshot } from '../types';
+import { useLanguage } from '../LanguageContext';
 
 interface WiFiScannerProps {
   snapshot: Snapshot | null;
 }
 
 export default function WiFiScanner(_props: WiFiScannerProps) {
+  const { t } = useLanguage();
   const [networks, setNetworks] = useState<WiFiNetwork[]>([]);
   const [scanning, setScanning] = useState(false);
   const [connecting, setConnecting] = useState(false);
@@ -74,7 +76,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
 
         if (job.status === 'completed') {
           setNetworks(job.result || []);
-          const msg = 'Skeniranje uspešno zaključeno!';
+          const msg = t('scanCompletedSuccess');
           setSuccess(msg);
           showToast(msg, 'success');
           setTimeout(() => setSuccess(''), 3000);
@@ -83,7 +85,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
         }
 
         if (job.status === 'failed') {
-          const errorMsg = job.error || 'Skeniranje ni uspelo';
+          const errorMsg = job.error || t('scanFailed');
           setError(errorMsg);
           showToast(errorMsg, 'error');
           return false;
@@ -98,7 +100,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
       }
     }
 
-    const msg = 'Skeniranje časovno poteklo - prosim poskusite znova';
+    const msg = t('scanTimeout');
     setError(msg);
     showToast(msg, 'error');
     return false;
@@ -116,16 +118,16 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
       setCheckingLte(false);
 
       if (!isLteConnected) {
-        const msg = 'LTE povezava ni aktivna. Skeniranje ni mogoče, saj bi prekinilo aktivno povezavo.';
+        const msg = t('lteNotActive');
         setError(msg);
         showToast(msg, 'warning');
         return;
       }
 
-      if (!confirm('Skeniranje bo začasno prekinilo WiFi povezavo. LTE bo ohranil povezljivost.\n\nNadaljujem?')) {
+      if (!confirm(t('confirmScanLte'))) {
         return;
       }
-    } else if (!confirm('OPOZORILO: Force scan bo prekinil aktivno povezavo!\n\nSamo nadaljujte, če imate fizični dostop do naprave ali alternativno povezavo.\n\nNadaljujem?')) {
+    } else if (!confirm(t('confirmForceScan'))) {
       return;
     }
 
@@ -136,12 +138,12 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
       if (data.jobId) {
         await pollScanJob(data.jobId);
       } else {
-        const msg = 'Neveljaven odgovor strežnika';
+        const msg = t('invalidServerResponse');
         setError(msg);
         showToast(msg, 'error');
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Napaka pri skeniranju WiFi';
+      const msg = err instanceof Error ? err.message : t('wifiScanError');
       setError(msg);
       showToast(msg, 'error');
     } finally {
@@ -167,13 +169,13 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
         await api.wifi.connect(selectedSsid);
       }
 
-      const msg = `Uspešno povezan z ${selectedSsid}!`;
+      const msg = t('connectedSuccessfully').replace('{ssid}', selectedSsid);
       setSuccess(msg);
       showToast(msg, 'success');
       setSelectedSsid('');
       setPassword('');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Napaka pri povezavi z WiFi';
+      const msg = err instanceof Error ? err.message : t('wifiConnectError');
       setError(msg);
       showToast(msg, 'error');
     } finally {
@@ -195,20 +197,20 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
           <Wifi className="w-5 h-5" />
-          WiFi Scanner (2.4 GHz)
+          {t('wifiScanner')}
           {checkingLte && (
             <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
-              (preverjam LTE...)
+              ({t('checkingLte')})
             </span>
           )}
           {!checkingLte && lteConnected === true && (
             <span className="text-xs text-green-600 dark:text-green-400 font-normal">
-              (LTE ✓)
+              ({t('lteCheckmark')})
             </span>
           )}
           {!checkingLte && lteConnected === false && (
             <span className="text-xs text-red-600 dark:text-red-400 font-normal">
-              (LTE ✗)
+              ({t('lteCross')})
             </span>
           )}
         </h3>
@@ -218,10 +220,10 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
               onClick={() => checkLte()}
               disabled={checkingLte}
               className="px-3 py-2 text-sm bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-300 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-              title="Ponovno preveri LTE povezavo"
+              title={t('recheckLte')}
             >
               <RefreshCw className={`w-4 h-4 ${checkingLte ? 'animate-spin' : ''}`} />
-              {checkingLte ? 'Preverjam...' : 'Preveri LTE'}
+              {checkingLte ? t('rechecking') : t('recheckLte')}
             </button>
           )}
           <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
@@ -232,7 +234,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
               disabled={scanning || checkingLte}
               className="w-4 h-4 text-blue-600 rounded border-slate-300 dark:border-slate-600 focus:ring-blue-500 disabled:opacity-50"
             />
-            <span className="select-none">Force scan</span>
+            <span className="select-none">{t('forceScan')}</span>
           </label>
           <button
             onClick={() => handleScan()}
@@ -242,17 +244,17 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
                 ? 'bg-slate-400 dark:bg-slate-600 text-white cursor-not-allowed'
                 : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed'
             }`}
-            title={!forceMode && lteConnected === false ? 'LTE povezava ni stabilna - gumb je onemogočen' : ''}
+            title={!forceMode && lteConnected === false ? t('scanDisabledTitle') : ''}
           >
             {!forceMode && lteConnected === false ? (
               <>
                 <WifiOff className="w-4 h-4" />
-                LTE ni stabilen
+                {t('lteNotStable')}
               </>
             ) : (
               <>
                 <Search className={`w-4 h-4 ${scanning ? 'animate-spin' : ''}`} />
-                {scanning ? 'Skeniram...' : checkingLte ? 'Preverjam LTE...' : 'Skeniraj omrežja'}
+                {scanning ? t('scanningText') : checkingLte ? t('checkingLteText') : t('scanNetworksBtn')}
               </>
             )}
           </button>
@@ -263,23 +265,21 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
         <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg text-red-800 dark:text-red-300 text-sm flex items-start gap-2">
           <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div>
-            <div className="font-semibold mb-1">Skeniranje onemogočeno - LTE ni stabilen</div>
+            <div className="font-semibold mb-1">{t('scanDisabledTitle')}</div>
             <div className="mb-2">
-              WiFi skeniranje zahteva stabilno LTE povezavo (vsaj 3/6 uspešnih pingov).
-              Skeniranje začasno prekine WiFi, zato mora biti LTE na voljo za vzdrževanje povezljivosti.
+              {t('scanDisabledMessage')}
             </div>
             <div className="text-xs opacity-90 mb-2">
-              <strong>Možni vzroki za nestabilen LTE:</strong>
+              <strong>{t('possibleCauses')}</strong>
               <ul className="list-disc ml-4 mt-1">
-                <li>Ni dobroimetja na SIM kartici</li>
-                <li>Slab signal / pokritost</li>
-                <li>Nepravilne APN nastavitve</li>
-                <li>Težave z mobilnim operaterjem</li>
+                <li>{t('causeNoCredit')}</li>
+                <li>{t('causeBadSignal')}</li>
+                <li>{t('causeApn')}</li>
+                <li>{t('causeOperator')}</li>
               </ul>
             </div>
             <div className="text-xs opacity-90">
-              Sistem samodejno preverja LTE povezavo vsakih 30 sekund. Ko bo LTE stabilen, se bo gumb za skeniranje omogočil.
-              {' '}Če imate fizični dostop do naprave, lahko omogočite "Force scan".
+              {t('autoCheckMessage')}
             </div>
           </div>
         </div>
@@ -289,8 +289,8 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
         <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg text-orange-800 dark:text-orange-300 text-sm flex items-start gap-2">
           <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div>
-            <div className="font-semibold mb-1">OPOZORILO: Force scan način</div>
-            <div>Skeniranje bo prekinilo aktivno povezavo! Nadaljujte samo, če imate fizični dostop do naprave ali alternativno povezavo.</div>
+            <div className="font-semibold mb-1">{t('forceScanWarningTitle')}</div>
+            <div>{t('forceScanWarningMessage')}</div>
           </div>
         </div>
       )}
@@ -322,7 +322,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
                         <span className="font-semibold text-slate-900 dark:text-slate-100">{network.ssid}</span>
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        Signal: {network.signal} dBm | Ch: {network.channel} | MAC: {network.address}
+                        {t('signalLabel')}: {network.signal} dBm | {t('channelShort')}: {network.channel} | {t('macLabel')}: {network.address}
                       </div>
                     </div>
                     <button
@@ -334,17 +334,17 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
                       disabled={connecting}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
                     >
-                      Poveži
+                      {t('connect')}
                     </button>
                   </div>
                 </div>
 
                 {isSelected && (
                   <form onSubmit={handleConnect} className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg space-y-3">
-                    <h4 className="font-semibold text-slate-900 dark:text-slate-100">Poveži se z {selectedSsid}</h4>
+                    <h4 className="font-semibold text-slate-900 dark:text-slate-100">{t('connectTo').replace('{ssid}', selectedSsid)}</h4>
                     <div>
                       <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Geslo {!isSecured && <span className="text-slate-500">(opcijsko za odprta omrežja)</span>}
+                        {t('password')} {!isSecured && <span className="text-slate-500">{t('passwordOptional')}</span>}
                       </label>
                       <input
                         id="password"
@@ -352,12 +352,12 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                        placeholder={isSecured ? "Vnesite geslo WiFi omrežja" : "Pustite prazno za odprta omrežja"}
+                        placeholder={isSecured ? t('enterPassword') : t('emptyForOpen')}
                         autoFocus
                       />
                     </div>
                     <div className="text-xs text-slate-600 dark:text-slate-400 p-2 bg-slate-50 dark:bg-slate-800/50 rounded border border-slate-200 dark:border-slate-700">
-                      <strong>Napomba:</strong> Povezava bo shranjena v MikroTik connect-list za samodejno povezovanje, ko bo omrežje v dosegu. Če ne veste ali je omrežje zaščiteno, poskusite brez gesla.
+                      {t('connectNote')}
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -365,7 +365,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
                         disabled={connecting}
                         className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
-                        {connecting ? 'Povezujem...' : 'Poveži'}
+                        {connecting ? t('connectingBtn') : t('connectBtn')}
                       </button>
                       <button
                         type="button"
@@ -375,7 +375,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
                         }}
                         className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
                       >
-                        Prekliči
+                        {t('cancelBtn')}
                       </button>
                     </div>
                   </form>
@@ -387,7 +387,7 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
       )}
 
       {networks.length === 0 && !scanning && !error && (
-        <p className="text-center py-8 text-slate-600 dark:text-slate-400">Omrežij ni najdenih. Klikni Skeniraj za iskanje WiFi omrežij.</p>
+        <p className="text-center py-8 text-slate-600 dark:text-slate-400">{t('noNetworksFoundText')}</p>
       )}
 
       {toast && (
