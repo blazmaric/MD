@@ -118,7 +118,7 @@ export const api = {
       return apiFetch(`/wifi/scan-results?${query.toString()}`);
     },
 
-    connect: (ssid: string, password: string) =>
+    connect: (ssid: string, password?: string) =>
       apiFetch('/wifi/connect', {
         method: 'POST',
         body: JSON.stringify({ ssid, password }),

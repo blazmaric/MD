@@ -161,9 +161,12 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
       const isSecured = network?.security === 'secured';
 
       // Only send password if network is secured or if password is provided
-      const passwordToSend = isSecured || password ? password : undefined;
+      if (isSecured || password) {
+        await api.wifi.connect(selectedSsid, password);
+      } else {
+        await api.wifi.connect(selectedSsid);
+      }
 
-      await api.wifi.connect(selectedSsid, passwordToSend);
       const msg = `Uspešno povezan z ${selectedSsid}!`;
       setSuccess(msg);
       showToast(msg, 'success');
