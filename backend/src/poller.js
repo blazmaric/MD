@@ -74,6 +74,15 @@ async function collectSnapshot() {
         activeInterface = route.interface;
       }
 
+      console.log('Route debug:', {
+        gateway: route.gateway,
+        'immediate-gw': route['immediate-gw'],
+        interface: route.interface,
+        activeInterface,
+        expectedLTE: config.mikrotik.interfaces.lte,
+        expectedWLAN: config.mikrotik.interfaces.wlan
+      });
+
       if (activeInterface) {
         if (activeInterface === config.mikrotik.interfaces.lte) {
           snapshot.gateway_type = 'LTE';
