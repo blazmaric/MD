@@ -649,6 +649,10 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
   try {
     console.log(`[connectWifi] Connecting to SSID: ${ssid}, password: ${password ? 'yes' : 'no'}, saveProfile: ${saveProfile}`);
 
+    // Wait a bit for interface to stabilize after scanning
+    console.log(`[connectWifi] Waiting for interface to stabilize...`);
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
     // Step 1: Create or update security profile if password is provided
     let securityProfileName = 'default';
     if (password) {
@@ -718,8 +722,8 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
         });
       } else {
         console.log(`[connectWifi] Creating new connect-list entry for ${ssid}`);
-        await mtFetch('/rest/interface/wireless/connect-list', {
-          method: 'PUT',
+        await mtFetch('/rest/interface/wireless/connect-list/add', {
+          method: 'POST',
           body: JSON.stringify(connectListData)
         });
       }
