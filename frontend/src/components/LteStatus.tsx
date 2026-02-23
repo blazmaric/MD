@@ -24,6 +24,7 @@ export default function LteStatus({ snapshot, lteConnected }: LteStatusProps) {
 
   const isLteActive = lteConnected === true;
   const isPrimaryGateway = snapshot.gateway_type === 'LTE';
+  const shouldShowPrimaryBadge = isPrimaryGateway && isLteActive;
 
   function getSignalQuality(rsrp?: number | string | null): { label: string; color: string } {
     const rsrpNum = typeof rsrp === 'number' ? rsrp : (typeof rsrp === 'string' && rsrp !== '' ? parseFloat(rsrp) : null);
@@ -50,7 +51,7 @@ export default function LteStatus({ snapshot, lteConnected }: LteStatusProps) {
         </div>
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('lteStatus')}</h3>
-          {isPrimaryGateway && (
+          {shouldShowPrimaryBadge && (
             <div className="flex items-center gap-1 mt-1">
               <Star className="w-3.5 h-3.5 text-yellow-500 dark:text-yellow-400 fill-yellow-500 dark:fill-yellow-400" />
               <p className="text-xs text-yellow-700 dark:text-yellow-400 font-bold uppercase tracking-wide">Primarni Gateway</p>

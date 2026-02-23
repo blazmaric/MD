@@ -5,7 +5,6 @@ import { useLanguage } from '../LanguageContext';
 import type { User, Snapshot } from '../types';
 import SummaryCards from './SummaryCards';
 import LogViewer from './LogViewer';
-import PingTester from './PingTester';
 import SmsManager from './SmsManager';
 import InterfaceList from './InterfaceList';
 import LteStatus from './LteStatus';
@@ -95,13 +94,8 @@ export default function Dashboard({ user }: DashboardProps) {
         onReboot={user.is_admin ? () => setShowRebootDialog(true) : undefined}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="w-full">
-          <InterfaceList />
-        </div>
-        <div className="w-full">
-          <PingTester />
-        </div>
+      <div className="w-full">
+        <InterfaceList />
       </div>
 
       <div className="w-full">
