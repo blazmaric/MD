@@ -80,25 +80,25 @@ export default function LteStatus({ snapshot }: LteStatusProps) {
           <div className="flex justify-between items-center">
             <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">RSRP</span>
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              {snapshot.lte_rsrp ? `${snapshot.lte_rsrp} dBm` : 'N/A'}
+              {snapshot.lte_rsrp != null && snapshot.lte_rsrp !== '' ? `${snapshot.lte_rsrp} dBm` : 'N/A'}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">RSRQ</span>
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              {snapshot.lte_rsrq ? `${snapshot.lte_rsrq} dB` : 'N/A'}
+              {snapshot.lte_rsrq != null && snapshot.lte_rsrq !== '' ? `${snapshot.lte_rsrq} dB` : 'N/A'}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">RSSI</span>
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              {snapshot.lte_rssi ? `${snapshot.lte_rssi} dBm` : 'N/A'}
+              {snapshot.lte_rssi != null && snapshot.lte_rssi !== '' ? `${snapshot.lte_rssi} dBm` : 'N/A'}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">SINR</span>
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              {snapshot.lte_sinr ? `${snapshot.lte_sinr} dB` : 'N/A'}
+              {snapshot.lte_sinr != null && snapshot.lte_sinr !== '' ? `${snapshot.lte_sinr} dB` : 'N/A'}
             </span>
           </div>
         </div>
