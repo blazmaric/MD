@@ -1077,17 +1077,20 @@ async function getSavedNetworks(interfaceName = 'wlan24') {
         const profileName = entry['security-profile'] || 'default';
         const profile = profileMap[profileName];
 
+        // Check if this is the currently active network
+        const isActive = profileName === activeProfile;
+
         return {
           id: profile?.id || entry['.id'], // Use security profile ID for switching
           ssid: entry.ssid || '',
           macAddress: entry['mac-address'] || '',
-          connected: entry.connect === 'yes',
+          connected: isActive, // Only mark as connected if it's the ACTIVE profile
           password: profile?.password || '',
           securityProfile: profileName
         };
       });
 
-    console.log(`[getSavedNetworks] Processed ${networks.length} networks`);
+    console.log(`[getSavedNetworks] Processed ${networks.length} networks (active: ${activeProfile})`);
     return networks;
   } catch (err) {
     console.error('[getSavedNetworks] Failed:', err.message);
