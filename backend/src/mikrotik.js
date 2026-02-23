@@ -53,6 +53,28 @@ export async function mtFetch(path, options = {}) {
   }
 }
 
+// Helper function to retry operations with exponential backoff
+async function mtFetchWithRetry(path, options = {}, maxRetries = 3, baseDelay = 2000) {
+  let lastError;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        const delay = baseDelay * Math.pow(2, attempt - 1);
+        console.log(`[mtFetchWithRetry] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms delay`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      return await mtFetch(path, options);
+    } catch (err) {
+      lastError = err;
+      console.warn(`[mtFetchWithRetry] Attempt ${attempt + 1} failed:`, err.message);
+      if (attempt === maxRetries - 1 || !err.message.includes('timeout')) {
+        break;
+      }
+    }
+  }
+  throw lastError;
+}
+
 export async function getDefaultRoute() {
   try {
     const routes = await mtFetch('/rest/ip/route?dst-address=0.0.0.0/0&active=true');
@@ -649,9 +671,9 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
   try {
     console.log(`[connectWifi] Connecting to SSID: ${ssid}, password: ${password ? 'yes' : 'no'}, saveProfile: ${saveProfile}`);
 
-    // Wait a bit for interface to stabilize after scanning
-    console.log(`[connectWifi] Waiting for interface to stabilize...`);
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Wait longer for interface to stabilize after scanning (8 seconds)
+    console.log(`[connectWifi] Waiting 8 seconds for interface to stabilize after scan...`);
+    await new Promise(resolve => setTimeout(resolve, 8000));
 
     // Step 1: Create or update security profile if password is provided
     let securityProfileName = 'default';
@@ -660,12 +682,12 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       console.log(`[connectWifi] Setting up security profile: ${securityProfileName}`);
 
       try {
-        // Check if profile exists
-        const profiles = await mtFetch(`/rest/interface/wireless/security-profiles?name=${securityProfileName}`);
+        // Check if profile exists (with retry)
+        const profiles = await mtFetchWithRetry(`/rest/interface/wireless/security-profiles?name=${securityProfileName}`);
 
         if (profiles && profiles[0]) {
-          // Update existing profile
-          await mtFetch(`/rest/interface/wireless/security-profiles/${profiles[0]['.id']}`, {
+          // Update existing profile (with retry)
+          await mtFetchWithRetry(`/rest/interface/wireless/security-profiles/${profiles[0]['.id']}`, {
             method: 'PATCH',
             body: JSON.stringify({
               'mode': 'dynamic-keys',
@@ -676,8 +698,8 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
           });
           console.log(`[connectWifi] Updated existing security profile: ${securityProfileName}`);
         } else {
-          // Create new profile
-          await mtFetch('/rest/interface/wireless/security-profiles', {
+          // Create new profile (with retry)
+          await mtFetchWithRetry('/rest/interface/wireless/security-profiles', {
             method: 'PUT',
             body: JSON.stringify({
               'name': securityProfileName,
@@ -699,8 +721,8 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
     console.log(`[connectWifi] Adding ${ssid} to connect-list with connect=yes`);
 
     try {
-      // Check if SSID already exists in connect-list
-      const existingProfiles = await mtFetch(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
+      // Check if SSID already exists in connect-list (with retry)
+      const existingProfiles = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
       const existingProfile = existingProfiles.find(p => p.ssid === ssid);
 
       // Set highest priority (0) for this profile and lower others
@@ -716,13 +738,13 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
 
       if (existingProfile) {
         console.log(`[connectWifi] Updating existing connect-list entry for ${ssid}`);
-        await mtFetch(`/rest/interface/wireless/connect-list/${existingProfile['.id']}`, {
+        await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${existingProfile['.id']}`, {
           method: 'PATCH',
           body: JSON.stringify(connectListData)
         });
       } else {
         console.log(`[connectWifi] Creating new connect-list entry for ${ssid}`);
-        await mtFetch('/rest/interface/wireless/connect-list/add', {
+        await mtFetchWithRetry('/rest/interface/wireless/connect-list/add', {
           method: 'POST',
           body: JSON.stringify(connectListData)
         });
@@ -730,11 +752,11 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
 
       // Set all other profiles for this interface to connect=no
       console.log(`[connectWifi] Disabling other connect-list entries for ${interfaceName}`);
-      const allProfiles = await mtFetch(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
+      const allProfiles = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
       for (const profile of allProfiles) {
         if (profile.ssid !== ssid) {
           try {
-            await mtFetch(`/rest/interface/wireless/connect-list/${profile['.id']}`, {
+            await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${profile['.id']}`, {
               method: 'PATCH',
               body: JSON.stringify({ 'connect': 'no' })
             });
