@@ -685,6 +685,25 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
     console.log(`[connectWifi] Waiting 8 seconds for interface to stabilize after scan...`);
     await new Promise(resolve => setTimeout(resolve, 8000));
 
+    // Normalize SSID by converting hex UTF-8 sequences to actual characters
+    // MikroTik SSH shows UTF-8 bytes as hex strings (e.g., "E28099" instead of the actual character)
+    let normalizedSsid = ssid;
+    const hexPattern = /([0-9A-F]{6})/g;
+    normalizedSsid = normalizedSsid.replace(hexPattern, (match) => {
+      try {
+        const hexBuffer = Buffer.from(match, 'hex');
+        const char = hexBuffer.toString('utf8');
+        if (char.length > 0 && char.charCodeAt(0) > 31) {
+          return char;
+        }
+        return match;
+      } catch (e) {
+        return match;
+      }
+    });
+    console.log(`[connectWifi] Original SSID: "${ssid}"`);
+    console.log(`[connectWifi] Normalized SSID: "${normalizedSsid}"`);
+
     // Step 1: Create or update security profile if password is provided
     let securityProfileName = 'default';
     if (password) {
@@ -754,10 +773,7 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
         }
       }
 
-      // Now create a fresh entry for the new SSID
-      // Ensure SSID is properly UTF-8 encoded
-      const normalizedSsid = Buffer.from(ssid, 'utf8').toString('utf8');
-
+      // Now create a fresh entry for the new SSID using the normalized SSID
       const connectListData = {
         'interface': interfaceName,
         'security-profile': securityProfileName,
@@ -765,7 +781,7 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
         'ssid': normalizedSsid
       };
 
-      console.log(`[connectWifi] Creating new connect-list entry for ${ssid}`);
+      console.log(`[connectWifi] Creating new connect-list entry for normalized SSID: "${normalizedSsid}"`);
       console.log(`[connectWifi] Normalized SSID bytes:`, Buffer.from(normalizedSsid, 'utf8').toString('hex'));
       console.log(`[connectWifi] Create data:`, JSON.stringify(connectListData));
       await mtFetchWithRetry('/rest/interface/wireless/connect-list/add', {
@@ -808,17 +824,18 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
           const isRunning = status[0].running === 'true';
 
           console.log(`[connectWifi] Attempt ${i + 1}/${maxAttempts}: SSID="${currentSsid}", running=${isRunning}`);
-          console.log(`[connectWifi] Expected SSID: "${ssid}"`);
-          console.log(`[connectWifi] Expected SSID bytes:`, Buffer.from(ssid, 'utf8').toString('hex'));
+          console.log(`[connectWifi] Expected normalized SSID: "${normalizedSsid}"`);
+          console.log(`[connectWifi] Expected SSID bytes:`, Buffer.from(normalizedSsid, 'utf8').toString('hex'));
           console.log(`[connectWifi] Current SSID bytes:`, Buffer.from(currentSsid || '', 'utf8').toString('hex'));
 
           // Compare SSIDs byte-by-byte to handle UTF-8 encoding differences
-          const expectedBytes = Buffer.from(ssid, 'utf8').toString('hex');
+          // Use the normalized SSID (with actual Unicode characters) for comparison
+          const expectedBytes = Buffer.from(normalizedSsid, 'utf8').toString('hex');
           const currentBytes = Buffer.from(currentSsid || '', 'utf8').toString('hex');
 
           if (expectedBytes === currentBytes && isRunning) {
             connected = true;
-            console.log(`[connectWifi] Successfully connected to ${ssid} after ${i + 1} seconds`);
+            console.log(`[connectWifi] Successfully connected to ${normalizedSsid} after ${i + 1} seconds`);
             break;
           }
         }
