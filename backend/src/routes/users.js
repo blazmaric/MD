@@ -3,7 +3,7 @@ import { query } from '../db.js';
 
 export default async function usersRoutes(fastify) {
   fastify.get('/users', {
-    preHandler: [authenticateMiddleware, requireAdmin()]
+    preHandler: [authenticateMiddleware, requireAdmin]
   }, async () => {
     const result = await query(`
       SELECT id, username, is_admin, is_active, created_at, updated_at
@@ -15,7 +15,7 @@ export default async function usersRoutes(fastify) {
   });
 
   fastify.post('/users', {
-    preHandler: [authenticateMiddleware, requireAdmin()]
+    preHandler: [authenticateMiddleware, requireAdmin]
   }, async (request, reply) => {
     const { username, password, is_admin = false, is_active = true } = request.body;
 
@@ -44,7 +44,7 @@ export default async function usersRoutes(fastify) {
   });
 
   fastify.patch('/users/:id', {
-    preHandler: [authenticateMiddleware, requireAdmin()]
+    preHandler: [authenticateMiddleware, requireAdmin]
   }, async (request, reply) => {
     const { id } = request.params;
     const { password, is_admin, is_active } = request.body;
@@ -95,7 +95,7 @@ export default async function usersRoutes(fastify) {
   });
 
   fastify.delete('/users/:id', {
-    preHandler: [authenticateMiddleware, requireAdmin()]
+    preHandler: [authenticateMiddleware, requireAdmin]
   }, async (request, reply) => {
     const { id } = request.params;
     const { permanent = false } = request.query;
