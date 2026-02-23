@@ -746,7 +746,7 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       }
     }
 
-    // Step 2: Clean up and add to connect-list
+    // Step 2: Add to connect-list (keep existing entries)
     console.log(`[connectWifi] Managing connect-list for ${ssid}`);
     console.log(`[connectWifi] SSID bytes:`, Buffer.from(ssid, 'utf8').toString('hex'));
 
@@ -755,42 +755,54 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       const existingProfiles = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
       console.log(`[connectWifi] Found ${existingProfiles.length} existing connect-list entries`);
 
-      // Log existing SSIDs to see what MikroTik actually has
+      // Check if this SSID already exists in the connect-list
+      const normalizedExpectedBytes = Buffer.from(normalizedSsid, 'utf8').toString('hex');
+      let existingEntry = null;
+
       for (const profile of existingProfiles) {
         console.log(`[connectWifi] Existing SSID: "${profile.ssid}", bytes:`, Buffer.from(profile.ssid || '', 'utf8').toString('hex'));
-      }
 
-      // Delete ALL existing entries for this interface to avoid duplicates
-      console.log(`[connectWifi] Removing all existing connect-list entries for ${interfaceName}`);
-      for (const profile of existingProfiles) {
-        try {
-          await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${profile['.id']}`, {
-            method: 'DELETE'
-          });
-          console.log(`[connectWifi] Deleted connect-list entry: ${profile.ssid || profile['.id']}`);
-        } catch (err) {
-          console.warn(`[connectWifi] Failed to delete entry ${profile.ssid}:`, err.message);
+        // Compare normalized SSIDs
+        const normalizedProfileSsid = profile.ssid || '';
+        const profileBytes = Buffer.from(normalizedProfileSsid, 'utf8').toString('hex');
+
+        if (profileBytes === normalizedExpectedBytes) {
+          existingEntry = profile;
+          console.log(`[connectWifi] Found existing entry for "${normalizedSsid}"`);
+          break;
         }
       }
 
-      // Now create a fresh entry for the new SSID using the normalized SSID
-      const connectListData = {
-        'interface': interfaceName,
-        'security-profile': securityProfileName,
-        'connect': 'yes',
-        'ssid': normalizedSsid
-      };
+      if (existingEntry) {
+        // Update existing entry with new password if needed
+        console.log(`[connectWifi] Updating existing connect-list entry for "${normalizedSsid}"`);
+        await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${existingEntry['.id']}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            'security-profile': securityProfileName,
+            'connect': 'yes'
+          })
+        });
+      } else {
+        // Create new entry for the SSID
+        const connectListData = {
+          'interface': interfaceName,
+          'security-profile': securityProfileName,
+          'connect': 'yes',
+          'ssid': normalizedSsid
+        };
 
-      console.log(`[connectWifi] Creating new connect-list entry for normalized SSID: "${normalizedSsid}"`);
-      console.log(`[connectWifi] Normalized SSID bytes:`, Buffer.from(normalizedSsid, 'utf8').toString('hex'));
-      console.log(`[connectWifi] Create data:`, JSON.stringify(connectListData));
-      await mtFetchWithRetry('/rest/interface/wireless/connect-list/add', {
-        method: 'POST',
-        body: JSON.stringify(connectListData)
-      });
+        console.log(`[connectWifi] Creating new connect-list entry for normalized SSID: "${normalizedSsid}"`);
+        console.log(`[connectWifi] Normalized SSID bytes:`, Buffer.from(normalizedSsid, 'utf8').toString('hex'));
+        console.log(`[connectWifi] Create data:`, JSON.stringify(connectListData));
+        await mtFetchWithRetry('/rest/interface/wireless/connect-list/add', {
+          method: 'POST',
+          body: JSON.stringify(connectListData)
+        });
+      }
     } catch (err) {
-      console.error('[connectWifi] Failed to add to connect-list:', err.message);
-      throw new Error('Failed to add to connect-list: ' + err.message);
+      console.error('[connectWifi] Failed to manage connect-list:', err.message);
+      throw new Error('Failed to manage connect-list: ' + err.message);
     }
 
     // Step 3: Set interface to station mode with blank SSID
@@ -819,6 +831,8 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
 
       try {
         const status = await mtFetch(`/rest/interface/wireless/${interfaceName}`);
+        console.log(`[connectWifi] Status check ${i + 1}/${maxAttempts} - Raw response:`, JSON.stringify(status));
+
         if (status && status[0]) {
           const currentSsid = status[0].ssid;
           const isRunning = status[0].running === 'true';
@@ -826,6 +840,12 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
           console.log(`[connectWifi] Attempt ${i + 1}/${maxAttempts}: SSID="${currentSsid}", running=${isRunning}`);
           console.log(`[connectWifi] Expected original SSID: "${ssid}"`);
           console.log(`[connectWifi] Expected normalized SSID: "${normalizedSsid}"`);
+
+          // If SSID is empty, interface hasn't connected yet - continue waiting
+          if (!currentSsid || currentSsid.trim() === '') {
+            console.log(`[connectWifi] Interface SSID is empty, waiting...`);
+            continue;
+          }
 
           // Normalize the current SSID as well, in case it comes back with hex sequences
           let normalizedCurrentSsid = currentSsid;
@@ -857,14 +877,22 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
 
           const ssidMatches = (expectedBytes === currentBytes) || (originalExpectedBytes === originalCurrentBytes);
 
+          console.log(`[connectWifi] SSID match check: ${ssidMatches} (expected: ${expectedBytes} vs current: ${currentBytes})`);
+
           if (ssidMatches && isRunning) {
             connected = true;
-            console.log(`[connectWifi] Successfully connected to ${normalizedSsid} after ${i + 1} seconds`);
+            console.log(`[connectWifi] ✅ Successfully connected to ${normalizedSsid} after ${i + 1} seconds`);
             break;
+          } else if (ssidMatches && !isRunning) {
+            console.log(`[connectWifi] SSID matches but interface not running yet, waiting...`);
+          } else {
+            console.log(`[connectWifi] SSID doesn't match yet (expected "${normalizedSsid}", got "${currentSsid}"), waiting...`);
           }
+        } else {
+          console.warn(`[connectWifi] Invalid status response at attempt ${i + 1}`);
         }
       } catch (err) {
-        console.warn(`[connectWifi] Status check failed:`, err.message);
+        console.error(`[connectWifi] Status check ${i + 1} failed:`, err.message);
       }
     }
 
