@@ -699,11 +699,15 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       const existingProfiles = await mtFetch(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
       const existingProfile = existingProfiles.find(p => p.ssid === ssid);
 
+      // Set highest priority (0) for this profile and lower others
+      // Lower number = higher priority
       const connectListData = {
         'ssid': ssid,
         'interface': interfaceName,
         'security-profile': securityProfileName,
-        'connect': 'yes'  // This is the "Connect" checkbox in Winbox!
+        'connect': 'yes',  // This is the "Connect" checkbox in Winbox!
+        'default-authentication': 'yes',
+        'default-forwarding': 'yes'
       };
 
       if (existingProfile) {
@@ -719,19 +723,36 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
           body: JSON.stringify(connectListData)
         });
       }
+
+      // Set all other profiles for this interface to connect=no
+      console.log(`[connectWifi] Disabling other connect-list entries for ${interfaceName}`);
+      const allProfiles = await mtFetch(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
+      for (const profile of allProfiles) {
+        if (profile.ssid !== ssid) {
+          try {
+            await mtFetch(`/rest/interface/wireless/connect-list/${profile['.id']}`, {
+              method: 'PATCH',
+              body: JSON.stringify({ 'connect': 'no' })
+            });
+            console.log(`[connectWifi] Disabled connect for SSID: ${profile.ssid}`);
+          } catch (err) {
+            console.warn(`[connectWifi] Failed to disable profile ${profile.ssid}:`, err.message);
+          }
+        }
+      }
     } catch (err) {
       console.error('[connectWifi] Failed to add to connect-list:', err.message);
       throw new Error('Failed to add to connect-list: ' + err.message);
     }
 
-    // Step 3: Ensure interface is in station mode and enabled (but don't set specific SSID)
-    // The interface will automatically connect based on connect-list entries
-    console.log(`[connectWifi] Ensuring interface ${interfaceName} is in station mode`);
+    // Step 3: Set interface to station mode with blank SSID
+    console.log(`[connectWifi] Setting interface ${interfaceName} to station mode with blank SSID`);
     try {
       await mtFetch(`/rest/interface/wireless/${interfaceName}`, {
         method: 'PATCH',
         body: JSON.stringify({
           'mode': 'station',
+          'ssid': '',
           'disabled': 'no'
         })
       });
@@ -740,10 +761,40 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       // Don't throw - connect-list should still work
     }
 
-    console.log(`[connectWifi] Successfully added ${ssid} to connect-list. Interface will auto-connect.`);
+    // Step 4: Wait for connection (check status for up to 30 seconds)
+    console.log(`[connectWifi] Waiting for connection to ${ssid}...`);
+    const maxAttempts = 30;
+    let connected = false;
+
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      try {
+        const status = await mtFetch(`/rest/interface/wireless/${interfaceName}`);
+        if (status && status[0]) {
+          const currentSsid = status[0].ssid;
+          const isRunning = status[0].running === 'true';
+
+          console.log(`[connectWifi] Attempt ${i + 1}/${maxAttempts}: SSID="${currentSsid}", running=${isRunning}`);
+
+          if (currentSsid === ssid && isRunning) {
+            connected = true;
+            console.log(`[connectWifi] Successfully connected to ${ssid} after ${i + 1} seconds`);
+            break;
+          }
+        }
+      } catch (err) {
+        console.warn(`[connectWifi] Status check failed:`, err.message);
+      }
+    }
+
+    if (!connected) {
+      throw new Error(`Failed to connect to ${ssid} within 30 seconds. Check signal strength and password.`);
+    }
+
     return {
       success: true,
-      message: `Added ${ssid} to connect list. Interface will connect automatically.`
+      message: `Successfully connected to ${ssid}`
     };
   } catch (err) {
     console.error('[connectWifi] Failed to connect WiFi:', err.message);
