@@ -71,12 +71,16 @@ export async function authenticateMiddleware(request, reply) {
   request.user = result.rows[0];
 }
 
-export function requireAdmin() {
-  return async (request, reply) => {
-    if (!request.user.is_admin) {
-      return reply.code(403).send({
-        error: 'Admin privileges required'
-      });
-    }
-  };
+export async function requireAdmin(request, reply) {
+  if (!request.user) {
+    return reply.code(401).send({
+      error: 'Authentication required'
+    });
+  }
+
+  if (!request.user.is_admin) {
+    return reply.code(403).send({
+      error: 'Admin privileges required'
+    });
+  }
 }
