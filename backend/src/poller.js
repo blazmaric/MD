@@ -72,15 +72,19 @@ async function collectSnapshot() {
         activeInterface = route['immediate-gw'].split('%')[1];
       } else if (route.interface) {
         activeInterface = route.interface;
+      } else if (route['gateway-status']) {
+        activeInterface = route['gateway-status'];
       }
 
       console.log('Route debug:', {
         gateway: route.gateway,
         'immediate-gw': route['immediate-gw'],
+        'gateway-status': route['gateway-status'],
         interface: route.interface,
         activeInterface,
         expectedLTE: config.mikrotik.interfaces.lte,
-        expectedWLAN: config.mikrotik.interfaces.wlan
+        expectedWLAN: config.mikrotik.interfaces.wlan,
+        fullRoute: route
       });
 
       if (activeInterface) {
@@ -90,6 +94,13 @@ async function collectSnapshot() {
           snapshot.gateway_type = 'WiFi';
         } else {
           snapshot.gateway_type = 'Unknown';
+        }
+      } else if (route.gateway) {
+        if (route.gateway === config.mikrotik.interfaces.lte || route.gateway.includes('lte')) {
+          snapshot.gateway_type = 'LTE';
+          snapshot.active_uplink = config.mikrotik.interfaces.lte;
+        } else if (route.gateway.includes('wlan') || route.gateway.includes('wifi')) {
+          snapshot.gateway_type = 'WiFi';
         }
       }
     }
