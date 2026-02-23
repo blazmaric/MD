@@ -1042,6 +1042,17 @@ async function getSavedNetworks(interfaceName = 'wlan1') {
   console.log(`[getSavedNetworks] Fetching saved networks for ${interfaceName}`);
 
   try {
+    // First check interface configuration
+    const interfaces = await mtFetchWithRetry('/rest/interface/wireless');
+    const wlanInterface = interfaces.find(i => i.name === interfaceName);
+    if (wlanInterface) {
+      console.log(`[getSavedNetworks] Interface config:`, {
+        ssid: wlanInterface.ssid,
+        mode: wlanInterface.mode,
+        disabled: wlanInterface.disabled
+      });
+    }
+
     // Get all connect-list entries for this interface
     const connectList = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
     console.log(`[getSavedNetworks] Raw response:`, JSON.stringify(connectList));
