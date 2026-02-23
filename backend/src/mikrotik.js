@@ -726,16 +726,28 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       }
     }
 
-    // Step 2: Add to connect-list (this is like checking "Connect" in Winbox)
-    console.log(`[connectWifi] Adding ${ssid} to connect-list with connect=yes`);
+    // Step 2: Clean up and add to connect-list
+    console.log(`[connectWifi] Managing connect-list for ${ssid}`);
 
     try {
-      // Check if SSID already exists in connect-list (with retry)
+      // First, get all existing profiles for this interface
       const existingProfiles = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
-      const existingProfile = existingProfiles.find(p => p.ssid === ssid);
+      console.log(`[connectWifi] Found ${existingProfiles.length} existing connect-list entries`);
 
-      // Minimal connect-list configuration
-      // Using MAC address matching instead of SSID to avoid special character issues
+      // Delete ALL existing entries for this interface to avoid duplicates
+      console.log(`[connectWifi] Removing all existing connect-list entries for ${interfaceName}`);
+      for (const profile of existingProfiles) {
+        try {
+          await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${profile['.id']}`, {
+            method: 'DELETE'
+          });
+          console.log(`[connectWifi] Deleted connect-list entry: ${profile.ssid || profile['.id']}`);
+        } catch (err) {
+          console.warn(`[connectWifi] Failed to delete entry ${profile.ssid}:`, err.message);
+        }
+      }
+
+      // Now create a fresh entry for the new SSID
       const connectListData = {
         'interface': interfaceName,
         'security-profile': securityProfileName,
@@ -743,38 +755,12 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
         'ssid': ssid
       };
 
-      if (existingProfile) {
-        console.log(`[connectWifi] Updating existing connect-list entry for ${ssid}`);
-        console.log(`[connectWifi] Update data:`, JSON.stringify(connectListData));
-        await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${existingProfile['.id']}`, {
-          method: 'PATCH',
-          body: JSON.stringify(connectListData)
-        });
-      } else {
-        console.log(`[connectWifi] Creating new connect-list entry for ${ssid}`);
-        console.log(`[connectWifi] Create data:`, JSON.stringify(connectListData));
-        await mtFetchWithRetry('/rest/interface/wireless/connect-list/add', {
-          method: 'POST',
-          body: JSON.stringify(connectListData)
-        });
-      }
-
-      // Set all other profiles for this interface to connect=no
-      console.log(`[connectWifi] Disabling other connect-list entries for ${interfaceName}`);
-      const allProfiles = await mtFetchWithRetry(`/rest/interface/wireless/connect-list?interface=${interfaceName}`);
-      for (const profile of allProfiles) {
-        if (profile.ssid !== ssid) {
-          try {
-            await mtFetchWithRetry(`/rest/interface/wireless/connect-list/${profile['.id']}`, {
-              method: 'PATCH',
-              body: JSON.stringify({ 'connect': 'no' })
-            });
-            console.log(`[connectWifi] Disabled connect for SSID: ${profile.ssid}`);
-          } catch (err) {
-            console.warn(`[connectWifi] Failed to disable profile ${profile.ssid}:`, err.message);
-          }
-        }
-      }
+      console.log(`[connectWifi] Creating new connect-list entry for ${ssid}`);
+      console.log(`[connectWifi] Create data:`, JSON.stringify(connectListData));
+      await mtFetchWithRetry('/rest/interface/wireless/connect-list/add', {
+        method: 'POST',
+        body: JSON.stringify(connectListData)
+      });
     } catch (err) {
       console.error('[connectWifi] Failed to add to connect-list:', err.message);
       throw new Error('Failed to add to connect-list: ' + err.message);
