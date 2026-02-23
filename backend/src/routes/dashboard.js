@@ -6,7 +6,7 @@ export default async function dashboardRoutes(fastify) {
     preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     try {
-      const snapshotResult = await pool.query('SELECT * FROM snapshot ORDER BY snapshot_ts DESC LIMIT 1');
+      const snapshotResult = await pool.query('SELECT * FROM snapshots ORDER BY snapshot_ts DESC LIMIT 1');
       const lteCheckResult = await pool.query('SELECT connected, checked_at FROM lte_check_cache ORDER BY checked_at DESC LIMIT 1');
 
       const snapshot = snapshotResult.rows[0] || null;
