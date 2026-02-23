@@ -685,24 +685,8 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
     console.log(`[connectWifi] Waiting 8 seconds for interface to stabilize after scan...`);
     await new Promise(resolve => setTimeout(resolve, 8000));
 
-    // Normalize SSID by converting hex UTF-8 sequences to actual characters
-    // MikroTik SSH shows UTF-8 bytes as hex strings (e.g., "E28099" instead of the actual character)
-    let normalizedSsid = ssid;
-    const hexPattern = /([0-9A-F]{6})/g;
-    normalizedSsid = normalizedSsid.replace(hexPattern, (match) => {
-      try {
-        const hexBuffer = Buffer.from(match, 'hex');
-        const char = hexBuffer.toString('utf8');
-        if (char.length > 0 && char.charCodeAt(0) > 31) {
-          return char;
-        }
-        return match;
-      } catch (e) {
-        return match;
-      }
-    });
-    console.log(`[connectWifi] Original SSID: "${ssid}"`);
-    console.log(`[connectWifi] Normalized SSID: "${normalizedSsid}"`);
+    // Use original SSID as-is - MikroTik handles UTF-8 encoding properly via REST API
+    console.log(`[connectWifi] Using SSID: "${ssid}"`);
 
     // Step 1: Create or update security profile if password is provided
     let securityProfileName = 'default';
@@ -753,7 +737,7 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
     let bestMacAddress = null;
     try {
       // Scan to find the best AP for this SSID
-      console.log(`[connectWifi] Scanning for best AP with SSID "${normalizedSsid}"...`);
+      console.log(`[connectWifi] Scanning for best AP with SSID "${ssid}"...`);
       const scanResult = await mtFetch('/rest/interface/wireless/scan', {
         method: 'POST',
         body: JSON.stringify({
@@ -766,7 +750,7 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       const matchingAPs = [];
       for (const ap of scanResult) {
         const apSsid = ap.ssid || '';
-        if (apSsid === normalizedSsid || apSsid === ssid) {
+        if (apSsid === ssid) {
           const signal = parseInt(ap.signal || '-999');
           matchingAPs.push({
             mac: ap.address,
@@ -782,9 +766,9 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
 
       if (matchingAPs.length > 0) {
         bestMacAddress = matchingAPs[0].mac;
-        console.log(`[connectWifi] Best AP for "${normalizedSsid}": ${bestMacAddress} (${matchingAPs[0].signal} dBm)`);
+        console.log(`[connectWifi] Best AP for "${ssid}": ${bestMacAddress} (${matchingAPs[0].signal} dBm)`);
       } else {
-        console.warn(`[connectWifi] No APs found for "${normalizedSsid}", will create entry without MAC filter`);
+        console.warn(`[connectWifi] No APs found for "${ssid}", will create entry without MAC filter`);
       }
     } catch (scanErr) {
       console.warn(`[connectWifi] Failed to scan for best AP:`, scanErr.message);
@@ -800,19 +784,19 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
       console.log(`[connectWifi] Keeping all connect-list entries enabled for automatic switching`);
 
       // Check if this SSID+MAC already exists in the connect-list
-      const normalizedExpectedBytes = Buffer.from(normalizedSsid, 'utf8').toString('hex');
+      const expectedBytes = Buffer.from(ssid, 'utf8').toString('hex');
       let existingEntry = null;
 
       for (const profile of existingProfiles) {
-        const normalizedProfileSsid = profile.ssid || '';
-        const profileBytes = Buffer.from(normalizedProfileSsid, 'utf8').toString('hex');
+        const profileSsid = profile.ssid || '';
+        const profileBytes = Buffer.from(profileSsid, 'utf8').toString('hex');
         const profileMac = profile['mac-address'] || '';
 
         // Match by SSID and MAC (if MAC is set)
-        if (profileBytes === normalizedExpectedBytes) {
+        if (profileBytes === expectedBytes) {
           if (!bestMacAddress || !profileMac || profileMac === bestMacAddress || profileMac === '00:00:00:00:00:00') {
             existingEntry = profile;
-            console.log(`[connectWifi] Found existing entry for "${normalizedSsid}" with MAC: ${profileMac}`);
+            console.log(`[connectWifi] Found existing entry for "${ssid}" with MAC: ${profileMac}`);
             break;
           }
         }
@@ -820,7 +804,7 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
 
       if (existingEntry) {
         // Update existing entry
-        console.log(`[connectWifi] Updating existing connect-list entry for "${normalizedSsid}"`);
+        console.log(`[connectWifi] Updating existing connect-list entry for "${ssid}"`);
         const updateData = {
           'security-profile': securityProfileName,
           'connect': 'yes'
@@ -841,7 +825,7 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
           'interface': interfaceName,
           'security-profile': securityProfileName,
           'connect': 'yes',
-          'ssid': normalizedSsid
+          'ssid': ssid
         };
 
         // Add MAC address filter if we found the best AP
@@ -850,8 +834,8 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
           console.log(`[connectWifi] Adding MAC address filter: ${bestMacAddress}`);
         }
 
-        console.log(`[connectWifi] Creating new connect-list entry for normalized SSID: "${normalizedSsid}"`);
-        console.log(`[connectWifi] Normalized SSID bytes:`, Buffer.from(normalizedSsid, 'utf8').toString('hex'));
+        console.log(`[connectWifi] Creating new connect-list entry for SSID: "${ssid}"`);
+        console.log(`[connectWifi] SSID bytes:`, Buffer.from(ssid, 'utf8').toString('hex'));
         console.log(`[connectWifi] Create data:`, JSON.stringify(connectListData));
         await mtFetchWithRetry('/rest/interface/wireless/connect-list/add', {
           method: 'POST',
@@ -910,8 +894,7 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
           const isRunning = statusData.running === 'true';
 
           console.log(`[connectWifi] Attempt ${i + 1}/${maxAttempts}: SSID="${currentSsid}", running=${isRunning}`);
-          console.log(`[connectWifi] Expected original SSID: "${ssid}"`);
-          console.log(`[connectWifi] Expected normalized SSID: "${normalizedSsid}"`);
+          console.log(`[connectWifi] Expected SSID: "${ssid}"`);
 
           // If interface is running, it's connected (even if SSID field is empty in config)
           if (isRunning) {
@@ -964,46 +947,25 @@ export async function connectWifi(interfaceName, ssid, password, saveProfile = t
             continue;
           }
 
-          // Normalize the current SSID as well, in case it comes back with hex sequences
-          let normalizedCurrentSsid = currentSsid;
-          if (currentSsid) {
-            normalizedCurrentSsid = currentSsid.replace(hexPattern, (match) => {
-              try {
-                const hexBuffer = Buffer.from(match, 'hex');
-                const char = hexBuffer.toString('utf8');
-                if (char.length > 0 && char.charCodeAt(0) > 31) {
-                  return char;
-                }
-                return match;
-              } catch (e) {
-                return match;
-              }
-            });
-          }
+          console.log(`[connectWifi] Expected SSID bytes:`, Buffer.from(ssid, 'utf8').toString('hex'));
+          console.log(`[connectWifi] Current SSID bytes:`, Buffer.from(currentSsid || '', 'utf8').toString('hex'));
 
-          console.log(`[connectWifi] Normalized current SSID: "${normalizedCurrentSsid}"`);
-          console.log(`[connectWifi] Expected SSID bytes:`, Buffer.from(normalizedSsid, 'utf8').toString('hex'));
-          console.log(`[connectWifi] Current SSID bytes:`, Buffer.from(normalizedCurrentSsid || '', 'utf8').toString('hex'));
+          // Compare SSIDs byte-by-byte to handle UTF-8 encoding
+          const expectedBytes = Buffer.from(ssid, 'utf8').toString('hex');
+          const currentBytes = Buffer.from(currentSsid || '', 'utf8').toString('hex');
 
-          // Compare SSIDs byte-by-byte to handle UTF-8 encoding differences
-          // Compare both original and normalized SSIDs to handle both cases
-          const expectedBytes = Buffer.from(normalizedSsid, 'utf8').toString('hex');
-          const currentBytes = Buffer.from(normalizedCurrentSsid || '', 'utf8').toString('hex');
-          const originalExpectedBytes = Buffer.from(ssid, 'utf8').toString('hex');
-          const originalCurrentBytes = Buffer.from(currentSsid || '', 'utf8').toString('hex');
+          const ssidMatches = expectedBytes === currentBytes;
 
-          const ssidMatches = (expectedBytes === currentBytes) || (originalExpectedBytes === originalCurrentBytes);
-
-          console.log(`[connectWifi] SSID match check: ${ssidMatches} (expected: ${expectedBytes} vs current: ${currentBytes})`);
+          console.log(`[connectWifi] SSID match check: ${ssidMatches}`);
 
           if (ssidMatches && isRunning) {
             connected = true;
-            console.log(`[connectWifi] ✅ Successfully connected to ${normalizedSsid} after ${i + 1} seconds`);
+            console.log(`[connectWifi] ✅ Successfully connected to ${ssid} after ${i + 1} seconds`);
             break;
           } else if (ssidMatches && !isRunning) {
             console.log(`[connectWifi] SSID matches but interface not running yet, waiting...`);
           } else {
-            console.log(`[connectWifi] SSID doesn't match yet (expected "${normalizedSsid}", got "${currentSsid}"), waiting...`);
+            console.log(`[connectWifi] SSID doesn't match yet (expected "${ssid}", got "${currentSsid}"), waiting...`);
           }
         } else {
           console.warn(`[connectWifi] Invalid status response at attempt ${i + 1}`);
