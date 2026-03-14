@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, Trash2, Calendar } from 'lucide-react';
+import { RefreshCw, Trash2, Calendar, ChevronDown } from 'lucide-react';
 import { api } from '../api';
 
 interface UsageLogEntry {
@@ -23,22 +23,48 @@ interface MonthlyUsage {
 export default function TrafficUsageLog() {
   const [logs, setLogs] = useState<UsageLogEntry[]>([]);
   const [monthlyUsage, setMonthlyUsage] = useState<MonthlyUsage | null>(null);
+  const [allMonths, setAllMonths] = useState<MonthlyUsage[]>([]);
   const [loading, setLoading] = useState(false);
   const [showClearDialog, setShowClearDialog] = useState(false);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
 
   useEffect(() => {
-    fetchData();
+    fetchAllMonths();
   }, []);
+
+  useEffect(() => {
+    fetchMonthlyUsage();
+  }, [selectedYear, selectedMonth]);
+
+  async function fetchAllMonths() {
+    try {
+      const months = await api.traffic.getAllMonthlyUsage();
+      setAllMonths(months);
+    } catch (err) {
+      console.error('Failed to fetch monthly history:', err);
+    }
+  }
+
+  async function fetchMonthlyUsage() {
+    try {
+      const monthlyData = await api.traffic.getMonthlyUsage({
+        year: selectedYear,
+        month: selectedMonth
+      });
+      setMonthlyUsage(monthlyData);
+    } catch (err) {
+      console.error('Failed to fetch monthly usage:', err);
+    }
+  }
 
   async function fetchData() {
     setLoading(true);
     try {
-      const [logsData, monthlyData] = await Promise.all([
-        api.traffic.getUsageLog(),
-        api.traffic.getMonthlyUsage()
-      ]);
+      const logsData = await api.traffic.getUsageLog();
       setLogs(logsData.logs || []);
-      setMonthlyUsage(monthlyData);
+      await fetchAllMonths();
+      await fetchMonthlyUsage();
     } catch (err) {
       console.error('Failed to fetch usage data:', err);
     } finally {
@@ -85,11 +111,36 @@ export default function TrafficUsageLog() {
     <>
       {monthlyUsage && (
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Calendar className="w-6 h-6 text-white" />
-            <h3 className="text-xl font-bold text-white">
-              Mesečna Poraba: {getMonthName(monthlyUsage.month)} {monthlyUsage.year}
-            </h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Calendar className="w-6 h-6 text-white" />
+              <h3 className="text-xl font-bold text-white">
+                Mesečna Poraba
+              </h3>
+            </div>
+            <div className="relative">
+              <select
+                value={`${selectedYear}-${selectedMonth}`}
+                onChange={(e) => {
+                  const [year, month] = e.target.value.split('-').map(Number);
+                  setSelectedYear(year);
+                  setSelectedMonth(month);
+                }}
+                className="appearance-none bg-white/20 text-white font-medium px-4 py-2 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 cursor-pointer"
+              >
+                <option value={`${new Date().getFullYear()}-${new Date().getMonth() + 1}`}>
+                  {getMonthName(new Date().getMonth() + 1)} {new Date().getFullYear()}
+                </option>
+                {allMonths
+                  .filter(m => !(m.year === new Date().getFullYear() && m.month === new Date().getMonth() + 1))
+                  .map(m => (
+                    <option key={`${m.year}-${m.month}`} value={`${m.year}-${m.month}`} className="text-slate-900">
+                      {getMonthName(m.month)} {m.year}
+                    </option>
+                  ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white pointer-events-none" />
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">

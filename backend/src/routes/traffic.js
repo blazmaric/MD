@@ -73,9 +73,17 @@ export default async function trafficRoutes(fastify) {
     preHandler: [authenticateMiddleware]
   }, async (request) => {
     try {
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1;
+      const { year, month } = request.query;
+
+      let targetYear, targetMonth;
+      if (year && month) {
+        targetYear = parseInt(year);
+        targetMonth = parseInt(month);
+      } else {
+        const now = new Date();
+        targetYear = now.getFullYear();
+        targetMonth = now.getMonth() + 1;
+      }
 
       const result = await query(`
         SELECT
@@ -88,12 +96,12 @@ export default async function trafficRoutes(fastify) {
           updated_at
         FROM monthly_traffic_usage
         WHERE year = $1 AND month = $2
-      `, [currentYear, currentMonth]);
+      `, [targetYear, targetMonth]);
 
       if (result.rows.length === 0) {
         return {
-          year: currentYear,
-          month: currentMonth,
+          year: targetYear,
+          month: targetMonth,
           rx_bytes: 0,
           tx_bytes: 0,
           total_bytes: 0
@@ -110,6 +118,37 @@ export default async function trafficRoutes(fastify) {
         created_at: row.created_at,
         updated_at: row.updated_at
       };
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
+
+  fastify.get('/traffic/monthly-usage/all', {
+    preHandler: [authenticateMiddleware]
+  }, async (request) => {
+    try {
+      const result = await query(`
+        SELECT
+          year,
+          month,
+          rx_bytes,
+          tx_bytes,
+          total_bytes,
+          created_at,
+          updated_at
+        FROM monthly_traffic_usage
+        ORDER BY year DESC, month DESC
+      `);
+
+      return result.rows.map(row => ({
+        year: row.year,
+        month: row.month,
+        rx_bytes: parseInt(row.rx_bytes) || 0,
+        tx_bytes: parseInt(row.tx_bytes) || 0,
+        total_bytes: parseInt(row.total_bytes) || 0,
+        created_at: row.created_at,
+        updated_at: row.updated_at
+      }));
     } catch (err) {
       return { error: err.message };
     }

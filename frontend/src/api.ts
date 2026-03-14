@@ -68,8 +68,15 @@ export const api = {
     reset: () =>
       apiFetch('/traffic/history', { method: 'DELETE' }),
 
-    getMonthlyUsage: () =>
-      apiFetch('/traffic/monthly-usage'),
+    getMonthlyUsage: (params?: { year?: number; month?: number }) => {
+      const query = new URLSearchParams();
+      if (params?.year) query.append('year', params.year.toString());
+      if (params?.month) query.append('month', params.month.toString());
+      return apiFetch(`/traffic/monthly-usage?${query.toString()}`);
+    },
+
+    getAllMonthlyUsage: () =>
+      apiFetch('/traffic/monthly-usage/all'),
 
     getUsageLog: () =>
       apiFetch('/traffic/usage-log'),
