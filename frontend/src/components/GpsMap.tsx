@@ -170,7 +170,22 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
 
             {snapshot.gps_datetime_fix && (
               <div className="text-xs text-slate-500 dark:text-slate-400 text-center py-1">
-                {t('fix')}: {snapshot.gps_datetime_fix}
+                {t('fix')}: {(() => {
+                  try {
+                    const date = new Date(snapshot.gps_datetime_fix);
+                    return date.toLocaleString('sl-SI', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: false
+                    });
+                  } catch {
+                    return snapshot.gps_datetime_fix;
+                  }
+                })()}
               </div>
             )}
           </div>
