@@ -78,8 +78,11 @@ export const api = {
     getAllMonthlyUsage: () =>
       apiFetch('/traffic/monthly-usage/all'),
 
-    getUsageLog: () =>
-      apiFetch('/traffic/usage-log'),
+    getUsageLog: (params?: { period?: string }) => {
+      const query = new URLSearchParams();
+      if (params?.period) query.append('period', params.period);
+      return apiFetch(`/traffic/usage-log?${query.toString()}`);
+    },
   },
 
   ping: {

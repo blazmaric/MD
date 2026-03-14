@@ -5,6 +5,17 @@ export default async function trafficRoutes(fastify) {
   fastify.get('/traffic/usage-log', {
     preHandler: [authenticateMiddleware]
   }, async (request) => {
+    const { period } = request.query;
+
+    let whereClause = '';
+    if (period === 'hour') {
+      whereClause = "WHERE logged_at >= NOW() - INTERVAL '1 hour'";
+    } else if (period === 'day') {
+      whereClause = "WHERE logged_at >= NOW() - INTERVAL '24 hours'";
+    } else if (period === 'month') {
+      whereClause = "WHERE logged_at >= NOW() - INTERVAL '30 days'";
+    }
+
     const result = await query(`
       SELECT
         id,
@@ -13,8 +24,9 @@ export default async function trafficRoutes(fastify) {
         tx_bytes,
         total_bytes
       FROM vxlan_usage_log
+      ${whereClause}
       ORDER BY logged_at DESC
-      LIMIT 100
+      LIMIT 1000
     `);
 
     return {

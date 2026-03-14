@@ -28,14 +28,33 @@ export default function TrafficUsageLog() {
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [historyPeriod, setHistoryPeriod] = useState<string>('all');
+
+  const fetchHistoryData = async () => {
+    setLoading(true);
+    try {
+      const period = historyPeriod === 'all' ? undefined : historyPeriod;
+      const logsData = await api.traffic.getUsageLog({ period });
+      setLogs(logsData.logs || []);
+    } catch (err) {
+      console.error('Failed to fetch usage data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchAllMonths();
+    fetchMonthlyUsage();
   }, []);
 
   useEffect(() => {
     fetchMonthlyUsage();
   }, [selectedYear, selectedMonth]);
+
+  useEffect(() => {
+    fetchHistoryData();
+  }, [historyPeriod]);
 
   async function fetchAllMonths() {
     try {
@@ -59,17 +78,9 @@ export default function TrafficUsageLog() {
   }
 
   async function fetchData() {
-    setLoading(true);
-    try {
-      const logsData = await api.traffic.getUsageLog();
-      setLogs(logsData.logs || []);
-      await fetchAllMonths();
-      await fetchMonthlyUsage();
-    } catch (err) {
-      console.error('Failed to fetch usage data:', err);
-    } finally {
-      setLoading(false);
-    }
+    await fetchHistoryData();
+    await fetchAllMonths();
+    await fetchMonthlyUsage();
   }
 
   async function handleClear() {
@@ -185,6 +196,49 @@ export default function TrafficUsageLog() {
               Pobriši
             </button>
           </div>
+        </div>
+
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setHistoryPeriod('hour')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              historyPeriod === 'hour'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+            }`}
+          >
+            Ura
+          </button>
+          <button
+            onClick={() => setHistoryPeriod('day')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              historyPeriod === 'day'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+            }`}
+          >
+            Dan
+          </button>
+          <button
+            onClick={() => setHistoryPeriod('month')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              historyPeriod === 'month'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+            }`}
+          >
+            Mesec
+          </button>
+          <button
+            onClick={() => setHistoryPeriod('all')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              historyPeriod === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+            }`}
+          >
+            Vse
+          </button>
         </div>
 
         {loading ? (

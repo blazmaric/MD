@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { MapPin, Satellite, Mountain, Gauge, ExternalLink, Crosshair } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
