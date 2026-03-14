@@ -9,6 +9,7 @@ let logPollerInterval = null;
 let trafficPollerInterval = null;
 let ltePingInterval = null;
 let usageLogInterval = null;
+let monthlyResetInterval = null;
 
 export function getLastSnapshot() {
   return lastSnapshot;
@@ -30,6 +31,7 @@ async function collectSnapshot() {
     lte_rssi: null,
     lte_sinr: null,
     lte_connected: null,
+    lte_carrier_aggregation: null,
     wifi_ssid: null,
     wifi_status: null,
     wifi_signal: null,
@@ -118,6 +120,7 @@ async function collectSnapshot() {
       snapshot.lte_rsrq = lte.rsrq ? parseInt(lte.rsrq, 10) : null;
       snapshot.lte_rssi = lte.rssi ? parseInt(lte.rssi, 10) : null;
       snapshot.lte_sinr = lte.sinr ? parseInt(lte.sinr, 10) : null;
+      snapshot.lte_carrier_aggregation = lte['carrier-aggregation'] || false;
     }
 
     if (wifi) {
@@ -363,6 +366,51 @@ async function logVxlanUsage() {
   }
 }
 
+async function checkMonthlyReset() {
+  try {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
+    const currentDay = now.getDate();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+
+    if (currentDay === lastDayOfMonth && currentHour === 23 && currentMinute >= 59) {
+      const checkReset = await query(`
+        SELECT id FROM monthly_resets WHERE year = $1 AND month = $2
+      `, [currentYear, currentMonth]);
+
+      if (checkReset.rows.length === 0) {
+        console.log('[Poller] Performing monthly traffic reset...');
+
+        const latestSnapshot = await query(`
+          SELECT vxlan_rx_bytes, vxlan_tx_bytes
+          FROM snapshots
+          ORDER BY snapshot_ts DESC
+          LIMIT 1
+        `);
+
+        if (latestSnapshot.rows.length > 0) {
+          const prevRxBytes = parseInt(latestSnapshot.rows[0].vxlan_rx_bytes) || 0;
+          const prevTxBytes = parseInt(latestSnapshot.rows[0].vxlan_tx_bytes) || 0;
+
+          await query(`
+            INSERT INTO monthly_resets (month, year, prev_rx_bytes, prev_tx_bytes)
+            VALUES ($1, $2, $3, $4)
+          `, [currentMonth, currentYear, prevRxBytes, prevTxBytes]);
+
+          await query(`DELETE FROM vxlan_usage_log`);
+
+          console.log('[Poller] Monthly traffic reset completed successfully');
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[Poller] Monthly reset check error:', err.message);
+  }
+}
+
 export function startPollers() {
   console.log('Starting pollers...');
 
@@ -381,6 +429,9 @@ export function startPollers() {
   logVxlanUsage();
   usageLogInterval = setInterval(logVxlanUsage, 3600 * 1000);
 
+  checkMonthlyReset();
+  monthlyResetInterval = setInterval(checkMonthlyReset, 60 * 1000);
+
   console.log('Pollers started');
 }
 
@@ -390,5 +441,6 @@ export function stopPollers() {
   if (trafficPollerInterval) clearInterval(trafficPollerInterval);
   if (ltePingInterval) clearInterval(ltePingInterval);
   if (usageLogInterval) clearInterval(usageLogInterval);
+  if (monthlyResetInterval) clearInterval(monthlyResetInterval);
   console.log('Pollers stopped');
 }

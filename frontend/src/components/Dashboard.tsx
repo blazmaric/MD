@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { TriangleAlert as AlertTriangle } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { User, Snapshot } from '../types';
@@ -92,7 +92,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
       <SummaryCards
         snapshot={snapshot}
-        onReboot={user.is_admin ? () => setShowRebootDialog(true) : undefined}
+        onReboot={() => setShowRebootDialog(true)}
       />
 
       <div className="w-full">

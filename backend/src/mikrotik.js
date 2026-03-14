@@ -114,7 +114,13 @@ export async function getLteStatus() {
       method: 'POST',
       body: JSON.stringify({ numbers: config.mikrotik.interfaces.lte, once: true })
     });
-    return result[0] || null;
+    const lteData = result[0] || null;
+
+    if (lteData) {
+      lteData['carrier-aggregation'] = lteData['primary-band'] && lteData['ca-band'] ? true : false;
+    }
+
+    return lteData;
   } catch (err) {
     console.error('Failed to get LTE status:', err.message);
     return null;

@@ -55,7 +55,8 @@ export default async function dashboardRoutes(fastify) {
           rsrq: snapshot.lte_rsrq,
           rssi: snapshot.lte_rssi,
           sinr: snapshot.lte_sinr,
-          connected: snapshot.lte_connected
+          connected: snapshot.lte_connected,
+          carrierAggregation: snapshot.lte_carrier_aggregation
         } : null,
         gps: snapshot ? {
           latitude: snapshot.gps_latitude,

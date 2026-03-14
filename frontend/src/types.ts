@@ -20,6 +20,7 @@ export interface Snapshot {
   lte_rsrq?: number | string | null;
   lte_rssi?: number | string | null;
   lte_sinr?: number | string | null;
+  lte_carrier_aggregation?: boolean | null;
   wifi_ssid?: string;
   wifi_status?: string;
   wifi_signal?: number | string | null;

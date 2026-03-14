@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Power, AlertCircle, TrendingUp, Zap, Server, History, X } from 'lucide-react';
+import { Power, CircleAlert as AlertCircle, TrendingUp, Zap, Server, History, X } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
 import TrafficUsageLog from './TrafficUsageLog';
@@ -47,14 +47,15 @@ export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) 
   function formatBytes(bytes?: number | string | null): string {
     const numBytes = Number(bytes);
     if (isNaN(numBytes) || numBytes == null) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let i = 0;
-    let value = numBytes;
-    while (value >= 1000 && i < units.length - 1) {
-      value /= 1000;
-      i++;
+
+    const mib = numBytes / (1024 * 1024);
+
+    if (mib >= 1024) {
+      const gib = mib / 1024;
+      return `${gib.toFixed(2)} GB`;
     }
-    return `${value.toFixed(2)} ${units[i]}`;
+
+    return `${mib.toFixed(2)} MB`;
   }
 
   return (

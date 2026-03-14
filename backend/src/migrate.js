@@ -202,6 +202,21 @@ CREATE TABLE IF NOT EXISTS vxlan_usage_log (
 CREATE INDEX IF NOT EXISTS idx_vxlan_usage_logged_at ON vxlan_usage_log(logged_at DESC);
 `;
 
+const MIGRATION_012 = `
+-- Create monthly resets table to track when resets were performed
+CREATE TABLE IF NOT EXISTS monthly_resets (
+  id BIGSERIAL PRIMARY KEY,
+  reset_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  month INTEGER NOT NULL,
+  year INTEGER NOT NULL,
+  prev_rx_bytes BIGINT,
+  prev_tx_bytes BIGINT
+);
+
+CREATE INDEX IF NOT EXISTS idx_monthly_resets_year_month ON monthly_resets(year DESC, month DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_monthly_resets_unique ON monthly_resets(year, month);
+`;
+
 export async function runMigrations() {
   try {
     console.log('Running database migrations...');
@@ -225,7 +240,8 @@ export async function runMigrations() {
       { name: '008_wlan_traffic_speed', sql: MIGRATION_008 },
       { name: '009_simplify_rbac', sql: MIGRATION_009 },
       { name: '010_wifi_scan_results', sql: MIGRATION_010 },
-      { name: '011_vxlan_usage_log', sql: MIGRATION_011 }
+      { name: '011_vxlan_usage_log', sql: MIGRATION_011 },
+      { name: '012_monthly_resets', sql: MIGRATION_012 }
     ];
 
     for (const migration of migrations) {

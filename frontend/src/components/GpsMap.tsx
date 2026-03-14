@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { MapPin, Satellite, Mountain, Gauge } from 'lucide-react';
+import { MapPin, Satellite, Mountain, Gauge, ExternalLink } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
 import L from 'leaflet';
@@ -50,12 +50,25 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
             <MapPin className="w-5 h-5 text-green-600 dark:text-green-400" />
             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('gpsLocation')}</h3>
           </div>
-          {hasGps && (
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-              {t('gpsSignal')}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {hasGps && (
+              <>
+                <a
+                  href={`https://www.google.com/maps?q=${lat},${lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Google Maps
+                </a>
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                  {t('gpsSignal')}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

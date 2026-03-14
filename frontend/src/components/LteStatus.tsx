@@ -109,6 +109,14 @@ export default function LteStatus({ snapshot, lteConnected }: LteStatusProps) {
               {formatValue(snapshot.lte_sinr) !== 'N/A' ? `${formatValue(snapshot.lte_sinr)} dB` : 'N/A'}
             </span>
           </div>
+          {snapshot.lte_carrier_aggregation && (
+            <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-600">
+              <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Carrier Aggregation</span>
+              <span className="text-sm font-bold text-green-600 dark:text-green-400">
+                Aktivna
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>
