@@ -67,6 +67,12 @@ export const api = {
 
     reset: () =>
       apiFetch('/traffic/history', { method: 'DELETE' }),
+
+    getMonthlyUsage: () =>
+      apiFetch('/traffic/monthly-usage'),
+
+    getUsageLog: () =>
+      apiFetch('/traffic/usage-log'),
   },
 
   ping: {

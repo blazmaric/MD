@@ -217,6 +217,48 @@ CREATE INDEX IF NOT EXISTS idx_monthly_resets_year_month ON monthly_resets(year 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_monthly_resets_unique ON monthly_resets(year, month);
 `;
 
+const MIGRATION_013 = `
+-- Create traffic baseline and accumulation tables for proper monthly usage tracking
+-- This handles Mikrotik counter resets (e.g., after reboot) and accumulates data usage
+
+-- Stores the current baseline (last known counter values) for delta calculation
+CREATE TABLE IF NOT EXISTS traffic_baseline (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  interface_name TEXT NOT NULL DEFAULT 'vxlan1',
+  rx_bytes BIGINT NOT NULL DEFAULT 0,
+  tx_bytes BIGINT NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT single_row CHECK (id = 1)
+);
+
+-- Stores monthly accumulated usage (survives reboots and accumulates deltas)
+CREATE TABLE IF NOT EXISTS monthly_traffic_usage (
+  id BIGSERIAL PRIMARY KEY,
+  year INTEGER NOT NULL,
+  month INTEGER NOT NULL,
+  rx_bytes BIGINT NOT NULL DEFAULT 0,
+  tx_bytes BIGINT NOT NULL DEFAULT 0,
+  total_bytes BIGINT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_monthly_traffic_unique ON monthly_traffic_usage(year, month);
+
+-- Initialize baseline with first reading
+INSERT INTO traffic_baseline (id, interface_name, rx_bytes, tx_bytes)
+VALUES (1, 'vxlan1', 0, 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- Initialize current month usage
+INSERT INTO monthly_traffic_usage (year, month, rx_bytes, tx_bytes, total_bytes)
+SELECT
+  EXTRACT(YEAR FROM NOW())::INTEGER,
+  EXTRACT(MONTH FROM NOW())::INTEGER,
+  0, 0, 0
+ON CONFLICT (year, month) DO NOTHING;
+`;
+
 export async function runMigrations() {
   try {
     console.log('Running database migrations...');
@@ -241,7 +283,8 @@ export async function runMigrations() {
       { name: '009_simplify_rbac', sql: MIGRATION_009 },
       { name: '010_wifi_scan_results', sql: MIGRATION_010 },
       { name: '011_vxlan_usage_log', sql: MIGRATION_011 },
-      { name: '012_monthly_resets', sql: MIGRATION_012 }
+      { name: '012_monthly_resets', sql: MIGRATION_012 },
+      { name: '013_traffic_accumulation', sql: MIGRATION_013 }
     ];
 
     for (const migration of migrations) {

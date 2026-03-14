@@ -68,4 +68,50 @@ export default async function trafficRoutes(fastify) {
       return reply.code(500).send({ error: err.message });
     }
   });
+
+  fastify.get('/traffic/monthly-usage', {
+    preHandler: [authenticateMiddleware]
+  }, async (request) => {
+    try {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+
+      const result = await query(`
+        SELECT
+          year,
+          month,
+          rx_bytes,
+          tx_bytes,
+          total_bytes,
+          created_at,
+          updated_at
+        FROM monthly_traffic_usage
+        WHERE year = $1 AND month = $2
+      `, [currentYear, currentMonth]);
+
+      if (result.rows.length === 0) {
+        return {
+          year: currentYear,
+          month: currentMonth,
+          rx_bytes: 0,
+          tx_bytes: 0,
+          total_bytes: 0
+        };
+      }
+
+      const row = result.rows[0];
+      return {
+        year: row.year,
+        month: row.month,
+        rx_bytes: parseInt(row.rx_bytes) || 0,
+        tx_bytes: parseInt(row.tx_bytes) || 0,
+        total_bytes: parseInt(row.total_bytes) || 0,
+        created_at: row.created_at,
+        updated_at: row.updated_at
+      };
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
 }

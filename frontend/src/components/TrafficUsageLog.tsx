@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, Trash2 } from 'lucide-react';
+import { RefreshCw, Trash2, Calendar } from 'lucide-react';
+import { api } from '../api';
 
 interface UsageLogEntry {
   id: number;
@@ -9,27 +10,37 @@ interface UsageLogEntry {
   total_bytes: number;
 }
 
+interface MonthlyUsage {
+  year: number;
+  month: number;
+  rx_bytes: number;
+  tx_bytes: number;
+  total_bytes: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export default function TrafficUsageLog() {
   const [logs, setLogs] = useState<UsageLogEntry[]>([]);
+  const [monthlyUsage, setMonthlyUsage] = useState<MonthlyUsage | null>(null);
   const [loading, setLoading] = useState(false);
   const [showClearDialog, setShowClearDialog] = useState(false);
 
   useEffect(() => {
-    fetchUsageLog();
+    fetchData();
   }, []);
 
-  async function fetchUsageLog() {
+  async function fetchData() {
     setLoading(true);
     try {
-      const response = await fetch('/api/traffic/usage-log', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
-      setLogs(data.logs || []);
+      const [logsData, monthlyData] = await Promise.all([
+        api.traffic.getUsageLog(),
+        api.traffic.getMonthlyUsage()
+      ]);
+      setLogs(logsData.logs || []);
+      setMonthlyUsage(monthlyData);
     } catch (err) {
-      console.error('Failed to fetch usage log:', err);
+      console.error('Failed to fetch usage data:', err);
     } finally {
       setLoading(false);
     }
@@ -44,10 +55,18 @@ export default function TrafficUsageLog() {
         }
       });
       setShowClearDialog(false);
-      fetchUsageLog();
+      fetchData();
     } catch (err) {
       alert('Failed to clear log: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
+  }
+
+  function getMonthName(month: number): string {
+    const monthNames = [
+      'Januar', 'Februar', 'Marec', 'April', 'Maj', 'Junij',
+      'Julij', 'Avgust', 'September', 'Oktober', 'November', 'December'
+    ];
+    return monthNames[month - 1] || '';
   }
 
   function formatBytes(bytes: number): string {
@@ -64,6 +83,36 @@ export default function TrafficUsageLog() {
 
   return (
     <>
+      {monthlyUsage && (
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 rounded-lg shadow-lg p-6 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Calendar className="w-6 h-6 text-white" />
+            <h3 className="text-xl font-bold text-white">
+              Mesečna Poraba: {getMonthName(monthlyUsage.month)} {monthlyUsage.year}
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+              <div className="text-sm text-blue-100 mb-1">Prejeto</div>
+              <div className="text-2xl font-bold text-white">{formatBytes(monthlyUsage.rx_bytes)}</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+              <div className="text-sm text-blue-100 mb-1">Poslano</div>
+              <div className="text-2xl font-bold text-white">{formatBytes(monthlyUsage.tx_bytes)}</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+              <div className="text-sm text-blue-100 mb-1">Skupaj</div>
+              <div className="text-2xl font-bold text-white">{formatBytes(monthlyUsage.total_bytes)}</div>
+            </div>
+          </div>
+          {monthlyUsage.updated_at && (
+            <div className="mt-4 text-sm text-blue-100">
+              Zadnja posodobitev: {new Date(monthlyUsage.updated_at).toLocaleString('sl-SI')}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
@@ -71,7 +120,7 @@ export default function TrafficUsageLog() {
           </h3>
           <div className="flex gap-2">
             <button
-              onClick={fetchUsageLog}
+              onClick={fetchData}
               className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />

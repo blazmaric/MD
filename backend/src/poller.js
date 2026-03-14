@@ -341,7 +341,8 @@ async function checkLtePing() {
 
 async function logVxlanUsage() {
   try {
-    console.log('[Poller] Logging VXLAN usage...');
+    console.log('[Poller] Accumulating VXLAN usage...');
+
     const latestSnapshot = await query(`
       SELECT vxlan_rx_bytes, vxlan_tx_bytes
       FROM snapshots
@@ -349,18 +350,77 @@ async function logVxlanUsage() {
       LIMIT 1
     `);
 
-    if (latestSnapshot.rows.length > 0) {
-      const rxBytes = parseInt(latestSnapshot.rows[0].vxlan_rx_bytes) || 0;
-      const txBytes = parseInt(latestSnapshot.rows[0].vxlan_tx_bytes) || 0;
-      const totalBytes = rxBytes + txBytes;
+    if (latestSnapshot.rows.length === 0) {
+      console.log('[Poller] No snapshot data available');
+      return;
+    }
+
+    const currentRx = parseInt(latestSnapshot.rows[0].vxlan_rx_bytes) || 0;
+    const currentTx = parseInt(latestSnapshot.rows[0].vxlan_tx_bytes) || 0;
+
+    const baseline = await query(`SELECT rx_bytes, tx_bytes FROM traffic_baseline WHERE id = 1`);
+
+    if (baseline.rows.length === 0) {
+      await query(`
+        INSERT INTO traffic_baseline (id, rx_bytes, tx_bytes)
+        VALUES (1, $1, $2)
+      `, [currentRx, currentTx]);
+      console.log('[Poller] Baseline initialized:', { currentRx, currentTx });
+      return;
+    }
+
+    const baselineRx = parseInt(baseline.rows[0].rx_bytes) || 0;
+    const baselineTx = parseInt(baseline.rows[0].tx_bytes) || 0;
+
+    let deltaRx = currentRx - baselineRx;
+    let deltaTx = currentTx - baselineTx;
+
+    if (deltaRx < 0 || deltaTx < 0) {
+      console.log('[Poller] Counter reset detected (reboot), using current as delta:', { currentRx, currentTx });
+      deltaRx = currentRx;
+      deltaTx = currentTx;
+    }
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    const monthUsage = await query(`
+      SELECT rx_bytes, tx_bytes FROM monthly_traffic_usage
+      WHERE year = $1 AND month = $2
+    `, [currentYear, currentMonth]);
+
+    if (monthUsage.rows.length === 0) {
+      await query(`
+        INSERT INTO monthly_traffic_usage (year, month, rx_bytes, tx_bytes, total_bytes)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [currentYear, currentMonth, deltaRx, deltaTx, deltaRx + deltaTx]);
+    } else {
+      const newRx = parseInt(monthUsage.rows[0].rx_bytes) + deltaRx;
+      const newTx = parseInt(monthUsage.rows[0].tx_bytes) + deltaTx;
 
       await query(`
-        INSERT INTO vxlan_usage_log (rx_bytes, tx_bytes, total_bytes)
-        VALUES ($1, $2, $3)
-      `, [rxBytes, txBytes, totalBytes]);
-
-      console.log('[Poller] VXLAN usage logged successfully:', { rxBytes, txBytes, totalBytes });
+        UPDATE monthly_traffic_usage
+        SET rx_bytes = $1, tx_bytes = $2, total_bytes = $3, updated_at = NOW()
+        WHERE year = $4 AND month = $5
+      `, [newRx, newTx, newRx + newTx, currentYear, currentMonth]);
     }
+
+    await query(`
+      UPDATE traffic_baseline
+      SET rx_bytes = $1, tx_bytes = $2, updated_at = NOW()
+      WHERE id = 1
+    `, [currentRx, currentTx]);
+
+    await query(`
+      INSERT INTO vxlan_usage_log (rx_bytes, tx_bytes, total_bytes)
+      VALUES ($1, $2, $3)
+    `, [currentRx, currentTx, currentRx + currentTx]);
+
+    console.log('[Poller] Usage accumulated:', {
+      delta: { rx: deltaRx, tx: deltaTx },
+      baseline: { rx: currentRx, tx: currentTx }
+    });
   } catch (err) {
     console.error('[Poller] VXLAN usage logging error:', err.message);
   }
@@ -371,39 +431,39 @@ async function checkMonthlyReset() {
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
-    const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
     const currentDay = now.getDate();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
 
-    if (currentDay === lastDayOfMonth && currentHour === 23 && currentMinute >= 59) {
+    if (currentDay === 1) {
+      const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+      const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+
       const checkReset = await query(`
         SELECT id FROM monthly_resets WHERE year = $1 AND month = $2
-      `, [currentYear, currentMonth]);
+      `, [prevYear, prevMonth]);
 
       if (checkReset.rows.length === 0) {
         console.log('[Poller] Performing monthly traffic reset...');
 
-        const latestSnapshot = await query(`
-          SELECT vxlan_rx_bytes, vxlan_tx_bytes
-          FROM snapshots
-          ORDER BY snapshot_ts DESC
-          LIMIT 1
-        `);
+        const prevMonthUsage = await query(`
+          SELECT rx_bytes, tx_bytes FROM monthly_traffic_usage
+          WHERE year = $1 AND month = $2
+        `, [prevYear, prevMonth]);
 
-        if (latestSnapshot.rows.length > 0) {
-          const prevRxBytes = parseInt(latestSnapshot.rows[0].vxlan_rx_bytes) || 0;
-          const prevTxBytes = parseInt(latestSnapshot.rows[0].vxlan_tx_bytes) || 0;
+        const prevRxBytes = prevMonthUsage.rows.length > 0 ? parseInt(prevMonthUsage.rows[0].rx_bytes) : 0;
+        const prevTxBytes = prevMonthUsage.rows.length > 0 ? parseInt(prevMonthUsage.rows[0].tx_bytes) : 0;
 
-          await query(`
-            INSERT INTO monthly_resets (month, year, prev_rx_bytes, prev_tx_bytes)
-            VALUES ($1, $2, $3, $4)
-          `, [currentMonth, currentYear, prevRxBytes, prevTxBytes]);
+        await query(`
+          INSERT INTO monthly_resets (month, year, prev_rx_bytes, prev_tx_bytes)
+          VALUES ($1, $2, $3, $4)
+        `, [prevMonth, prevYear, prevRxBytes, prevTxBytes]);
 
-          await query(`DELETE FROM vxlan_usage_log`);
+        await query(`
+          INSERT INTO monthly_traffic_usage (year, month, rx_bytes, tx_bytes, total_bytes)
+          VALUES ($1, $2, 0, 0, 0)
+          ON CONFLICT (year, month) DO NOTHING
+        `, [currentYear, currentMonth]);
 
-          console.log('[Poller] Monthly traffic reset completed successfully');
-        }
+        console.log('[Poller] Monthly traffic reset completed successfully');
       }
     }
   } catch (err) {
