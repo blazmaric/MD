@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { MapPin, Satellite, Mountain, Gauge, ExternalLink } from 'lucide-react';
+import { MapPin, Satellite, Mountain, Gauge, ExternalLink, Crosshair } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
 import L from 'leaflet';
@@ -28,13 +28,14 @@ interface GpsMapProps {
 function MapUpdater({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
   useEffect(() => {
-    map.setView([lat, lng], 16);
+    map.setView([lat, lng], 18);
   }, [lat, lng, map]);
   return null;
 }
 
 export default function GpsMap({ snapshot }: GpsMapProps) {
   const { t } = useLanguage();
+  const mapRef = useRef<L.Map | null>(null);
 
   function toNumber(value?: number | string | null): number | null {
     if (value == null || value === '') return null;
@@ -50,6 +51,12 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
 
   const hasGps = snapshot?.gps_valid && lat != null && lng != null;
 
+  const handleRecenter = () => {
+    if (mapRef.current && lat != null && lng != null) {
+      mapRef.current.setView([lat, lng], 18, { animate: true });
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
       <div className="border-b border-slate-200 dark:border-slate-700 px-6 py-4">
@@ -61,6 +68,13 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
           <div className="flex items-center gap-2">
             {hasGps && (
               <>
+                <button
+                  onClick={handleRecenter}
+                  className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                >
+                  <Crosshair className="w-3.5 h-3.5" />
+                  {t('recenterMap')}
+                </button>
                 <a
                   href={`https://www.google.com/maps?q=${lat},${lng}`}
                   target="_blank"
@@ -102,9 +116,10 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
             <div className="h-64 rounded-lg overflow-hidden border-2 border-green-200 dark:border-green-800 shadow-lg relative z-0">
               <MapContainer
                 center={[lat!, lng!]}
-                zoom={16}
+                zoom={18}
                 className="h-full w-full z-0"
                 zoomControl={true}
+                ref={mapRef}
               >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

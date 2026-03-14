@@ -98,6 +98,7 @@ export const translations = {
     speed: 'Hitrost',
     satellitesLabel: 'Sateliti',
     openInMaps: 'Odpri v Zemljevidih',
+    recenterMap: 'Centriraj',
     fix: 'Fix',
 
     // Wlan5 Clients
@@ -372,6 +373,7 @@ export const translations = {
     speed: 'Speed',
     satellitesLabel: 'Satellites',
     openInMaps: 'Open in Maps',
+    recenterMap: 'Recenter',
     fix: 'Fix',
 
     // Wlan5 Clients
