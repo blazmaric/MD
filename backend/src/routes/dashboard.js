@@ -6,12 +6,25 @@ export default async function dashboardRoutes(fastify) {
     preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     try {
-      // Get latest snapshot - contains ALL data
-      const snapshotResult = await pool.query('SELECT * FROM snapshots ORDER BY snapshot_ts DESC LIMIT 1');
-      const snapshot = snapshotResult.rows[0] || null;
+      const { getLastSnapshot } = await import('../poller.js');
+      const snapshot = getLastSnapshot();
 
       const now = new Date();
       const cacheAge = snapshot ? (now - new Date(snapshot.snapshot_ts)) / 1000 : 9999;
+
+      let interfaces = [];
+      try {
+        interfaces = snapshot?.interfaces_data ? JSON.parse(snapshot.interfaces_data) : [];
+      } catch (e) {
+        console.error('Failed to parse interfaces_data:', e);
+      }
+
+      let smsMessages = [];
+      try {
+        smsMessages = snapshot?.sms_messages ? JSON.parse(snapshot.sms_messages) : [];
+      } catch (e) {
+        console.error('Failed to parse sms_messages:', e);
+      }
 
       return {
         timestamp: now.toISOString(),
@@ -25,8 +38,16 @@ export default async function dashboardRoutes(fastify) {
           rx_rate: snapshot.wifi_rx_rate
         } : null,
         wlan5: snapshot ? {
-          speed_rx: snapshot.wlan_speed_rx,
-          speed_tx: snapshot.wlan_speed_tx
+          ssid: snapshot.wlan5_ssid,
+          status: snapshot.wlan5_status,
+          authenticatedClients: snapshot.wlan5_authenticated_clients,
+          registeredClients: snapshot.wlan5_registered_clients,
+          noiseFloor: snapshot.wlan5_noise_floor,
+          wmmEnabled: snapshot.wlan5_wmm_enabled,
+          rxRate: snapshot.wlan5_rx_rate,
+          txRate: snapshot.wlan5_tx_rate,
+          disabled: snapshot.wlan5_disabled,
+          running: snapshot.wlan5_running
         } : null,
         lte: snapshot ? {
           operator: snapshot.lte_operator,
@@ -48,7 +69,10 @@ export default async function dashboardRoutes(fastify) {
           uptime: snapshot.system_uptime,
           cpu_percent: snapshot.system_cpu_percent,
           ram_percent: snapshot.system_ram_percent
-        } : null
+        } : null,
+        interfaces: interfaces,
+        smsMessages: smsMessages,
+        publicIp: snapshot?.public_ip || null
       };
     } catch (err) {
       fastify.log.error('Dashboard data error:', err);

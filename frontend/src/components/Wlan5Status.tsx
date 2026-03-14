@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Wifi, RefreshCw, Users, X } from 'lucide-react';
-import { api } from '../api';
+import { useState } from 'react';
+import { Wifi, Users, X } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import Wlan5Clients from './Wlan5Clients';
 
@@ -17,30 +16,15 @@ interface Wlan5Status {
   running?: string;
 }
 
-export default function Wlan5Status() {
+interface Wlan5StatusProps {
+  wlan5Data: Wlan5Status | null;
+}
+
+export default function Wlan5Status({ wlan5Data }: Wlan5StatusProps) {
   const { t } = useLanguage();
-  const [wlan5Info, setWlan5Info] = useState<Wlan5Status | null>(null);
-  const [loading, setLoading] = useState(false);
   const [showClientsModal, setShowClientsModal] = useState(false);
 
-  useEffect(() => {
-    fetchWlan5Info();
-    const interval = setInterval(fetchWlan5Info, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  async function fetchWlan5Info() {
-    setLoading(true);
-    try {
-      const data = await api.wifi.wlan5Status();
-      setWlan5Info(data.status);
-    } catch (err) {
-      console.error('Failed to fetch WLAN 5 info:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
+  const wlan5Info = wlan5Data;
   const isActive = wlan5Info?.running === 'true' && wlan5Info?.disabled !== 'true';
 
   return (
@@ -61,14 +45,6 @@ export default function Wlan5Status() {
             <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-blue-500' : 'bg-slate-400'}`}></div>
             {isActive ? t('active') : t('inactive')}
           </div>
-          <button
-            onClick={fetchWlan5Info}
-            disabled={loading}
-            className="p-2 text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-700/40 rounded-lg disabled:opacity-50 transition-colors"
-            title={t('refresh')}
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
         </div>
       </div>
 

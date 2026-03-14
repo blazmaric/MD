@@ -1,6 +1,4 @@
-import { useState, useEffect } from 'react';
-import { Network, RefreshCw } from 'lucide-react';
-import { api } from '../api';
+import { Network } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface Interface {
@@ -17,35 +15,23 @@ interface Interface {
   };
 }
 
-export default function InterfaceList() {
+interface InterfaceListProps {
+  interfaces: Interface[];
+  publicIp: string | null;
+}
+
+export default function InterfaceList({ interfaces: propInterfaces, publicIp }: InterfaceListProps) {
   const { t } = useLanguage();
-  const [interfaces, setInterfaces] = useState<Interface[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchInterfaces();
-    const interval = setInterval(fetchInterfaces, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  const sortedInterfaces = [...propInterfaces].sort((a: Interface, b: Interface) => {
+    const aMatch = a.name.match(/^ether(\d+)/);
+    const bMatch = b.name.match(/^ether(\d+)/);
+    const aNum = aMatch ? parseInt(aMatch[1]) : 0;
+    const bNum = bMatch ? parseInt(bMatch[1]) : 0;
+    return aNum - bNum;
+  });
 
-  async function fetchInterfaces() {
-    setLoading(true);
-    try {
-      const data = await api.interfaces.list();
-      const sortedInterfaces = (data.interfaces || []).sort((a: Interface, b: Interface) => {
-        const aMatch = a.name.match(/^ether(\d+)/);
-        const bMatch = b.name.match(/^ether(\d+)/);
-        const aNum = aMatch ? parseInt(aMatch[1]) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1]) : 0;
-        return aNum - bNum;
-      });
-      setInterfaces(sortedInterfaces);
-    } catch (err) {
-      console.error('Failed to fetch interfaces:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const interfaces = sortedInterfaces;
 
   function formatBitsPerSecond(bps?: string | number): string {
     const numBps = Number(bps);
@@ -88,14 +74,6 @@ export default function InterfaceList() {
           <Network className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           {t('interfaceStatus')}
         </h3>
-        <button
-          onClick={fetchInterfaces}
-          disabled={loading}
-          className="p-1.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg disabled:opacity-50 transition-colors"
-          title={t('refresh')}
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-        </button>
       </div>
 
       <div className="p-3">
@@ -124,7 +102,7 @@ export default function InterfaceList() {
           ))}
         </div>
 
-        {interfaces.length === 0 && !loading && (
+        {interfaces.length === 0 && (
           <p className="text-center py-6 text-sm text-slate-600 dark:text-slate-400">{t('noInterfacesFound')}</p>
         )}
       </div>

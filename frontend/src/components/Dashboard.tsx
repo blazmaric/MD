@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { TriangleAlert as AlertTriangle } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { User, Snapshot } from '../types';
@@ -16,9 +16,17 @@ interface DashboardProps {
   user: User;
 }
 
+interface DashboardData {
+  summary: Snapshot | null;
+  wlan5: any;
+  interfaces: any[];
+  smsMessages: any[];
+  publicIp: string | null;
+}
+
 export default function Dashboard({ user }: DashboardProps) {
   const { t } = useLanguage();
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [error, setError] = useState('');
   const [showRebootDialog, setShowRebootDialog] = useState(false);
   const [rebooting, setRebooting] = useState(false);
@@ -29,7 +37,6 @@ export default function Dashboard({ user }: DashboardProps) {
     checkLte();
     const interval = setInterval(() => {
       fetchDashboardData();
-      checkLte();
     }, 3000);
     return () => clearInterval(interval);
   }, [user]);
@@ -37,12 +44,7 @@ export default function Dashboard({ user }: DashboardProps) {
   async function fetchDashboardData() {
     try {
       const data = await api.dashboard.getData();
-      console.log('Dashboard API Response:', {
-        summary: data.summary,
-        gateway_type: data.summary?.gateway_type,
-        active_uplink: data.summary?.active_uplink
-      });
-      setSnapshot(data.summary);
+      setDashboardData(data);
       setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
@@ -72,6 +74,8 @@ export default function Dashboard({ user }: DashboardProps) {
     }
   }
 
+  const snapshot = dashboardData?.summary || null;
+
   return (
     <div className="space-y-6 pb-8">
       {error && (
@@ -91,7 +95,7 @@ export default function Dashboard({ user }: DashboardProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <LteStatus snapshot={snapshot} lteConnected={lteConnected} />
         <WlanStatus snapshot={snapshot} />
-        <Wlan5Status />
+        <Wlan5Status wlan5Data={dashboardData?.wlan5 || null} />
       </div>
 
       <SummaryCards
@@ -100,7 +104,7 @@ export default function Dashboard({ user }: DashboardProps) {
       />
 
       <div className="w-full">
-        <SmsManager />
+        <SmsManager smsMessages={dashboardData?.smsMessages || []} />
       </div>
 
       <div className="w-full">
@@ -108,7 +112,7 @@ export default function Dashboard({ user }: DashboardProps) {
       </div>
 
       <div className="w-full">
-        <InterfaceList />
+        <InterfaceList interfaces={dashboardData?.interfaces || []} publicIp={dashboardData?.publicIp || null} />
       </div>
 
       <LogViewer />

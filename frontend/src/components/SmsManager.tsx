@@ -4,9 +4,13 @@ import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { SmsMessage } from '../types';
 
-export default function SmsManager() {
+interface SmsManagerProps {
+  smsMessages: SmsMessage[];
+}
+
+export default function SmsManager({ smsMessages }: SmsManagerProps) {
   const { t } = useLanguage();
-  const [messages, setMessages] = useState<SmsMessage[]>([]);
+  const [messages, setMessages] = useState<SmsMessage[]>(smsMessages);
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,8 +21,8 @@ export default function SmsManager() {
   const messagesPerPage = 4;
 
   useEffect(() => {
-    fetchInbox();
-  }, []);
+    setMessages(smsMessages);
+  }, [smsMessages]);
 
   async function fetchInbox() {
     setLoading(true);

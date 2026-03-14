@@ -45,18 +45,32 @@ async function collectSnapshot() {
     gps_speed: null,
     gps_satellites: null,
     gps_valid: null,
-    gps_datetime_fix: null
+    gps_datetime_fix: null,
+    wlan5_ssid: null,
+    wlan5_status: null,
+    wlan5_authenticated_clients: null,
+    wlan5_registered_clients: null,
+    wlan5_noise_floor: null,
+    wlan5_wmm_enabled: null,
+    wlan5_tx_rate: null,
+    wlan5_rx_rate: null,
+    wlan5_running: null,
+    wlan5_disabled: null,
+    interfaces_data: null,
+    sms_messages: null
   };
 
   try {
-    const [route, lte, wifi, sysres, interfaces, cloud, gps] = await Promise.all([
+    const [route, lte, wifi, sysres, interfaces, cloud, gps, wlan5Status, smsInbox] = await Promise.all([
       mt.getDefaultRoute(),
       mt.getLteStatus(),
       mt.getWifiStatus(),
       mt.getSystemResource(),
       mt.getInterfaces(),
       mt.getCloudStatus(),
-      mt.getGpsStatus()
+      mt.getGpsStatus(),
+      mt.getWlan5Status(),
+      mt.getSmsInbox()
     ]);
 
     snapshot.online = true;
@@ -154,6 +168,31 @@ async function collectSnapshot() {
         snapshot.gps_speed = gps.speed ? parseFloat(gps.speed.replace(/\s*km\/h$/, '')) : null;
       }
     }
+
+    if (wlan5Status) {
+      snapshot.wlan5_ssid = wlan5Status.ssid;
+      snapshot.wlan5_status = wlan5Status.status;
+      snapshot.wlan5_authenticated_clients = wlan5Status.authenticatedClients;
+      snapshot.wlan5_registered_clients = wlan5Status.registeredClients;
+      snapshot.wlan5_noise_floor = wlan5Status.noiseFloor;
+      snapshot.wlan5_wmm_enabled = wlan5Status.wmmEnabled;
+      snapshot.wlan5_tx_rate = wlan5Status.txRate;
+      snapshot.wlan5_rx_rate = wlan5Status.rxRate;
+      snapshot.wlan5_running = wlan5Status.running;
+      snapshot.wlan5_disabled = wlan5Status.disabled;
+    }
+
+    const etherInterfaces = interfaces.filter(iface => iface.name.match(/^ether\d+/));
+    const trafficData = await Promise.all(
+      etherInterfaces.map(iface => mt.monitorTraffic(iface.name))
+    );
+    const interfacesWithTraffic = etherInterfaces.map((iface, index) => ({
+      ...iface,
+      traffic: trafficData[index]
+    }));
+    snapshot.interfaces_data = JSON.stringify(interfacesWithTraffic);
+
+    snapshot.sms_messages = JSON.stringify(smsInbox || []);
 
     const elapsed = Date.now() - startTime;
     snapshot.stale = elapsed > (config.polling.staleSeconds * 1000);
