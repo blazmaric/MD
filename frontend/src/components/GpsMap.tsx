@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { MapPin, Satellite, Mountain, Gauge, ExternalLink, Crosshair } from 'lucide-react';
+import { MapPin, Satellite, Mountain, Gauge, ExternalLink, Crosshair, ZoomIn, ZoomOut } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
 import L from 'leaflet';
@@ -13,20 +13,31 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const shipIcon = L.divIcon({
-  html: `<div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 36px; height: 36px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-      <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
-      <path d="M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.94 5.34 2.81 7.76"/>
-      <path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6"/>
-      <path d="M12 10v4"/>
-      <path d="M12 2v3"/>
+const createLocationIcon = () => L.divIcon({
+  html: `<div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+    <div style="position: absolute; width: 32px; height: 32px; background: rgba(37, 99, 235, 0.2); border-radius: 50%; animation: pulse 2s infinite;"></div>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#2563eb" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); position: relative; z-index: 1;">
+      <circle cx="12" cy="12" r="10" fill="#2563eb"/>
+      <circle cx="12" cy="12" r="6" fill="#ffffff"/>
+      <circle cx="12" cy="12" r="3" fill="#2563eb"/>
     </svg>
+    <style>
+      @keyframes pulse {
+        0%, 100% {
+          transform: scale(1);
+          opacity: 0.6;
+        }
+        50% {
+          transform: scale(1.5);
+          opacity: 0.2;
+        }
+      }
+    </style>
   </div>`,
-  className: 'ship-marker',
-  iconSize: [40, 40],
-  iconAnchor: [20, 20],
-  popupAnchor: [0, -20],
+  className: 'location-marker',
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16],
 });
 
 interface GpsMapProps {
@@ -54,7 +65,19 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
 
   const handleRecenter = () => {
     if (mapRef.current && lat != null && lng != null) {
-      mapRef.current.setView([lat, lng], 18, { animate: true });
+      mapRef.current.setView([lat, lng], 15, { animate: true });
+    }
+  };
+
+  const handleZoomIn = () => {
+    if (mapRef.current) {
+      mapRef.current.zoomIn();
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (mapRef.current) {
+      mapRef.current.zoomOut();
     }
   };
 
@@ -114,19 +137,19 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="h-64 rounded-lg overflow-hidden border-2 border-green-200 dark:border-green-800 shadow-lg relative z-0">
+            <div className="h-96 rounded-lg overflow-hidden border-2 border-green-200 dark:border-green-800 shadow-lg relative z-0">
               <MapContainer
                 center={[lat!, lng!]}
-                zoom={18}
+                zoom={15}
                 className="h-full w-full z-0"
-                zoomControl={true}
+                zoomControl={false}
                 ref={mapRef}
               >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <Marker position={[lat!, lng!]} icon={shipIcon}>
+                <Marker position={[lat!, lng!]} icon={createLocationIcon()}>
                   <Popup>
                     <div className="text-sm">
                       <p className="font-semibold">Current Location</p>
@@ -135,6 +158,23 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                   </Popup>
                 </Marker>
               </MapContainer>
+
+              <div className="absolute top-4 right-4 flex flex-col gap-2 z-[1000]">
+                <button
+                  onClick={handleZoomIn}
+                  className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 p-2 rounded-lg shadow-lg border border-slate-200 dark:border-slate-600 transition-colors"
+                  aria-label="Zoom in"
+                >
+                  <ZoomIn className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={handleZoomOut}
+                  className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 p-2 rounded-lg shadow-lg border border-slate-200 dark:border-slate-600 transition-colors"
+                  aria-label="Zoom out"
+                >
+                  <ZoomOut className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
