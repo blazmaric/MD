@@ -1,11 +1,13 @@
 import { config } from './config.js';
 import { query } from './db.js';
 import * as mt from './mikrotik.js';
+import { setLteCache } from './lteCache.js';
 
 let lastSnapshot = null;
 let pollerInterval = null;
 let logPollerInterval = null;
 let trafficPollerInterval = null;
+let ltePingInterval = null;
 
 export function getLastSnapshot() {
   return lastSnapshot;
@@ -321,6 +323,18 @@ function parseLogTime(timeStr) {
   return new Date();
 }
 
+async function checkLtePing() {
+  try {
+    console.log('[Poller] Running periodic LTE ping check...');
+    const result = await mt.checkLteConnectivity();
+    setLteCache(result, result);
+    console.log('[Poller] LTE ping check result:', result);
+  } catch (err) {
+    console.error('[Poller] LTE ping check error:', err.message);
+    setLteCache(false, false);
+  }
+}
+
 export function startPollers() {
   console.log('Starting pollers...');
 
@@ -333,6 +347,9 @@ export function startPollers() {
   collectTraffic();
   trafficPollerInterval = setInterval(collectTraffic, 300 * 1000);
 
+  checkLtePing();
+  ltePingInterval = setInterval(checkLtePing, 30 * 1000);
+
   console.log('Pollers started');
 }
 
@@ -340,5 +357,6 @@ export function stopPollers() {
   if (pollerInterval) clearInterval(pollerInterval);
   if (logPollerInterval) clearInterval(logPollerInterval);
   if (trafficPollerInterval) clearInterval(trafficPollerInterval);
+  if (ltePingInterval) clearInterval(ltePingInterval);
   console.log('Pollers stopped');
 }

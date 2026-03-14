@@ -1,7 +1,8 @@
 let lteCache = {
   connected: null,
   lastChecked: null,
-  checkInProgress: false
+  checkInProgress: false,
+  pingSuccess: null  // Added for periodic ping test result
 };
 
 const CACHE_TTL_MS = 30000;
@@ -14,14 +15,16 @@ export function getLteCache() {
 
   return {
     connected: lteCache.connected,
+    pingSuccess: lteCache.pingSuccess,
     age,
     cached: true
   };
 }
 
-export function setLteCache(connected) {
+export function setLteCache(connected, pingSuccess = null) {
   lteCache = {
     connected,
+    pingSuccess,
     lastChecked: Date.now(),
     checkInProgress: false
   };
@@ -39,6 +42,7 @@ export function clearLteCache() {
   lteCache = {
     connected: null,
     lastChecked: null,
-    checkInProgress: false
+    checkInProgress: false,
+    pingSuccess: null
   };
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wifi, Search, AlertTriangle, WifiOff, RefreshCw } from 'lucide-react';
+import { Wifi, Search, TriangleAlert as AlertTriangle, WifiOff, RefreshCw } from 'lucide-react';
 import { api } from '../api';
 import type { WiFiNetwork, Snapshot } from '../types';
 import { useLanguage } from '../LanguageContext';
@@ -54,9 +54,10 @@ export default function WiFiScanner(_props: WiFiScannerProps) {
     try {
       const data = await api.wifi.checkLte();
       console.log('[WiFiScanner] LTE check response:', data);
-      console.log('[WiFiScanner] Setting lteConnected to:', data.connected);
-      setLteConnected(data.connected);
-      return data.connected;
+      const pingResult = data.pingSuccess !== undefined ? data.pingSuccess : data.connected;
+      console.log('[WiFiScanner] Setting lteConnected to:', pingResult);
+      setLteConnected(pingResult);
+      return pingResult;
     } catch (err) {
       console.error('[WiFiScanner] Failed to check LTE:', err);
       setLteConnected(false);
