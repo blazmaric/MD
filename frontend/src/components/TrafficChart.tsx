@@ -1,9 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
 
 export default function TrafficStatus({ snapshot }: { snapshot: Snapshot | null }) {
-  const { t } = useLanguage();
 
   function formatBytes(bytes: number | string | null | undefined): string {
     const numBytes = Number(bytes);

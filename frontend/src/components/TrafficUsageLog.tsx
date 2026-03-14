@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { RefreshCw, Trash2 } from 'lucide-react';
-import { api } from '../api';
 
 interface UsageLogEntry {
   id: number;
