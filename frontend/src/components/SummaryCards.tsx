@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Power, CircleAlert as AlertCircle, TrendingUp, Zap, Server, History, X } from 'lucide-react';
+import { Power, AlertCircle, TrendingUp, Zap, Server, History, X } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
 import TrafficUsageLog from './TrafficUsageLog';
