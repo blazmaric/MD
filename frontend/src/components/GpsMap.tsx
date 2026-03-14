@@ -14,32 +14,34 @@ L.Icon.Default.mergeOptions({
 });
 
 const createShipIcon = (lat: number, lng: number) => L.divIcon({
-  html: `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener noreferrer" style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none;">
-    <div style="position: absolute; width: 48px; height: 48px; background: rgba(37, 99, 235, 0.2); border-radius: 50%; animation: pulse 2s infinite;"></div>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); position: relative; z-index: 1;">
-      <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" fill="none" stroke="#2563eb"/>
-      <path d="M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.94 5.34 2.81 7.76" fill="#2563eb" opacity="0.2"/>
-      <path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6" fill="#fff" stroke="#2563eb"/>
-      <path d="M12 10v4" stroke="#2563eb"/>
-      <path d="M12 2v3" stroke="#2563eb"/>
-    </svg>
+  html: `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener noreferrer" style="position: relative; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none;">
+    <div style="position: absolute; width: 56px; height: 56px; background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(59, 130, 246, 0.15)); border-radius: 50%; animation: pulse 2s infinite;"></div>
+    <div style="position: relative; z-index: 1; background: linear-gradient(135deg, #2563eb, #3b82f6); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4), 0 0 0 3px rgba(255, 255, 255, 0.9);">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+        <path d="M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.94 5.34 2.81 7.76"/>
+        <path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6"/>
+        <path d="M12 10v4"/>
+        <path d="M12 2v3"/>
+      </svg>
+    </div>
     <style>
       @keyframes pulse {
         0%, 100% {
           transform: scale(1);
-          opacity: 0.6;
+          opacity: 1;
         }
         50% {
-          transform: scale(1.5);
-          opacity: 0.2;
+          transform: scale(1.3);
+          opacity: 0.3;
         }
       }
     </style>
   </a>`,
   className: 'ship-marker',
-  iconSize: [48, 48],
-  iconAnchor: [24, 24],
-  popupAnchor: [0, -24],
+  iconSize: [56, 56],
+  iconAnchor: [28, 28],
+  popupAnchor: [0, -28],
 });
 
 interface GpsMapProps {
