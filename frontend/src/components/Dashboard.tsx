@@ -11,6 +11,8 @@ import LteStatus from './LteStatus';
 import WlanStatus from './WlanStatus';
 import Wlan5Status from './Wlan5Status';
 import GpsMap from './GpsMap';
+import TrafficStatus from './TrafficChart';
+import TrafficUsageLog from './TrafficUsageLog';
 
 interface DashboardProps {
   user: User;
@@ -94,6 +96,14 @@ export default function Dashboard({ user }: DashboardProps) {
         snapshot={snapshot}
         onReboot={user.is_admin ? () => setShowRebootDialog(true) : undefined}
       />
+
+      <div className="w-full">
+        <TrafficStatus snapshot={snapshot} />
+      </div>
+
+      <div className="w-full">
+        <TrafficUsageLog />
+      </div>
 
       <div className="w-full">
         <SmsManager smsMessages={dashboardData?.smsMessages || []} />

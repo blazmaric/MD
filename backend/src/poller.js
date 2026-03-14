@@ -8,6 +8,7 @@ let pollerInterval = null;
 let logPollerInterval = null;
 let trafficPollerInterval = null;
 let ltePingInterval = null;
+let usageLogInterval = null;
 
 export function getLastSnapshot() {
   return lastSnapshot;
@@ -335,6 +336,33 @@ async function checkLtePing() {
   }
 }
 
+async function logVxlanUsage() {
+  try {
+    console.log('[Poller] Logging VXLAN usage...');
+    const latestSnapshot = await query(`
+      SELECT vxlan_rx_bytes, vxlan_tx_bytes
+      FROM snapshots
+      ORDER BY snapshot_ts DESC
+      LIMIT 1
+    `);
+
+    if (latestSnapshot.rows.length > 0) {
+      const rxBytes = parseInt(latestSnapshot.rows[0].vxlan_rx_bytes) || 0;
+      const txBytes = parseInt(latestSnapshot.rows[0].vxlan_tx_bytes) || 0;
+      const totalBytes = rxBytes + txBytes;
+
+      await query(`
+        INSERT INTO vxlan_usage_log (rx_bytes, tx_bytes, total_bytes)
+        VALUES ($1, $2, $3)
+      `, [rxBytes, txBytes, totalBytes]);
+
+      console.log('[Poller] VXLAN usage logged successfully:', { rxBytes, txBytes, totalBytes });
+    }
+  } catch (err) {
+    console.error('[Poller] VXLAN usage logging error:', err.message);
+  }
+}
+
 export function startPollers() {
   console.log('Starting pollers...');
 
@@ -350,6 +378,9 @@ export function startPollers() {
   checkLtePing();
   ltePingInterval = setInterval(checkLtePing, 30 * 1000);
 
+  logVxlanUsage();
+  usageLogInterval = setInterval(logVxlanUsage, 3600 * 1000);
+
   console.log('Pollers started');
 }
 
@@ -358,5 +389,6 @@ export function stopPollers() {
   if (logPollerInterval) clearInterval(logPollerInterval);
   if (trafficPollerInterval) clearInterval(trafficPollerInterval);
   if (ltePingInterval) clearInterval(ltePingInterval);
+  if (usageLogInterval) clearInterval(usageLogInterval);
   console.log('Pollers stopped');
 }

@@ -188,6 +188,20 @@ CREATE INDEX IF NOT EXISTS idx_wifi_scan_address ON wifi_scan_results(address);
 CREATE INDEX IF NOT EXISTS idx_wifi_scan_interface_name ON wifi_scan_results(interface_name);
 `;
 
+const MIGRATION_011 = `
+-- Create VXLAN traffic usage log table for tracking data usage
+-- This table stores daily snapshots of VXLAN interface traffic for SIM card data monitoring
+CREATE TABLE IF NOT EXISTS vxlan_usage_log (
+  id BIGSERIAL PRIMARY KEY,
+  logged_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  rx_bytes BIGINT NOT NULL,
+  tx_bytes BIGINT NOT NULL,
+  total_bytes BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_vxlan_usage_logged_at ON vxlan_usage_log(logged_at DESC);
+`;
+
 export async function runMigrations() {
   try {
     console.log('Running database migrations...');
@@ -210,7 +224,8 @@ export async function runMigrations() {
       { name: '007_wifi_signal_rate', sql: MIGRATION_007 },
       { name: '008_wlan_traffic_speed', sql: MIGRATION_008 },
       { name: '009_simplify_rbac', sql: MIGRATION_009 },
-      { name: '010_wifi_scan_results', sql: MIGRATION_010 }
+      { name: '010_wifi_scan_results', sql: MIGRATION_010 },
+      { name: '011_vxlan_usage_log', sql: MIGRATION_011 }
     ];
 
     for (const migration of migrations) {

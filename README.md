@@ -18,7 +18,7 @@ Production-ready monitoring and management dashboard for MikroTik routers with a
 - SMS message management (read, send, delete)
 - Interface monitoring with real-time statistics
 - Historical log collection and filtering
-- Traffic usage tracking with persistence
+- VXLAN traffic monitoring with hourly usage logging
 - Ping testing tool
 - Multi-user support with admin/user roles
 
@@ -213,7 +213,9 @@ docker compose up -d --build
 ### Data Endpoints
 - `GET /api/dashboard` - System status
 - `GET /api/logs` - Logs with filtering
-- `GET /api/traffic` - Traffic data
+- `GET /api/traffic/usage-log` - VXLAN usage history
+- `POST /api/traffic/log-current` - Manually log current usage (Admin only)
+- `DELETE /api/traffic/usage-log` - Clear usage log (Admin only)
 - `POST /api/ping` - Ping test
 - `GET /api/interfaces` - Interface list
 - `GET /api/gps` - GPS data

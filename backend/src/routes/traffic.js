@@ -2,75 +2,68 @@ import { authenticateMiddleware, requireAdmin } from '../auth.js';
 import { query } from '../db.js';
 
 export default async function trafficRoutes(fastify) {
-  fastify.get('/traffic', {
+  fastify.get('/traffic/usage-log', {
     preHandler: [authenticateMiddleware]
   }, async (request) => {
-    const { period = 'day', interface: iface } = request.query;
-
-    let interval = 'hour';
-    let timeRange = '1 day';
-
-    if (period === 'week') {
-      interval = 'hour';
-      timeRange = '7 days';
-    } else if (period === 'month') {
-      interval = 'day';
-      timeRange = '30 days';
-    }
-
-    let sql = `
+    const result = await query(`
       SELECT
-        date_trunc($1, recorded_at) as time_bucket,
-        interface_name,
-        MAX(rx_bytes) - MIN(rx_bytes) as rx_bytes_delta,
-        MAX(tx_bytes) - MIN(tx_bytes) as tx_bytes_delta
-      FROM traffic_history
-      WHERE recorded_at >= NOW() - INTERVAL '${timeRange}'
-    `;
-
-    const params = [interval];
-
-    if (iface) {
-      sql += ' AND interface_name = $2';
-      params.push(iface);
-    }
-
-    sql += ' GROUP BY time_bucket, interface_name ORDER BY time_bucket DESC';
-
-    const result = await query(sql, params);
-
-    const totalResult = await query(`
-      SELECT
-        interface_name,
-        MAX(rx_bytes) as total_rx,
-        MAX(tx_bytes) as total_tx
-      FROM traffic_history
-      WHERE interface_name = $1
-      GROUP BY interface_name
-    `, [iface || 'Vxlan']);
-
-    const totals = totalResult.rows[0] || { total_rx: 0, total_tx: 0 };
+        id,
+        logged_at,
+        rx_bytes,
+        tx_bytes,
+        total_bytes
+      FROM vxlan_usage_log
+      ORDER BY logged_at DESC
+      LIMIT 100
+    `);
 
     return {
-      history: result.rows.map(row => ({
-        time_bucket: row.time_bucket,
-        interface_name: row.interface_name,
-        rx_bytes_delta: parseInt(row.rx_bytes_delta) || 0,
-        tx_bytes_delta: parseInt(row.tx_bytes_delta) || 0
-      })),
-      totals: {
-        total_rx: parseInt(totals.total_rx) || 0,
-        total_tx: parseInt(totals.total_tx) || 0
-      }
+      logs: result.rows.map(row => ({
+        id: row.id,
+        logged_at: row.logged_at,
+        rx_bytes: parseInt(row.rx_bytes) || 0,
+        tx_bytes: parseInt(row.tx_bytes) || 0,
+        total_bytes: parseInt(row.total_bytes) || 0
+      }))
     };
   });
 
-  fastify.delete('/traffic/history', {
+  fastify.post('/traffic/log-current', {
     preHandler: [authenticateMiddleware, requireAdmin]
   }, async (request, reply) => {
     try {
-      await query('DELETE FROM traffic_history');
-      return { success: true, message: 'Traffic history reset successfully' };
+      const latestSnapshot = await query(`
+        SELECT vxlan_rx_bytes, vxlan_tx_bytes
+        FROM snapshots
+        ORDER BY snapshot_ts DESC
+        LIMIT 1
+      `);
+
+      if (latestSnapshot.rows.length === 0) {
+        return reply.code(404).send({ error: 'No snapshot data found' });
+      }
+
+      const rxBytes = parseInt(latestSnapshot.rows[0].vxlan_rx_bytes) || 0;
+      const txBytes = parseInt(latestSnapshot.rows[0].vxlan_tx_bytes) || 0;
+      const totalBytes = rxBytes + txBytes;
+
+      await query(`
+        INSERT INTO vxlan_usage_log (rx_bytes, tx_bytes, total_bytes)
+        VALUES ($1, $2, $3)
+      `, [rxBytes, txBytes, totalBytes]);
+
+      return { success: true, message: 'Traffic usage logged successfully' };
+    } catch (err) {
+      return reply.code(500).send({ error: err.message });
+    }
+  });
+
+  fastify.delete('/traffic/usage-log', {
+    preHandler: [authenticateMiddleware, requireAdmin]
+  }, async (request, reply) => {
+    try {
+      await query('DELETE FROM vxlan_usage_log');
+      return { success: true, message: 'Usage log cleared successfully' };
     } catch (err) {
       return reply.code(500).send({ error: err.message });
     }
