@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { TriangleAlert as AlertTriangle, RefreshCw } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { User, Snapshot } from '../types';
@@ -33,6 +33,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [error, setError] = useState('');
   const [showRebootDialog, setShowRebootDialog] = useState(false);
   const [rebooting, setRebooting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -42,13 +43,16 @@ export default function Dashboard({ user }: DashboardProps) {
     return () => clearInterval(interval);
   }, [user]);
 
-  async function fetchDashboardData() {
+  async function fetchDashboardData(manual = false) {
+    if (manual) setRefreshing(true);
     try {
       const data = await api.dashboard.getData();
       setDashboardData(data);
       setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
+    } finally {
+      if (manual) setRefreshing(false);
     }
   }
 
@@ -77,10 +81,18 @@ export default function Dashboard({ user }: DashboardProps) {
       )}
 
       {snapshot && (
-        <div className="flex justify-end">
+        <div className="flex justify-end items-center gap-2">
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Osveženo: {new Date(snapshot.snapshot_ts).toLocaleTimeString('sl-SI')}
           </p>
+          <button
+            onClick={() => fetchDashboardData(true)}
+            disabled={refreshing}
+            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50"
+            title="Osveži"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 dark:text-slate-400 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
         </div>
       )}
 
