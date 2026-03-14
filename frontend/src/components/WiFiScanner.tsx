@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wifi, Search, TriangleAlert as AlertTriangle, WifiOff, RefreshCw } from 'lucide-react';
+import { Wifi, Search, AlertTriangle, WifiOff, RefreshCw } from 'lucide-react';
 import { api } from '../api';
 import type { WiFiNetwork, Snapshot } from '../types';
 import { useLanguage } from '../LanguageContext';
