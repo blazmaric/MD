@@ -40,7 +40,18 @@ export default function LteStatus({ snapshot, lteConnected }: LteStatusProps) {
     return typeof value === 'number' ? value.toString() : value;
   }
 
+  function getLedCount(rsrp?: number | string | null): number {
+    const rsrpNum = typeof rsrp === 'number' ? rsrp : (typeof rsrp === 'string' && rsrp !== '' ? parseFloat(rsrp) : null);
+    if (!rsrpNum || isNaN(rsrpNum)) return 0;
+    if (rsrpNum >= -80) return 5;  // Excellent
+    if (rsrpNum >= -90) return 4;  // Good
+    if (rsrpNum >= -100) return 3; // Moderate
+    if (rsrpNum >= -110) return 2; // Poor
+    return 1;                       // Very Poor
+  }
+
   const signalQuality = getSignalQuality(snapshot.lte_rsrp);
+  const activeLeds = getLedCount(snapshot.lte_rsrp);
 
   return (
     <div className="bg-gradient-to-br from-rose-50 to-pink-50 dark:from-slate-800 dark:to-slate-800 rounded-xl shadow-lg border border-rose-100 dark:border-slate-700">
@@ -78,9 +89,27 @@ export default function LteStatus({ snapshot, lteConnected }: LteStatusProps) {
 
           <div className="bg-white/60 dark:bg-slate-700/40 rounded-lg p-3">
             <p className="text-xs text-slate-600 dark:text-slate-400 mb-2 uppercase font-medium">{t('signalQuality')}</p>
-            <p className={`text-lg font-bold ${signalQuality.color}`}>
-              {signalQuality.label}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className={`text-lg font-bold ${signalQuality.color}`}>
+                {signalQuality.label}
+              </p>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((led) => (
+                  <div
+                    key={led}
+                    className={`w-1.5 h-3 rounded-sm transition-all ${
+                      led <= activeLeds
+                        ? led <= 2
+                          ? 'bg-red-500'
+                          : led === 3
+                          ? 'bg-yellow-500'
+                          : 'bg-green-500'
+                        : 'bg-slate-300 dark:bg-slate-600'
+                    } ${led <= activeLeds ? 'opacity-100' : 'opacity-30'}`}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
