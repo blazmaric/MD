@@ -22,6 +22,9 @@ interface DashboardData {
   interfaces: any[];
   smsMessages: any[];
   publicIp: string | null;
+  lte: {
+    connected: boolean;
+  } | null;
 }
 
 export default function Dashboard({ user }: DashboardProps) {
@@ -30,11 +33,9 @@ export default function Dashboard({ user }: DashboardProps) {
   const [error, setError] = useState('');
   const [showRebootDialog, setShowRebootDialog] = useState(false);
   const [rebooting, setRebooting] = useState(false);
-  const [lteConnected, setLteConnected] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
-    checkLte();
     const interval = setInterval(() => {
       fetchDashboardData();
     }, 3000);
@@ -48,16 +49,6 @@ export default function Dashboard({ user }: DashboardProps) {
       setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
-    }
-  }
-
-  async function checkLte() {
-    try {
-      const data = await api.wifi.checkLte();
-      setLteConnected(data.connected);
-    } catch (err) {
-      console.error('Failed to check LTE status:', err);
-      setLteConnected(null);
     }
   }
 
@@ -75,6 +66,7 @@ export default function Dashboard({ user }: DashboardProps) {
   }
 
   const snapshot = dashboardData?.summary || null;
+  const lteConnected = dashboardData?.lte?.connected ?? null;
 
   return (
     <div className="space-y-6 pb-8">

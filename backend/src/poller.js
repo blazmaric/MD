@@ -26,6 +26,7 @@ async function collectSnapshot() {
     lte_rsrq: null,
     lte_rssi: null,
     lte_sinr: null,
+    lte_connected: null,
     wifi_ssid: null,
     wifi_status: null,
     wifi_signal: null,
@@ -193,6 +194,19 @@ async function collectSnapshot() {
     snapshot.interfaces_data = JSON.stringify(interfacesWithTraffic);
 
     snapshot.sms_messages = JSON.stringify(smsInbox || []);
+
+    // Quick LTE connectivity check (no SSH) - only check interface status
+    const lteIface = interfaces.find(iface => iface.name === config.mikrotik.interfaces.lte);
+    const lteAddresses = await mt.mtFetch('/rest/ip/address');
+    const lteAddress = lteAddresses.find(addr => addr.interface === config.mikrotik.interfaces.lte && addr.disabled !== 'true');
+
+    // Consider connected if: interface UP + has IP address
+    snapshot.lte_connected = !!(
+      lteIface &&
+      lteIface.running === 'true' &&
+      lteIface.disabled !== 'true' &&
+      lteAddress
+    );
 
     const elapsed = Date.now() - startTime;
     snapshot.stale = elapsed > (config.polling.staleSeconds * 1000);
