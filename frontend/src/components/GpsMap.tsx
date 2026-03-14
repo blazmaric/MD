@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { MapPin, Satellite, Mountain, Gauge, ExternalLink, Crosshair, ZoomIn, ZoomOut } from 'lucide-react';
+import { MapPin, Satellite, Mountain, Gauge, Crosshair, ZoomIn, ZoomOut } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
 import L from 'leaflet';
@@ -13,8 +13,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const createLocationIcon = () => L.divIcon({
-  html: `<div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+const createLocationIcon = (lat: number, lng: number) => L.divIcon({
+  html: `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener noreferrer" style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none;">
     <div style="position: absolute; width: 32px; height: 32px; background: rgba(37, 99, 235, 0.2); border-radius: 50%; animation: pulse 2s infinite;"></div>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#2563eb" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); position: relative; z-index: 1;">
       <circle cx="12" cy="12" r="10" fill="#2563eb"/>
@@ -33,7 +33,7 @@ const createLocationIcon = () => L.divIcon({
         }
       }
     </style>
-  </div>`,
+  </a>`,
   className: 'location-marker',
   iconSize: [32, 32],
   iconAnchor: [16, 16],
@@ -89,32 +89,21 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
             <MapPin className="w-5 h-5 text-green-600 dark:text-green-400" />
             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('gpsLocation')}</h3>
           </div>
-          <div className="flex items-center gap-2">
-            {hasGps && (
-              <>
-                <button
-                  onClick={handleRecenter}
-                  className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
-                >
-                  <Crosshair className="w-3.5 h-3.5" />
-                  {t('recenterMap')}
-                </button>
-                <a
-                  href={`https://www.google.com/maps?q=${lat},${lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  {t('openInMaps')}
-                </a>
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                  {t('gpsSignal')}
-                </div>
-              </>
-            )}
-          </div>
+          {hasGps && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleRecenter}
+                className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+              >
+                <Crosshair className="w-3.5 h-3.5" />
+                {t('recenterMap')}
+              </button>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                {t('gpsSignal')}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -149,7 +138,7 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <Marker position={[lat!, lng!]} icon={createLocationIcon()}>
+                <Marker position={[lat!, lng!]} icon={createLocationIcon(lat!, lng!)}>
                   <Popup>
                     <div className="text-sm">
                       <p className="font-semibold">Current Location</p>
