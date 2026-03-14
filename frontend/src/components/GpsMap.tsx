@@ -54,13 +54,11 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
             {hasGps && (
               <>
                 <a
-                  href={`https://www.google.com/maps?q=${lat},${lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={`geo:${lat},${lng}`}
                   className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  Google Maps
+                  {t('openInMaps')}
                 </a>
                 <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>

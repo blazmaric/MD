@@ -97,7 +97,7 @@ export const translations = {
     altitude: 'Višina',
     speed: 'Hitrost',
     satellitesLabel: 'Sateliti',
-    openInMaps: 'Odpri v Google Maps',
+    openInMaps: 'Odpri v Zemljevidih',
     fix: 'Fix',
 
     // Wlan5 Clients
@@ -371,7 +371,7 @@ export const translations = {
     altitude: 'Altitude',
     speed: 'Speed',
     satellitesLabel: 'Satellites',
-    openInMaps: 'Open in Google Maps',
+    openInMaps: 'Open in Maps',
     fix: 'Fix',
 
     // Wlan5 Clients
