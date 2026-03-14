@@ -1,6 +1,8 @@
-import { Power, AlertCircle, TrendingUp, Zap, Server } from 'lucide-react';
+import { useState } from 'react';
+import { Power, CircleAlert as AlertCircle, TrendingUp, Zap, Server, History, X } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
+import TrafficUsageLog from './TrafficUsageLog';
 
 interface SummaryCardsProps {
   snapshot: Snapshot | null;
@@ -9,6 +11,7 @@ interface SummaryCardsProps {
 
 export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) {
   const { t } = useLanguage();
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
 
   if (!snapshot) {
     return (
@@ -72,11 +75,20 @@ export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) 
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-800 dark:to-slate-800 rounded-xl shadow-lg border border-blue-100 dark:border-slate-700 p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-blue-600 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-600 rounded-lg">
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('usageAndSpeed')}</h3>
             </div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('usageAndSpeed')}</h3>
+            <button
+              onClick={() => setShowHistoryModal(true)}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            >
+              <History className="w-4 h-4" />
+              Zgodovina porabe
+            </button>
           </div>
 
           <div className="space-y-6">
@@ -188,6 +200,30 @@ export default function SummaryCards({ snapshot, onReboot }: SummaryCardsProps) 
           </div>
         </div>
       </div>
+
+      {showHistoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-3">
+                <History className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                  Zgodovina porabe prometa
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-slate-600 dark:text-slate-400" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-6">
+              <TrafficUsageLog />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
