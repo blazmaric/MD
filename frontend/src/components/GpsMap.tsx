@@ -25,13 +25,6 @@ interface GpsMapProps {
   snapshot: Snapshot | null;
 }
 
-function MapUpdater({ lat, lng }: { lat: number; lng: number }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView([lat, lng], 18);
-  }, [lat, lng, map]);
-  return null;
-}
 
 export default function GpsMap({ snapshot }: GpsMapProps) {
   const { t } = useLanguage();
@@ -133,7 +126,6 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                     </div>
                   </Popup>
                 </Marker>
-                <MapUpdater lat={lat!} lng={lng!} />
               </MapContainer>
             </div>
 
