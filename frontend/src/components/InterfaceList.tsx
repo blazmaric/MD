@@ -20,7 +20,7 @@ interface InterfaceListProps {
   publicIp: string | null;
 }
 
-export default function InterfaceList({ interfaces: propInterfaces, publicIp }: InterfaceListProps) {
+export default function InterfaceList({ interfaces: propInterfaces }: InterfaceListProps) {
   const { t } = useLanguage();
 
   const sortedInterfaces = [...propInterfaces].sort((a: Interface, b: Interface) => {
