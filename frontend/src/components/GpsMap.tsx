@@ -13,13 +13,15 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const createLocationIcon = (lat: number, lng: number) => L.divIcon({
-  html: `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener noreferrer" style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none;">
-    <div style="position: absolute; width: 32px; height: 32px; background: rgba(37, 99, 235, 0.2); border-radius: 50%; animation: pulse 2s infinite;"></div>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#2563eb" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); position: relative; z-index: 1;">
-      <circle cx="12" cy="12" r="10" fill="#2563eb"/>
-      <circle cx="12" cy="12" r="6" fill="#ffffff"/>
-      <circle cx="12" cy="12" r="3" fill="#2563eb"/>
+const createShipIcon = (lat: number, lng: number) => L.divIcon({
+  html: `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener noreferrer" style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none;">
+    <div style="position: absolute; width: 48px; height: 48px; background: rgba(37, 99, 235, 0.2); border-radius: 50%; animation: pulse 2s infinite;"></div>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); position: relative; z-index: 1;">
+      <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" fill="none" stroke="#2563eb"/>
+      <path d="M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.94 5.34 2.81 7.76" fill="#2563eb" opacity="0.2"/>
+      <path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6" fill="#fff" stroke="#2563eb"/>
+      <path d="M12 10v4" stroke="#2563eb"/>
+      <path d="M12 2v3" stroke="#2563eb"/>
     </svg>
     <style>
       @keyframes pulse {
@@ -34,10 +36,10 @@ const createLocationIcon = (lat: number, lng: number) => L.divIcon({
       }
     </style>
   </a>`,
-  className: 'location-marker',
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
-  popupAnchor: [0, -16],
+  className: 'ship-marker',
+  iconSize: [48, 48],
+  iconAnchor: [24, 24],
+  popupAnchor: [0, -24],
 });
 
 interface GpsMapProps {
@@ -65,7 +67,7 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
 
   const handleRecenter = () => {
     if (mapRef.current && lat != null && lng != null) {
-      mapRef.current.setView([lat, lng], 15, { animate: true });
+      mapRef.current.setView([lat, lng], 18, { animate: true });
     }
   };
 
@@ -129,7 +131,9 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
             <div className="h-96 rounded-lg overflow-hidden border-2 border-green-200 dark:border-green-800 shadow-lg relative z-0">
               <MapContainer
                 center={[lat!, lng!]}
-                zoom={15}
+                zoom={18}
+                maxZoom={19}
+                minZoom={3}
                 className="h-full w-full z-0"
                 zoomControl={false}
                 ref={mapRef}
@@ -138,7 +142,7 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <Marker position={[lat!, lng!]} icon={createLocationIcon(lat!, lng!)}>
+                <Marker position={[lat!, lng!]} icon={createShipIcon(lat!, lng!)}>
                   <Popup>
                     <div className="text-sm">
                       <p className="font-semibold">Current Location</p>
