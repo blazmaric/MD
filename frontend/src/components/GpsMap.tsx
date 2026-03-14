@@ -13,6 +13,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
+const shipIcon = L.divIcon({
+  html: '<div style="font-size: 32px; text-align: center; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">🚢</div>',
+  className: 'ship-marker',
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16],
+});
+
 interface GpsMapProps {
   snapshot: Snapshot | null;
 }
@@ -102,7 +110,7 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <Marker position={[lat!, lng!]}>
+                <Marker position={[lat!, lng!]} icon={shipIcon}>
                   <Popup>
                     <div className="text-sm">
                       <p className="font-semibold">Current Location</p>
