@@ -10,14 +10,13 @@ const authHeader = 'Basic ' + Buffer.from(
 
 const httpsAgent = new https.Agent({
   keepAlive: true,
-  keepAliveMsecs: 30000,
-  maxSockets: 1, // Reduced to 1 to minimize SSL load
+  keepAliveMsecs: 60000,
+  maxSockets: 2,
   maxFreeSockets: 1,
-  timeout: 15000,
-  scheduling: 'fifo',
-  checkServerIdentity: (hostname, cert) => {
-    return undefined;
-  }
+  timeout: 20000,
+  scheduling: 'lifo',
+  rejectUnauthorized: false,
+  checkServerIdentity: () => undefined
 });
 
 export async function mtFetch(path, options = {}) {

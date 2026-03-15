@@ -7,6 +7,7 @@ import type { User } from './types';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import UsersPage from './components/UsersPage';
+import { wsClient } from './websocket';
 
 export default function App() {
   const { language, setLanguage, t } = useLanguage();
@@ -19,6 +20,18 @@ export default function App() {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      wsClient.connect();
+    } else {
+      wsClient.disconnect();
+    }
+
+    return () => {
+      wsClient.disconnect();
+    };
+  }, [user]);
 
   useEffect(() => {
     setMobileMenuOpen(false);

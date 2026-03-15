@@ -2,6 +2,7 @@ import { config } from './config.js';
 import { query } from './db.js';
 import * as mt from './mikrotik.js';
 import { setLteCache } from './lteCache.js';
+import { broadcast } from './websocket.js';
 
 let lastSnapshot = null;
 let pollerInterval = null;
@@ -245,6 +246,8 @@ async function collectSnapshot() {
   } catch (err) {
     console.error('Failed to save snapshot to database:', err.message);
   }
+
+  broadcast('snapshot', snapshot);
 }
 
 async function collectLogs() {
@@ -341,9 +344,11 @@ async function checkLtePing() {
     const result = await mt.checkLteConnectivity();
     setLteCache(result, result);
     console.log('[Poller] LTE ping check result:', result);
+    broadcast('lte_connectivity', { connected: result });
   } catch (err) {
     console.error('[Poller] LTE ping check error:', err.message);
     setLteCache(false, false);
+    broadcast('lte_connectivity', { connected: false });
   }
 }
 

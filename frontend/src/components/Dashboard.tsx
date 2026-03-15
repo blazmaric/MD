@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { TriangleAlert as AlertTriangle, RefreshCw } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { User, Snapshot } from '../types';
@@ -11,6 +11,7 @@ import LteStatus from './LteStatus';
 import WlanStatus from './WlanStatus';
 import Wlan5Status from './Wlan5Status';
 import GpsMap from './GpsMap';
+import { wsClient } from '../websocket';
 
 interface DashboardProps {
   user: User;
@@ -37,10 +38,30 @@ export default function Dashboard({ user }: DashboardProps) {
 
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(() => {
-      fetchDashboardData();
-    }, 3000);
-    return () => clearInterval(interval);
+
+    const handleSnapshot = (data: any) => {
+      setDashboardData(prev => ({
+        ...prev!,
+        summary: data,
+        interfaces: data.interfaces_data ? JSON.parse(data.interfaces_data) : prev?.interfaces || [],
+        smsMessages: data.sms_messages ? JSON.parse(data.sms_messages) : prev?.smsMessages || []
+      }));
+    };
+
+    const handleLteConnectivity = (data: any) => {
+      setDashboardData(prev => ({
+        ...prev!,
+        lte: data
+      }));
+    };
+
+    wsClient.on('snapshot', handleSnapshot);
+    wsClient.on('lte_connectivity', handleLteConnectivity);
+
+    return () => {
+      wsClient.off('snapshot', handleSnapshot);
+      wsClient.off('lte_connectivity', handleLteConnectivity);
+    };
   }, [user]);
 
   async function fetchDashboardData(manual = false) {

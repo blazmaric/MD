@@ -6,6 +6,7 @@ import { testConnection } from './db.js';
 import { runMigrations } from './migrate.js';
 import { bootstrapAdmin } from './auth.js';
 import { startPollers, stopPollers } from './poller.js';
+import { initWebSocket } from './websocket.js';
 
 import authRoutes from './routes/auth.js';
 import summaryRoutes from './routes/summary.js';
@@ -68,6 +69,8 @@ async function start() {
 
     await fastify.listen({ port: config.port, host: '0.0.0.0' });
     console.log(`Server listening on port ${config.port}`);
+
+    initWebSocket(fastify.server);
 
     startPollers();
 
