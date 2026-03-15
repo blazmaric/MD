@@ -67,15 +67,22 @@ async function collectSnapshot() {
   };
 
   try {
-    const [route, lte, wifi, sysres, interfaces, cloud, gps, wlan5Status, smsInbox] = await Promise.all([
+    // Batch 1: Critical system info (run in parallel)
+    const [route, sysres, interfaces] = await Promise.all([
       mt.getDefaultRoute(),
-      mt.getLteStatus(),
-      mt.getWifiStatus(),
       mt.getSystemResource(),
-      mt.getInterfaces(),
+      mt.getInterfaces()
+    ]);
+
+    // Batch 2: Network status (sequential to reduce SSL load)
+    const lte = await mt.getLteStatus();
+    const wifi = await mt.getWifiStatus();
+    const wlan5Status = await mt.getWlan5Status();
+
+    // Batch 3: Additional info (run in parallel)
+    const [cloud, gps, smsInbox] = await Promise.all([
       mt.getCloudStatus(),
       mt.getGpsStatus(),
-      mt.getWlan5Status(),
       mt.getSmsInbox()
     ]);
 
@@ -189,14 +196,18 @@ async function collectSnapshot() {
       snapshot.wlan5_disabled = wlan5Status.disabled;
     }
 
+    // Get traffic for ether interfaces sequentially to avoid overloading SSL
     const etherInterfaces = interfaces.filter(iface => iface.name.match(/^ether\d+/));
-    const trafficData = await Promise.all(
-      etherInterfaces.map(iface => mt.monitorTraffic(iface.name))
-    );
-    const interfacesWithTraffic = etherInterfaces.map((iface, index) => ({
-      ...iface,
-      traffic: trafficData[index]
-    }));
+    const interfacesWithTraffic = [];
+
+    for (const iface of etherInterfaces) {
+      const traffic = await mt.monitorTraffic(iface.name);
+      interfacesWithTraffic.push({
+        ...iface,
+        traffic
+      });
+    }
+
     snapshot.interfaces_data = JSON.stringify(interfacesWithTraffic);
 
     snapshot.sms_messages = JSON.stringify(smsInbox || []);

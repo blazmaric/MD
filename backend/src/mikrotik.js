@@ -11,9 +11,9 @@ const authHeader = 'Basic ' + Buffer.from(
 const httpsAgent = new https.Agent({
   keepAlive: true,
   keepAliveMsecs: 30000,
-  maxSockets: 5,
-  maxFreeSockets: 2,
-  timeout: 10000,
+  maxSockets: 2, // Reduced from 5 to avoid overwhelming MikroTik SSL
+  maxFreeSockets: 1,
+  timeout: 15000,
   scheduling: 'fifo',
   checkServerIdentity: (hostname, cert) => {
     return undefined;
