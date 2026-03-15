@@ -8,18 +8,35 @@ const authHeader = 'Basic ' + Buffer.from(
   `${config.mikrotik.user}:${config.mikrotik.pass}`
 ).toString('base64');
 
-const httpsAgent = new https.Agent({
+// Connection pooling with aggressive keep-alive and error recovery
+let httpsAgent = new https.Agent({
   keepAlive: true,
-  keepAliveMsecs: 60000,
-  maxSockets: 2,
+  keepAliveMsecs: 15000, // Send keep-alive packets every 15s (reduced from 60s)
+  maxSockets: 3,
   maxFreeSockets: 1,
-  timeout: 20000,
+  timeout: 15000,
   scheduling: 'lifo',
   rejectUnauthorized: false,
   checkServerIdentity: () => undefined
 });
 
-export async function mtFetch(path, options = {}) {
+// Recreate agent every 5 minutes to force fresh connections
+setInterval(() => {
+  console.log('[httpsAgent] Recreating agent to refresh connection pool');
+  httpsAgent.destroy();
+  httpsAgent = new https.Agent({
+    keepAlive: true,
+    keepAliveMsecs: 15000,
+    maxSockets: 3,
+    maxFreeSockets: 1,
+    timeout: 15000,
+    scheduling: 'lifo',
+    rejectUnauthorized: false,
+    checkServerIdentity: () => undefined
+  });
+}, 5 * 60 * 1000);
+
+export async function mtFetch(path, options = {}, retryCount = 0) {
   const url = `${config.mikrotik.baseUrl}${path}`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), config.polling.requestTimeoutMs);
@@ -54,6 +71,38 @@ export async function mtFetch(path, options = {}) {
     return await response.json();
   } catch (err) {
     clearTimeout(timeout);
+
+    // Auto-retry on connection errors (ECONNREFUSED, ECONNRESET, socket hang up, etc.)
+    const isConnectionError = err.code === 'ECONNREFUSED' ||
+                              err.code === 'ECONNRESET' ||
+                              err.code === 'ETIMEDOUT' ||
+                              err.code === 'EPIPE' ||
+                              err.message?.includes('socket hang up') ||
+                              err.message?.includes('Client network socket disconnected');
+
+    if (isConnectionError && retryCount < 2) {
+      console.warn(`[mtFetch] Connection error (${err.message}), retrying (${retryCount + 1}/2)...`);
+
+      // Destroy current agent to force new connection
+      httpsAgent.destroy();
+      httpsAgent = new https.Agent({
+        keepAlive: true,
+        keepAliveMsecs: 15000,
+        maxSockets: 3,
+        maxFreeSockets: 1,
+        timeout: 15000,
+        scheduling: 'lifo',
+        rejectUnauthorized: false,
+        checkServerIdentity: () => undefined
+      });
+
+      // Wait before retry (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+
+      // Retry
+      return mtFetch(path, options, retryCount + 1);
+    }
+
     if (err.name === 'AbortError') {
       throw new Error('MikroTik request timeout');
     }
