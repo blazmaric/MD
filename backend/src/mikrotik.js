@@ -454,13 +454,20 @@ export async function checkLteConnectivity() {
 
     console.log('[checkLteConnectivity] ✅ Step 2 PASSED: LTE has IP:', lteAddress.address);
 
-    // Step 3: Try to ping 8.8.8.8 using REST API (3 packets - faster, less blocking)
-    console.log('[checkLteConnectivity] Step 3 - Running ping via REST API...');
-    const pingResult = await ping('8.8.8.8', 3, lteInterface);
+    // Step 3: Try to ping 8.8.8.8 using SSH (faster, doesn't block REST API)
+    console.log('[checkLteConnectivity] Step 3 - Running ping via SSH...');
+    const sshCommand = `/ping address=8.8.8.8 count=3 interface=${lteInterface}`;
+    const pingOutput = await executeSSHCommand(sshCommand);
 
-    const successfulPings = pingResult.pings.filter(p => !p.timeout).length;
-    const totalPings = pingResult.pings.length;
-    const packetLoss = Math.round(((totalPings - successfulPings) / totalPings) * 100);
+    console.log('[checkLteConnectivity] Ping output:', pingOutput);
+
+    // Parse SSH ping output: look for "sent=X received=Y"
+    const sentMatch = pingOutput.match(/sent[=\s]+(\d+)/i);
+    const receivedMatch = pingOutput.match(/received[=\s]+(\d+)/i);
+
+    const totalPings = sentMatch ? parseInt(sentMatch[1]) : 0;
+    const successfulPings = receivedMatch ? parseInt(receivedMatch[1]) : 0;
+    const packetLoss = totalPings > 0 ? Math.round(((totalPings - successfulPings) / totalPings) * 100) : 100;
 
     console.log(`[checkLteConnectivity] Ping stats: sent=${totalPings}, received=${successfulPings}, loss=${packetLoss}%`);
 
