@@ -21,10 +21,10 @@ export const config = {
   },
 
   polling: {
-    summarySeconds: parseInt(process.env.SUMMARY_POLL_SECONDS || '10', 10),
-    staleSeconds: parseInt(process.env.SUMMARY_STALE_SECONDS || '25', 10),
+    summarySeconds: parseInt(process.env.SUMMARY_POLL_SECONDS || '5', 10), // 5s (was 10s)
+    staleSeconds: parseInt(process.env.SUMMARY_STALE_SECONDS || '12', 10), // 12s (was 25s)
     requestTimeoutMs: parseInt(process.env.REQUEST_TIMEOUT_MS || '15000', 10),
-    requestDelayMs: parseInt(process.env.REQUEST_DELAY_MS || '150', 10)
+    requestDelayMs: parseInt(process.env.REQUEST_DELAY_MS || '100', 10) // 100ms (was 150ms)
   },
 
   admin: {

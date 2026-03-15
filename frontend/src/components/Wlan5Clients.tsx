@@ -44,7 +44,7 @@ export default function Wlan5Clients({ hideHeader = false }: Wlan5ClientsProps) 
 
   useEffect(() => {
     fetchClients();
-    const interval = setInterval(fetchClients, 5000);
+    const interval = setInterval(fetchClients, 3000); // 3s (was 5s)
     return () => clearInterval(interval);
   }, []);
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wifi, Search, X, Star, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { Wifi, Search, X, Star, Eye, EyeOff, CircleCheck as CheckCircle } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
@@ -71,8 +71,8 @@ export default function WlanStatus({ snapshot }: WlanStatusProps) {
     fetchWlan24Status();
     checkLte();
 
-    const statusInterval = setInterval(fetchWlan24Status, 5000);
-    const lteInterval = setInterval(checkLte, 30000);
+    const statusInterval = setInterval(fetchWlan24Status, 3000); // 3s (was 5s)
+    const lteInterval = setInterval(checkLte, 15000); // 15s (was 30s)
 
     return () => {
       clearInterval(statusInterval);

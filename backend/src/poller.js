@@ -458,10 +458,10 @@ export function startPollers() {
   pollerInterval = setInterval(collectSnapshot, config.polling.summarySeconds * 1000);
 
   collectTraffic();
-  trafficPollerInterval = setInterval(collectTraffic, 180 * 1000); // 3 min
+  trafficPollerInterval = setInterval(collectTraffic, 60 * 1000); // 1 min (was 3 min)
 
   checkLtePing();
-  ltePingInterval = setInterval(checkLtePing, 45 * 1000); // 45s
+  ltePingInterval = setInterval(checkLtePing, 30 * 1000); // 30s (was 45s)
 
   logVxlanUsage();
   usageLogInterval = setInterval(logVxlanUsage, 3600 * 1000); // 1 hour
