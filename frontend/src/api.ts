@@ -43,19 +43,6 @@ export const api = {
       apiFetch('/dashboard-data'),
   },
 
-  logs: {
-    get: (params?: { category?: string; severity?: string; search?: string; limit?: number; offset?: number }) => {
-      const query = new URLSearchParams();
-      if (params?.category) query.append('category', params.category);
-      if (params?.severity) query.append('severity', params.severity);
-      if (params?.search) query.append('search', params.search);
-      if (params?.limit) query.append('limit', params.limit.toString());
-      if (params?.offset) query.append('offset', params.offset.toString());
-
-      return apiFetch(`/logs?${query.toString()}`) as Promise<{ logs: Log[]; count: number }>;
-    },
-  },
-
   traffic: {
     get: (params?: { period?: string; interface?: string }): Promise<TrafficData> => {
       const query = new URLSearchParams();

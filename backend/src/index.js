@@ -10,7 +10,6 @@ import { initWebSocket } from './websocket.js';
 
 import authRoutes from './routes/auth.js';
 import summaryRoutes from './routes/summary.js';
-import logsRoutes from './routes/logs.js';
 import trafficRoutes from './routes/traffic.js';
 import pingRoutes from './routes/ping.js';
 import usersRoutes from './routes/users.js';
@@ -42,7 +41,6 @@ fastify.get('/api/health', async () => {
 fastify.register(authRoutes, { prefix: '/api' });
 fastify.register(dashboardRoutes, { prefix: '/api' });
 fastify.register(summaryRoutes, { prefix: '/api' });
-fastify.register(logsRoutes, { prefix: '/api' });
 fastify.register(trafficRoutes, { prefix: '/api' });
 fastify.register(pingRoutes, { prefix: '/api' });
 fastify.register(usersRoutes, { prefix: '/api' });

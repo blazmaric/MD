@@ -228,26 +228,6 @@ export const translations = {
     to: 'do',
     of: 'od',
 
-    // Logs
-    logs: 'Dnevniki',
-    searchLogs: 'Išči dnevnike...',
-    allCategories: 'Vse kategorije',
-    allSeverities: 'Vse resnosti',
-    search: 'Išči',
-    loadingLogs: 'Nalagam dnevnike...',
-    noLogsFound: 'Dnevnikov ni najdenih',
-    time: 'Čas',
-    category: 'Kategorija',
-    severity: 'Resnost',
-    messageLog: 'Sporočilo',
-    error: 'Napaka',
-    warning: 'Opozorilo',
-    info: 'Informacija',
-    showingLogs: 'Prikazujem',
-    toLogs: 'do',
-    ofLogs: 'od',
-    logsText: 'dnevnikov',
-
     // Users
     userManagement: 'Upravljanje uporabnikov',
     createUser: 'Ustvari uporabnika',
@@ -502,26 +482,6 @@ export const translations = {
     showing: 'Showing',
     to: 'to',
     of: 'of',
-
-    // Logs
-    logs: 'Logs',
-    searchLogs: 'Search logs...',
-    allCategories: 'All Categories',
-    allSeverities: 'All Severities',
-    search: 'Search',
-    loadingLogs: 'Loading logs...',
-    noLogsFound: 'No logs found',
-    time: 'Time',
-    category: 'Category',
-    severity: 'Severity',
-    messageLog: 'Message',
-    error: 'Error',
-    warning: 'Warning',
-    info: 'Info',
-    showingLogs: 'Showing',
-    toLogs: 'to',
-    ofLogs: 'of',
-    logsText: 'logs',
 
     // Users
     userManagement: 'User Management',

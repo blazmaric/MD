@@ -45,16 +45,6 @@ export interface Snapshot {
   gps_datetime_fix?: string;
 }
 
-export interface Log {
-  id: number;
-  log_time: string;
-  topics: string;
-  message: string;
-  category: string;
-  severity: string;
-  created_at: string;
-}
-
 export interface TrafficData {
   history: Array<{
     time_bucket: string;

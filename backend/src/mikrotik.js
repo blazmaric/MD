@@ -221,14 +221,6 @@ export async function monitorTraffic(interfaceName) {
   }
 }
 
-export async function getLogs() {
-  try {
-    return await mtFetch('/rest/log');
-  } catch (err) {
-    console.error('Failed to get logs:', err.message);
-    return [];
-  }
-}
 
 export async function ping(address, count = 4, sourceInterface = null) {
   const controller = new AbortController();
@@ -1136,29 +1128,4 @@ async function switchToNetwork(networkId, interfaceName = 'wlan24') {
   }
 }
 
-function categorizeLog(topics, message) {
-  const topicsLower = topics.toLowerCase();
-  const messageLower = message.toLowerCase();
-
-  if (topicsLower.includes('wireless') || topicsLower.includes('wifi')) return 'wifi';
-  if (topicsLower.includes('vpn') || topicsLower.includes('ipsec') || topicsLower.includes('l2tp')) return 'vpn';
-  if (topicsLower.includes('firewall')) return 'firewall';
-  if (topicsLower.includes('lte') || messageLower.includes('lte')) return 'lte';
-  if (topicsLower.includes('dns')) return 'dns';
-  if (topicsLower.includes('auth') || topicsLower.includes('login')) return 'auth';
-  if (topicsLower.includes('system')) return 'system';
-
-  return 'network';
-}
-
-function getSeverity(topics) {
-  const topicsLower = topics.toLowerCase();
-
-  if (topicsLower.includes('error') || topicsLower.includes('critical')) return 'error';
-  if (topicsLower.includes('warning')) return 'warning';
-  if (topicsLower.includes('info')) return 'info';
-
-  return 'info';
-}
-
-export { categorizeLog, getSeverity, getSavedNetworks, switchToNetwork };
+export { getSavedNetworks, switchToNetwork };

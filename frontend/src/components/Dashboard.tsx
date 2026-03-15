@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { TriangleAlert as AlertTriangle, RefreshCw } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { User, Snapshot } from '../types';
 import SummaryCards from './SummaryCards';
-import LogViewer from './LogViewer';
 import SmsManager from './SmsManager';
 import InterfaceList from './InterfaceList';
 import LteStatus from './LteStatus';
@@ -139,8 +138,6 @@ export default function Dashboard({ user }: DashboardProps) {
       <div className="w-full">
         <InterfaceList interfaces={dashboardData?.interfaces || []} publicIp={dashboardData?.publicIp || null} />
       </div>
-
-      <LogViewer />
 
       {showRebootDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50">

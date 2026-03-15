@@ -6,7 +6,6 @@ import { broadcast } from './websocket.js';
 
 let lastSnapshot = null;
 let pollerInterval = null;
-let logPollerInterval = null;
 let trafficPollerInterval = null;
 let ltePingInterval = null;
 let usageLogInterval = null;
@@ -253,41 +252,6 @@ async function collectSnapshot() {
   broadcast('snapshot', snapshot);
 }
 
-async function collectLogs() {
-  try {
-    const logs = await mt.getLogs();
-
-    if (logs.length === 0) return;
-
-    const values = [];
-    const placeholders = [];
-    let paramIndex = 1;
-
-    for (const log of logs) {
-      const logTime = log.time ? parseLogTime(log.time) : new Date();
-      const topics = log.topics || '';
-      const message = log.message || '';
-      const category = mt.categorizeLog(topics, message);
-      const severity = mt.getSeverity(topics);
-
-      placeholders.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4})`);
-      values.push(logTime, topics, message, category, severity);
-      paramIndex += 5;
-    }
-
-    try {
-      await query(`
-        INSERT INTO logs (log_time, topics, message, category, severity)
-        VALUES ${placeholders.join(', ')}
-        ON CONFLICT DO NOTHING
-      `, values);
-    } catch (err) {
-      console.error('Batch log insert error:', err.message);
-    }
-  } catch (err) {
-    console.error('Log collection error:', err.message);
-  }
-}
 
 async function collectTraffic() {
   try {
@@ -493,9 +457,6 @@ export function startPollers() {
   collectSnapshot();
   pollerInterval = setInterval(collectSnapshot, config.polling.summarySeconds * 1000);
 
-  collectLogs();
-  logPollerInterval = setInterval(collectLogs, 240 * 1000); // 4 min (reduced from 3 min)
-
   collectTraffic();
   trafficPollerInterval = setInterval(collectTraffic, 360 * 1000); // 6 min (reduced from 5 min)
 
@@ -513,7 +474,6 @@ export function startPollers() {
 
 export function stopPollers() {
   if (pollerInterval) clearInterval(pollerInterval);
-  if (logPollerInterval) clearInterval(logPollerInterval);
   if (trafficPollerInterval) clearInterval(trafficPollerInterval);
   if (ltePingInterval) clearInterval(ltePingInterval);
   if (usageLogInterval) clearInterval(usageLogInterval);
