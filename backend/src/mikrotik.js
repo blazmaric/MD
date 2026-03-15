@@ -8,13 +8,13 @@ const authHeader = 'Basic ' + Buffer.from(
   `${config.mikrotik.user}:${config.mikrotik.pass}`
 ).toString('base64');
 
-// Connection pooling optimized for real-time data updates
+// Connection pooling optimized for WAN connections (70ms latency)
 let httpsAgent = new https.Agent({
   keepAlive: true,
   keepAliveMsecs: 30000,
   maxSockets: 5,
   maxFreeSockets: 2,
-  timeout: 20000,
+  timeout: 25000,
   scheduling: 'lifo',
   rejectUnauthorized: false,
   checkServerIdentity: () => undefined
@@ -29,7 +29,7 @@ setInterval(() => {
     keepAliveMsecs: 30000,
     maxSockets: 5,
     maxFreeSockets: 2,
-    timeout: 20000,
+    timeout: 25000,
     scheduling: 'lifo',
     rejectUnauthorized: false,
     checkServerIdentity: () => undefined
@@ -90,14 +90,14 @@ export async function mtFetch(path, options = {}, retryCount = 0) {
         keepAliveMsecs: 30000,
         maxSockets: 5,
         maxFreeSockets: 2,
-        timeout: 20000,
+        timeout: 25000,
         scheduling: 'lifo',
         rejectUnauthorized: false,
         checkServerIdentity: () => undefined
       });
 
-      // Wait before retry (shorter backoff for faster recovery)
-      await new Promise(resolve => setTimeout(resolve, 300 * (retryCount + 1)));
+      // Wait before retry (account for WAN latency)
+      await new Promise(resolve => setTimeout(resolve, 500 * (retryCount + 1)));
 
       // Retry
       return mtFetch(path, options, retryCount + 1);
