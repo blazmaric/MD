@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wifi, Search, X, Star, Eye, EyeOff, CircleCheck as CheckCircle } from 'lucide-react';
+import { Wifi, Search, X, Star, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
