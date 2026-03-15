@@ -458,16 +458,16 @@ export function startPollers() {
   pollerInterval = setInterval(collectSnapshot, config.polling.summarySeconds * 1000);
 
   collectTraffic();
-  trafficPollerInterval = setInterval(collectTraffic, 360 * 1000); // 6 min (reduced from 5 min)
+  trafficPollerInterval = setInterval(collectTraffic, 180 * 1000); // 3 min
 
   checkLtePing();
-  ltePingInterval = setInterval(checkLtePing, 90 * 1000); // 90s (reduced from 60s)
+  ltePingInterval = setInterval(checkLtePing, 45 * 1000); // 45s
 
   logVxlanUsage();
   usageLogInterval = setInterval(logVxlanUsage, 3600 * 1000); // 1 hour
 
   checkMonthlyReset();
-  monthlyResetInterval = setInterval(checkMonthlyReset, 360 * 1000); // 6 min (reduced from 5 min)
+  monthlyResetInterval = setInterval(checkMonthlyReset, 300 * 1000); // 5 min
 
   console.log('Pollers started');
 }

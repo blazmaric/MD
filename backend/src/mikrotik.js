@@ -8,35 +8,33 @@ const authHeader = 'Basic ' + Buffer.from(
   `${config.mikrotik.user}:${config.mikrotik.pass}`
 ).toString('base64');
 
-// Connection pooling optimized for MikroTik session limits (900s max session)
-// CONSERVATIVE settings to avoid session overload
+// Connection pooling optimized for real-time data updates
 let httpsAgent = new https.Agent({
   keepAlive: true,
-  keepAliveMsecs: 60000, // Keep-alive every 60s (within 900s session limit)
-  maxSockets: 1, // REDUCED to 1 to minimize concurrent connections
-  maxFreeSockets: 1,
+  keepAliveMsecs: 30000,
+  maxSockets: 5,
+  maxFreeSockets: 2,
   timeout: 20000,
-  scheduling: 'lifo', // Use most recent socket first
+  scheduling: 'lifo',
   rejectUnauthorized: false,
   checkServerIdentity: () => undefined
 });
 
-// Recreate agent every 10 minutes to refresh connection before session timeout
-// MikroTik session timeout is 900s (15 min), we refresh at 10 min to be safe
+// Recreate agent every 10 minutes to refresh connections
 setInterval(() => {
-  console.log('[httpsAgent] Recreating agent to refresh connection (prevent session timeout)');
+  console.log('[httpsAgent] Recreating agent to refresh connections');
   httpsAgent.destroy();
   httpsAgent = new https.Agent({
     keepAlive: true,
-    keepAliveMsecs: 60000,
-    maxSockets: 1,
-    maxFreeSockets: 1,
+    keepAliveMsecs: 30000,
+    maxSockets: 5,
+    maxFreeSockets: 2,
     timeout: 20000,
     scheduling: 'lifo',
     rejectUnauthorized: false,
     checkServerIdentity: () => undefined
   });
-}, 10 * 60 * 1000); // 10 minutes
+}, 10 * 60 * 1000);
 
 export async function mtFetch(path, options = {}, retryCount = 0) {
   const url = `${config.mikrotik.baseUrl}${path}`;
@@ -89,17 +87,17 @@ export async function mtFetch(path, options = {}, retryCount = 0) {
       httpsAgent.destroy();
       httpsAgent = new https.Agent({
         keepAlive: true,
-        keepAliveMsecs: 60000,
-        maxSockets: 1,
-        maxFreeSockets: 1,
+        keepAliveMsecs: 30000,
+        maxSockets: 5,
+        maxFreeSockets: 2,
         timeout: 20000,
         scheduling: 'lifo',
         rejectUnauthorized: false,
         checkServerIdentity: () => undefined
       });
 
-      // Wait before retry (exponential backoff)
-      await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+      // Wait before retry (shorter backoff for faster recovery)
+      await new Promise(resolve => setTimeout(resolve, 300 * (retryCount + 1)));
 
       // Retry
       return mtFetch(path, options, retryCount + 1);
