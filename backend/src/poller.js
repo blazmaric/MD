@@ -138,14 +138,6 @@ async function collectSnapshot() {
       snapshot.wifi_rx_rate = wifi['rx-rate'] || null;
     }
 
-    const wlanIface = interfaces.find(iface => iface.name === config.mikrotik.interfaces.wlan);
-    if (wlanIface) {
-      const wlanTraffic = await mt.monitorTraffic(config.mikrotik.interfaces.wlan);
-      if (wlanTraffic) {
-        snapshot.wlan_speed_rx = wlanTraffic['rx-bits-per-second'] ? Math.floor(wlanTraffic['rx-bits-per-second'] / 8) : null;
-        snapshot.wlan_speed_tx = wlanTraffic['tx-bits-per-second'] ? Math.floor(wlanTraffic['tx-bits-per-second'] / 8) : null;
-      }
-    }
 
     if (sysres) {
       snapshot.system_uptime = sysres.uptime ? parseDuration(sysres.uptime) : null;
@@ -196,17 +188,12 @@ async function collectSnapshot() {
       snapshot.wlan5_disabled = wlan5Status.disabled;
     }
 
-    // Get traffic for ether interfaces sequentially to avoid overloading SSL
+    // Get traffic for ether interfaces in parallel
     const etherInterfaces = interfaces.filter(iface => iface.name.match(/^ether\d+/));
-    const interfacesWithTraffic = [];
-
-    for (const iface of etherInterfaces) {
-      const traffic = await mt.monitorTraffic(iface.name);
-      interfacesWithTraffic.push({
-        ...iface,
-        traffic
-      });
-    }
+    const trafficPromises = etherInterfaces.map(iface =>
+      mt.monitorTraffic(iface.name).then(traffic => ({ ...iface, traffic }))
+    );
+    const interfacesWithTraffic = await Promise.all(trafficPromises);
 
     snapshot.interfaces_data = JSON.stringify(interfacesWithTraffic);
 
@@ -265,6 +252,12 @@ async function collectLogs() {
   try {
     const logs = await mt.getLogs();
 
+    if (logs.length === 0) return;
+
+    const values = [];
+    const placeholders = [];
+    let paramIndex = 1;
+
     for (const log of logs) {
       const logTime = log.time ? parseLogTime(log.time) : new Date();
       const topics = log.topics || '';
@@ -272,14 +265,19 @@ async function collectLogs() {
       const category = mt.categorizeLog(topics, message);
       const severity = mt.getSeverity(topics);
 
-      try {
-        await query(`
-          INSERT INTO logs (log_time, topics, message, category, severity)
-          VALUES ($1, $2, $3, $4, $5)
-          ON CONFLICT DO NOTHING
-        `, [logTime, topics, message, category, severity]);
-      } catch (err) {
-      }
+      placeholders.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4})`);
+      values.push(logTime, topics, message, category, severity);
+      paramIndex += 5;
+    }
+
+    try {
+      await query(`
+        INSERT INTO logs (log_time, topics, message, category, severity)
+        VALUES ${placeholders.join(', ')}
+        ON CONFLICT DO NOTHING
+      `, values);
+    } catch (err) {
+      console.error('Batch log insert error:', err.message);
     }
   } catch (err) {
     console.error('Log collection error:', err.message);

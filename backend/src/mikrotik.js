@@ -414,39 +414,25 @@ export async function checkLteConnectivity() {
 
     console.log('[checkLteConnectivity] ✅ Step 2 PASSED: LTE has IP:', lteAddress.address);
 
-    // Step 3: Try to ping 8.8.8.8 to verify connectivity (6 packets minimum)
-    const command = `/ping 8.8.8.8 count=6 interface=${lteInterface}`;
-    console.log('[checkLteConnectivity] Step 3 - Running ping:', command);
-    const output = await executeSSHCommand(command);
-    console.log('[checkLteConnectivity] Ping output:', output);
+    // Step 3: Try to ping 8.8.8.8 using REST API (6 packets)
+    console.log('[checkLteConnectivity] Step 3 - Running ping via REST API...');
+    const pingResult = await ping('8.8.8.8', 6, lteInterface);
 
-    // Parse packet loss
-    const lossMatch = output.match(/packet-loss=(\d+)%/);
-    if (!lossMatch) {
-      console.log('[checkLteConnectivity] ❌ Step 3 FAILED: Could not parse ping result');
-      return false;
-    }
+    const successfulPings = pingResult.pings.filter(p => !p.timeout).length;
+    const totalPings = pingResult.pings.length;
+    const packetLoss = Math.round(((totalPings - successfulPings) / totalPings) * 100);
 
-    const packetLoss = parseInt(lossMatch[1], 10);
-
-    // Parse sent and received packets
-    const sentMatch = output.match(/sent=(\d+)/);
-    const receivedMatch = output.match(/received=(\d+)/);
-
-    const sent = sentMatch ? parseInt(sentMatch[1], 10) : 0;
-    const received = receivedMatch ? parseInt(receivedMatch[1], 10) : 0;
-
-    console.log(`[checkLteConnectivity] Ping stats: sent=${sent}, received=${received}, loss=${packetLoss}%`);
+    console.log(`[checkLteConnectivity] Ping stats: sent=${totalPings}, received=${successfulPings}, loss=${packetLoss}%`);
 
     // STRICT CHECK: Require at least 50% successful pings (3/6 packets)
     // This ensures not just interface UP, but actual working internet connection
-    const isConnected = sent >= 6 && received >= 3 && packetLoss <= 50;
+    const isConnected = totalPings >= 6 && successfulPings >= 3 && packetLoss <= 50;
 
     if (isConnected) {
-      console.log(`[checkLteConnectivity] ✅ Step 3 PASSED: ${received}/${sent} packets successful (${packetLoss}% loss)`);
+      console.log(`[checkLteConnectivity] ✅ Step 3 PASSED: ${successfulPings}/${totalPings} packets successful (${packetLoss}% loss)`);
       console.log('[checkLteConnectivity] 🎉 ALL CHECKS PASSED - LTE is fully connected');
     } else {
-      console.log(`[checkLteConnectivity] ❌ Step 3 FAILED: Only ${received}/${sent} packets successful (${packetLoss}% loss)`);
+      console.log(`[checkLteConnectivity] ❌ Step 3 FAILED: Only ${successfulPings}/${totalPings} packets successful (${packetLoss}% loss)`);
       console.log('[checkLteConnectivity] ❌ Internet connection not working - možno je, da na kartici ni dobroimetja!');
     }
 
@@ -550,11 +536,22 @@ export async function scanWifi(interfaceName, db, force = false) {
     console.log('[WiFi Scan] After deduplication:', result.length, 'unique networks');
 
     const scannedAt = new Date().toISOString();
-    for (const network of result) {
+
+    if (result.length > 0) {
+      const values = [];
+      const placeholders = [];
+      let paramIndex = 1;
+
+      for (const network of result) {
+        placeholders.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}, $${paramIndex + 5}, $${paramIndex + 6}, $${paramIndex + 7})`);
+        values.push(interfaceName, network.ssid, network.address, network.signal, network.channel, network.frequency, network.security, scannedAt);
+        paramIndex += 8;
+      }
+
       await db.query(
         `INSERT INTO wifi_scan_results (interface_name, ssid, address, signal, channel, frequency, security, scanned_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [interfaceName, network.ssid, network.address, network.signal, network.channel, network.frequency, network.security, scannedAt]
+         VALUES ${placeholders.join(', ')}`,
+        values
       );
     }
 
@@ -567,18 +564,18 @@ export async function scanWifi(interfaceName, db, force = false) {
 
 export async function getWlan5Status() {
   try {
-    const monitorResult = await mtFetch('/rest/interface/wireless/monitor', {
-      method: 'POST',
-      body: JSON.stringify({
-        numbers: 'wlan5',
-        once: 'true'
-      })
-    });
+    const [monitorResult, interfaces] = await Promise.all([
+      mtFetch('/rest/interface/wireless/monitor', {
+        method: 'POST',
+        body: JSON.stringify({
+          numbers: 'wlan5',
+          once: 'true'
+        })
+      }),
+      mtFetch('/rest/interface/wireless')
+    ]);
 
     const monitor = monitorResult[0] || {};
-
-    // Get interface details for running/disabled status and SSID
-    const interfaces = await mtFetch('/rest/interface/wireless');
     const wlan5Interface = interfaces.find(iface => iface.name === 'wlan5');
 
     // Get SSID from interface if monitor doesn't have it
