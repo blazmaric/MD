@@ -23,7 +23,17 @@ interface InterfaceListProps {
 export default function InterfaceList({ interfaces: propInterfaces }: InterfaceListProps) {
   const { t } = useLanguage();
 
-  const sortedInterfaces = [...propInterfaces].sort((a: Interface, b: Interface) => {
+  // Filter: Show only ether1-ether5 and Vxlan
+  const filteredInterfaces = propInterfaces.filter((iface: Interface) => {
+    const etherMatch = iface.name.match(/^ether(\d+)/);
+    if (etherMatch) {
+      const etherNum = parseInt(etherMatch[1]);
+      return etherNum >= 1 && etherNum <= 5;
+    }
+    return iface.name.toLowerCase().includes('vxlan');
+  });
+
+  const sortedInterfaces = [...filteredInterfaces].sort((a: Interface, b: Interface) => {
     const aMatch = a.name.match(/^ether(\d+)/);
     const bMatch = b.name.match(/^ether(\d+)/);
     const aNum = aMatch ? parseInt(aMatch[1]) : 0;

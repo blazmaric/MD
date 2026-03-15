@@ -9,13 +9,21 @@ export default async function interfacesRoutes(fastify) {
     const interfaces = await getInterfaces();
     const snapshot = getLastSnapshot();
 
-    const etherInterfaces = interfaces.filter(iface => iface.name.match(/^ether\d+/));
+    // Filter: Show only ether1-ether5 and Vxlan
+    const filteredInterfaces = interfaces.filter(iface => {
+      const etherMatch = iface.name.match(/^ether(\d+)/);
+      if (etherMatch) {
+        const etherNum = parseInt(etherMatch[1]);
+        return etherNum >= 1 && etherNum <= 5;
+      }
+      return iface.name.toLowerCase().includes('vxlan');
+    });
 
     const trafficData = await Promise.all(
-      etherInterfaces.map(iface => monitorTraffic(iface.name))
+      filteredInterfaces.map(iface => monitorTraffic(iface.name))
     );
 
-    const interfacesWithTraffic = etherInterfaces.map((iface, index) => ({
+    const interfacesWithTraffic = filteredInterfaces.map((iface, index) => ({
       ...iface,
       traffic: trafficData[index]
     }));
