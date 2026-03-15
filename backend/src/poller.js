@@ -151,12 +151,9 @@ async function collectSnapshot() {
 
     const vxlanIface = interfaces.find(iface => iface.name === config.mikrotik.interfaces.vxlan);
     if (vxlanIface) {
-      const traffic = await mt.monitorTraffic(config.mikrotik.interfaces.vxlan);
-      if (traffic) {
-        snapshot.current_speed_interface = config.mikrotik.interfaces.vxlan;
-        snapshot.current_speed_rx = traffic['rx-bits-per-second'] ? Math.floor(traffic['rx-bits-per-second'] / 8) : null;
-        snapshot.current_speed_tx = traffic['tx-bits-per-second'] ? Math.floor(traffic['tx-bits-per-second'] / 8) : null;
-      }
+      snapshot.current_speed_interface = config.mikrotik.interfaces.vxlan;
+      snapshot.current_speed_rx = null;
+      snapshot.current_speed_tx = null;
 
       snapshot.vxlan_rx_bytes = vxlanIface['rx-byte'] || null;
       snapshot.vxlan_tx_bytes = vxlanIface['tx-byte'] || null;
@@ -188,14 +185,8 @@ async function collectSnapshot() {
       snapshot.wlan5_disabled = wlan5Status.disabled;
     }
 
-    // Get traffic for ether interfaces in parallel
-    const etherInterfaces = interfaces.filter(iface => iface.name.match(/^ether\d+/));
-    const trafficPromises = etherInterfaces.map(iface =>
-      mt.monitorTraffic(iface.name).then(traffic => ({ ...iface, traffic }))
-    );
-    const interfacesWithTraffic = await Promise.all(trafficPromises);
-
-    snapshot.interfaces_data = JSON.stringify(interfacesWithTraffic);
+    // Store interface data without real-time traffic monitoring
+    snapshot.interfaces_data = JSON.stringify(interfaces);
 
     snapshot.sms_messages = JSON.stringify(smsInbox || []);
 

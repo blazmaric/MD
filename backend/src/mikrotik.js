@@ -585,28 +585,9 @@ export async function getWlan5Status() {
         ? wlan5Interface.ssid
         : 'N/A';
 
-    // Get real-time traffic
-    let txRate = 'N/A';
-    let rxRate = 'N/A';
-
-    const traffic = await monitorTraffic('wlan5');
-    if (traffic) {
-      const rxBps = traffic['rx-bits-per-second'] || 0;
-      const txBps = traffic['tx-bits-per-second'] || 0;
-
-      // Format speeds: if < 1 Mbps, show in Kbps
-      if (rxBps < 1000000) {
-        rxRate = `${(rxBps / 1000).toFixed(0)} Kbps`;
-      } else {
-        rxRate = `${(rxBps / 1000000).toFixed(2)} Mbps`;
-      }
-
-      if (txBps < 1000000) {
-        txRate = `${(txBps / 1000).toFixed(0)} Kbps`;
-      } else {
-        txRate = `${(txBps / 1000000).toFixed(2)} Mbps`;
-      }
-    }
+    // Traffic monitoring disabled for performance
+    const txRate = 'N/A';
+    const rxRate = 'N/A';
 
     return {
       status: monitor.status || 'N/A',
