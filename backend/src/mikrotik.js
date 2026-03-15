@@ -454,9 +454,9 @@ export async function checkLteConnectivity() {
 
     console.log('[checkLteConnectivity] ✅ Step 2 PASSED: LTE has IP:', lteAddress.address);
 
-    // Step 3: Try to ping 8.8.8.8 using REST API (6 packets)
+    // Step 3: Try to ping 8.8.8.8 using REST API (3 packets - faster, less blocking)
     console.log('[checkLteConnectivity] Step 3 - Running ping via REST API...');
-    const pingResult = await ping('8.8.8.8', 6, lteInterface);
+    const pingResult = await ping('8.8.8.8', 3, lteInterface);
 
     const successfulPings = pingResult.pings.filter(p => !p.timeout).length;
     const totalPings = pingResult.pings.length;
@@ -464,9 +464,9 @@ export async function checkLteConnectivity() {
 
     console.log(`[checkLteConnectivity] Ping stats: sent=${totalPings}, received=${successfulPings}, loss=${packetLoss}%`);
 
-    // STRICT CHECK: Require at least 50% successful pings (3/6 packets)
+    // STRICT CHECK: Require at least 2/3 successful pings (66% success rate)
     // This ensures not just interface UP, but actual working internet connection
-    const isConnected = totalPings >= 6 && successfulPings >= 3 && packetLoss <= 50;
+    const isConnected = totalPings >= 3 && successfulPings >= 2 && packetLoss <= 34;
 
     if (isConnected) {
       console.log(`[checkLteConnectivity] ✅ Step 3 PASSED: ${successfulPings}/${totalPings} packets successful (${packetLoss}% loss)`);
