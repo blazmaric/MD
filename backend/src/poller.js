@@ -68,30 +68,33 @@ async function collectSnapshot() {
   };
 
   try {
-    // Execute ALL requests sequentially to avoid SSL overload
+    // Execute ALL requests sequentially with delays to avoid session overload
+    // MikroTik has max_session=900s limit, we spread requests to avoid hitting it
+    const delay = config.polling.requestDelayMs;
+
     const route = await mt.getDefaultRoute();
-    await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
+    await new Promise(resolve => setTimeout(resolve, delay));
 
     const sysres = await mt.getSystemResource();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, delay));
 
     const interfaces = await mt.getInterfaces();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, delay));
 
     const lte = await mt.getLteStatus();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, delay));
 
     const wifi = await mt.getWifiStatus();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, delay));
 
     const wlan5Status = await mt.getWlan5Status();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, delay));
 
     const cloud = await mt.getCloudStatus();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, delay));
 
     const gps = await mt.getGpsStatus();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, delay));
 
     const smsInbox = await mt.getSmsInbox();
 
@@ -491,19 +494,19 @@ export function startPollers() {
   pollerInterval = setInterval(collectSnapshot, config.polling.summarySeconds * 1000);
 
   collectLogs();
-  logPollerInterval = setInterval(collectLogs, 180 * 1000); // 3 min (reduced frequency)
+  logPollerInterval = setInterval(collectLogs, 240 * 1000); // 4 min (reduced from 3 min)
 
   collectTraffic();
-  trafficPollerInterval = setInterval(collectTraffic, 300 * 1000); // 5 min
+  trafficPollerInterval = setInterval(collectTraffic, 360 * 1000); // 6 min (reduced from 5 min)
 
   checkLtePing();
-  ltePingInterval = setInterval(checkLtePing, 60 * 1000); // 1 min (reduced from 30s)
+  ltePingInterval = setInterval(checkLtePing, 90 * 1000); // 90s (reduced from 60s)
 
   logVxlanUsage();
   usageLogInterval = setInterval(logVxlanUsage, 3600 * 1000); // 1 hour
 
   checkMonthlyReset();
-  monthlyResetInterval = setInterval(checkMonthlyReset, 300 * 1000); // 5 min (reduced from 1 min)
+  monthlyResetInterval = setInterval(checkMonthlyReset, 360 * 1000); // 6 min (reduced from 5 min)
 
   console.log('Pollers started');
 }

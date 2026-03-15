@@ -8,33 +8,35 @@ const authHeader = 'Basic ' + Buffer.from(
   `${config.mikrotik.user}:${config.mikrotik.pass}`
 ).toString('base64');
 
-// Connection pooling with aggressive keep-alive and error recovery
+// Connection pooling optimized for MikroTik session limits (900s max session)
+// CONSERVATIVE settings to avoid session overload
 let httpsAgent = new https.Agent({
   keepAlive: true,
-  keepAliveMsecs: 15000, // Send keep-alive packets every 15s (reduced from 60s)
-  maxSockets: 3,
+  keepAliveMsecs: 60000, // Keep-alive every 60s (within 900s session limit)
+  maxSockets: 1, // REDUCED to 1 to minimize concurrent connections
   maxFreeSockets: 1,
-  timeout: 15000,
-  scheduling: 'lifo',
+  timeout: 20000,
+  scheduling: 'lifo', // Use most recent socket first
   rejectUnauthorized: false,
   checkServerIdentity: () => undefined
 });
 
-// Recreate agent every 5 minutes to force fresh connections
+// Recreate agent every 10 minutes to refresh connection before session timeout
+// MikroTik session timeout is 900s (15 min), we refresh at 10 min to be safe
 setInterval(() => {
-  console.log('[httpsAgent] Recreating agent to refresh connection pool');
+  console.log('[httpsAgent] Recreating agent to refresh connection (prevent session timeout)');
   httpsAgent.destroy();
   httpsAgent = new https.Agent({
     keepAlive: true,
-    keepAliveMsecs: 15000,
-    maxSockets: 3,
+    keepAliveMsecs: 60000,
+    maxSockets: 1,
     maxFreeSockets: 1,
-    timeout: 15000,
+    timeout: 20000,
     scheduling: 'lifo',
     rejectUnauthorized: false,
     checkServerIdentity: () => undefined
   });
-}, 5 * 60 * 1000);
+}, 10 * 60 * 1000); // 10 minutes
 
 export async function mtFetch(path, options = {}, retryCount = 0) {
   const url = `${config.mikrotik.baseUrl}${path}`;
@@ -87,10 +89,10 @@ export async function mtFetch(path, options = {}, retryCount = 0) {
       httpsAgent.destroy();
       httpsAgent = new https.Agent({
         keepAlive: true,
-        keepAliveMsecs: 15000,
-        maxSockets: 3,
+        keepAliveMsecs: 60000,
+        maxSockets: 1,
         maxFreeSockets: 1,
-        timeout: 15000,
+        timeout: 20000,
         scheduling: 'lifo',
         rejectUnauthorized: false,
         checkServerIdentity: () => undefined
