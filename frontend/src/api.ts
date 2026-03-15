@@ -1,4 +1,4 @@
-import type { User, Snapshot, Log, TrafficData } from './types';
+import type { User, Snapshot, TrafficData } from './types';
 
 async function apiFetch(path: string, options?: RequestInit) {
   const response = await fetch(`/api${path}`, {
