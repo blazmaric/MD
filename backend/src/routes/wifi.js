@@ -5,6 +5,11 @@ import * as db from '../db.js';
 import { createJob, updateJob, getJob } from '../jobManager.js';
 import { getLteCache, setLteCache, isLteCheckInProgress, setLteCheckInProgress } from '../lteCache.js';
 
+// Cache for WiFi status to reduce MikroTik API calls
+let wlan24Cache = { data: null, timestamp: 0 };
+let wlan5Cache = { data: null, timestamp: 0 };
+const WIFI_CACHE_TTL = 5000; // 5 seconds cache
+
 export default async function wifiRoutes(fastify) {
   fastify.get('/wifi/lte-check', {
     preHandler: [authenticateMiddleware]
@@ -167,7 +172,15 @@ export default async function wifiRoutes(fastify) {
     preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     try {
+      const now = Date.now();
+      // Return cached data if fresh
+      if (wlan5Cache.data && (now - wlan5Cache.timestamp) < WIFI_CACHE_TTL) {
+        return { status: wlan5Cache.data, cached: true };
+      }
+
+      // Fetch fresh data
       const status = await getWlan5Status();
+      wlan5Cache = { data: status, timestamp: now };
       return { status };
     } catch (err) {
       return reply.code(500).send({ error: err.message });
@@ -178,7 +191,15 @@ export default async function wifiRoutes(fastify) {
     preHandler: [authenticateMiddleware]
   }, async (request, reply) => {
     try {
+      const now = Date.now();
+      // Return cached data if fresh
+      if (wlan24Cache.data && (now - wlan24Cache.timestamp) < WIFI_CACHE_TTL) {
+        return { status: wlan24Cache.data, cached: true };
+      }
+
+      // Fetch fresh data
       const status = await getWlan24Status();
+      wlan24Cache = { data: status, timestamp: now };
       return { status };
     } catch (err) {
       return reply.code(500).send({ error: err.message });

@@ -21,9 +21,9 @@ export const config = {
   },
 
   polling: {
-    summarySeconds: parseInt(process.env.SUMMARY_POLL_SECONDS || '3', 10),
-    staleSeconds: parseInt(process.env.SUMMARY_STALE_SECONDS || '10', 10),
-    requestTimeoutMs: parseInt(process.env.REQUEST_TIMEOUT_MS || '5000', 10)
+    summarySeconds: parseInt(process.env.SUMMARY_POLL_SECONDS || '10', 10),
+    staleSeconds: parseInt(process.env.SUMMARY_STALE_SECONDS || '20', 10),
+    requestTimeoutMs: parseInt(process.env.REQUEST_TIMEOUT_MS || '8000', 10)
   },
 
   admin: {
