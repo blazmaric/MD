@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TriangleAlert as AlertTriangle, RefreshCw } from 'lucide-react';
+import { TriangleAlert, RefreshCw } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { User, Snapshot } from '../types';
