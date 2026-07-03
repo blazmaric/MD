@@ -145,7 +145,7 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                 title={autoRecenter ? 'Auto-recenter is ON' : 'Click to enable auto-recenter'}
               >
                 <Crosshair className={`w-3.5 h-3.5 ${autoRecenter ? 'animate-pulse' : ''}`} />
-                {autoRecenter ? t('recenterMap') : 'Omogoči sledenje'}
+                {autoRecenter ? t('recenterMap') : t('enableTracking')}
               </button>
               <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
                 autoRecenter
@@ -153,7 +153,7 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                   : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
               }`}>
                 <div className={`w-2 h-2 rounded-full ${autoRecenter ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`}></div>
-                {autoRecenter ? t('gpsSignal') : 'Sledenje izklopljeno'}
+                {autoRecenter ? t('gpsSignal') : t('trackingDisabled')}
               </div>
             </div>
           )}

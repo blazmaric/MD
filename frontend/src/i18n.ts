@@ -100,6 +100,8 @@ export const translations = {
     openInMaps: 'Odpri v Zemljevidih',
     recenterMap: 'Centriraj',
     fix: 'Fix',
+    enableTracking: 'Omogoči sledenje',
+    trackingDisabled: 'Sledenje izklopljeno',
 
     // Wlan5 Clients
     wlan5Clients: 'Povezani klienti (wlan5)',
@@ -355,6 +357,8 @@ export const translations = {
     openInMaps: 'Open in Maps',
     recenterMap: 'Recenter',
     fix: 'Fix',
+    enableTracking: 'Enable tracking',
+    trackingDisabled: 'Tracking disabled',
 
     // Wlan5 Clients
     wlan5Clients: 'Connected Clients (wlan5)',
