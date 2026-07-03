@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { TriangleAlert as AlertTriangle, RefreshCw } from 'lucide-react';
 import { api } from '../api';
 import { useLanguage } from '../LanguageContext';
 import type { User, Snapshot } from '../types';
@@ -39,12 +39,51 @@ export default function Dashboard({ user }: DashboardProps) {
     fetchDashboardData();
 
     const handleSnapshot = (data: any) => {
-      setDashboardData(prev => ({
-        ...prev!,
-        summary: data,
-        interfaces: data.interfaces_data ? JSON.parse(data.interfaces_data) : prev?.interfaces || [],
-        smsMessages: data.sms_messages ? JSON.parse(data.sms_messages) : prev?.smsMessages || []
-      }));
+      console.log('[Dashboard] Received snapshot update:', data?.snapshot_ts);
+      setDashboardData(prev => {
+        // Extract all data from snapshot like dashboard.js does
+        let interfaces = [];
+        try {
+          interfaces = data.interfaces_data ? JSON.parse(data.interfaces_data) : prev?.interfaces || [];
+        } catch (e) {
+          interfaces = prev?.interfaces || [];
+        }
+
+        let smsMessages = [];
+        try {
+          smsMessages = data.sms_messages ? JSON.parse(data.sms_messages) : prev?.smsMessages || [];
+        } catch (e) {
+          smsMessages = prev?.smsMessages || [];
+        }
+
+        return {
+          summary: data,
+          wlan5: data ? {
+            ssid: data.wlan5_ssid,
+            status: data.wlan5_status,
+            authenticatedClients: data.wlan5_authenticated_clients,
+            registeredClients: data.wlan5_registered_clients,
+            noiseFloor: data.wlan5_noise_floor,
+            wmmEnabled: data.wlan5_wmm_enabled,
+            rxRate: data.wlan5_rx_rate,
+            txRate: data.wlan5_tx_rate,
+            disabled: data.wlan5_disabled,
+            running: data.wlan5_running
+          } : null,
+          interfaces: interfaces,
+          smsMessages: smsMessages,
+          publicIp: data?.public_ip || prev?.publicIp || null,
+          lte: data ? {
+            operator: data.lte_operator,
+            rsrp: data.lte_rsrp,
+            rsrq: data.lte_rsrq,
+            rssi: data.lte_rssi,
+            sinr: data.lte_sinr,
+            connected: data.lte_connected,
+            carrierAggregation: data.lte_carrier_aggregation
+          } : prev?.lte || null
+        };
+      });
     };
 
     const handleLteConnectivity = (data: any) => {

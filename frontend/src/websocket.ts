@@ -17,10 +17,10 @@ class WebSocketClient {
 
     this.isIntentionallyClosed = false;
 
+    // Use same host and protocol as the page - WebSocket goes through Traefik in production
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.hostname;
-    const port = '3000';
-    const wsUrl = `${protocol}//${host}:${port}/ws`;
+    const host = window.location.host; // includes port if non-default
+    const wsUrl = `${protocol}//${host}/ws`;
 
     console.log('[WebSocket] Connecting to:', wsUrl);
 
