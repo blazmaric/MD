@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { MapPin, Satellite, Mountain, Gauge, Crosshair, ZoomIn, ZoomOut } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
@@ -14,9 +14,14 @@ L.Icon.Default.mergeOptions({
 });
 
 // Component that auto-recenters the map when coordinates change
-function MapRecenter({ lat, lng, autoRecenter }: { lat: number; lng: number; autoRecenter: boolean }) {
+function MapController({ lat, lng, autoRecenter, onMapReady }: { lat: number; lng: number; autoRecenter: boolean; onMapReady: (map: L.Map) => void }) {
   const map = useMap();
   const prevCoords = useRef({ lat, lng });
+
+  useEffect(() => {
+    // Notify parent of map instance
+    onMapReady(map);
+  }, [map, onMapReady]);
 
   useEffect(() => {
     if (!autoRecenter) return;
@@ -97,9 +102,16 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
   };
 
   // Disable auto-recenter when user interacts with map
-  const handleMapInteraction = () => {
+  const handleMapInteraction = useCallback(() => {
     setAutoRecenter(false);
-  };
+  }, []);
+
+  // Handle map ready callback
+  const handleMapReady = useCallback((map: L.Map) => {
+    mapRef.current = map;
+    // Disable auto-recenter when user drags the map
+    map.on('dragstart', handleMapInteraction);
+  }, [handleMapInteraction]);
 
   const handleZoomIn = () => {
     if (mapRef.current) {
@@ -175,14 +187,8 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                 minZoom={3}
                 className="h-full w-full z-0"
                 zoomControl={false}
-                ref={mapRef}
-                whenCreated={(map) => {
-                  mapRef.current = map;
-                  // Disable auto-recenter when user drags the map
-                  map.on('dragstart', handleMapInteraction);
-                }}
               >
-                <MapRecenter lat={lat!} lng={lng!} autoRecenter={autoRecenter && hasGps} />
+                <MapController lat={lat!} lng={lng!} autoRecenter={autoRecenter && hasGps} onMapReady={handleMapReady} />
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
