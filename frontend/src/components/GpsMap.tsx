@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useRef, useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { MapPin, Satellite, Mountain, Gauge, Crosshair, ZoomIn, ZoomOut } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import type { Snapshot } from '../types';
@@ -12,6 +12,27 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
+
+// Component that auto-recenters the map when coordinates change
+function MapRecenter({ lat, lng, autoRecenter }: { lat: number; lng: number; autoRecenter: boolean }) {
+  const map = useMap();
+  const prevCoords = useRef({ lat, lng });
+
+  useEffect(() => {
+    if (!autoRecenter) return;
+
+    // Only recenter if coordinates actually changed (more than ~1 meter)
+    const latDiff = Math.abs(lat - prevCoords.current.lat);
+    const lngDiff = Math.abs(lng - prevCoords.current.lng);
+
+    if (latDiff > 0.00001 || lngDiff > 0.00001) {
+      map.setView([lat, lng], map.getZoom(), { animate: true, duration: 0.5 });
+      prevCoords.current = { lat, lng };
+    }
+  }, [lat, lng, map, autoRecenter]);
+
+  return null;
+}
 
 const createShipIcon = (lat: number, lng: number) => L.divIcon({
   html: `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener noreferrer" style="position: relative; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none;">
@@ -52,6 +73,7 @@ interface GpsMapProps {
 export default function GpsMap({ snapshot }: GpsMapProps) {
   const { t } = useLanguage();
   const mapRef = useRef<L.Map | null>(null);
+  const [autoRecenter, setAutoRecenter] = useState(true);
 
   function toNumber(value?: number | string | null): number | null {
     if (value == null || value === '') return null;
@@ -70,7 +92,13 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
   const handleRecenter = () => {
     if (mapRef.current && lat != null && lng != null) {
       mapRef.current.setView([lat, lng], 18, { animate: true });
+      setAutoRecenter(true);
     }
+  };
+
+  // Disable auto-recenter when user interacts with map
+  const handleMapInteraction = () => {
+    setAutoRecenter(false);
   };
 
   const handleZoomIn = () => {
@@ -97,14 +125,23 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleRecenter}
-                className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  autoRecenter
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300'
+                }`}
+                title={autoRecenter ? 'Auto-recenter is ON' : 'Click to enable auto-recenter'}
               >
-                <Crosshair className="w-3.5 h-3.5" />
-                {t('recenterMap')}
+                <Crosshair className={`w-3.5 h-3.5 ${autoRecenter ? 'animate-pulse' : ''}`} />
+                {autoRecenter ? t('recenterMap') : 'Omogoči sledenje'}
               </button>
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                {t('gpsSignal')}
+              <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
+                autoRecenter
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+              }`}>
+                <div className={`w-2 h-2 rounded-full ${autoRecenter ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`}></div>
+                {autoRecenter ? t('gpsSignal') : 'Sledenje izklopljeno'}
               </div>
             </div>
           )}
@@ -139,7 +176,13 @@ export default function GpsMap({ snapshot }: GpsMapProps) {
                 className="h-full w-full z-0"
                 zoomControl={false}
                 ref={mapRef}
+                whenCreated={(map) => {
+                  mapRef.current = map;
+                  // Disable auto-recenter when user drags the map
+                  map.on('dragstart', handleMapInteraction);
+                }}
               >
+                <MapRecenter lat={lat!} lng={lng!} autoRecenter={autoRecenter && hasGps} />
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
